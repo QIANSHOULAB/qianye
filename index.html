@@ -57,7 +57,15 @@
   .ed .mirror { position: absolute; inset: 0; color: transparent; pointer-events: none; overflow: hidden; border-radius: var(--r) var(--r) 0 0; }
   .ed .mirror mark { background: var(--mark); color: transparent; border-radius: 3px; box-shadow: 0 0 0 1px rgba(219,166,0,.35); }
   .ed textarea { position: relative; display: block; min-height: 188px; resize: none; outline: none; background: transparent; color: var(--ink); overflow: hidden; caret-color: var(--blue); }
-  .ed textarea::placeholder { color: #a1a1a6; }
+  .ed textarea::placeholder { color: var(--ph, #a1a1a6); }
+  /* 纸：没在写的时候，写字框换成排好版的那张纸；一点就回到写字框，皮不变 */
+  .write { overflow: hidden; }
+  .write .ed, .write .ed textarea { transition: background-color .2s; }
+  .write.viewing .ed { display: none; }
+  .write .pv { padding: 0; background: transparent; border-radius: 0; display: block; }
+  .write .pv[hidden] { display: none; }
+  .write .pv canvas { width: 100%; max-width: none; border-radius: 0; box-shadow: none; cursor: text; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+  .tip { margin: 0 4px 10px; font-size: 13px; color: var(--grey2); }
   .tools { display: flex; align-items: center; gap: 8px; padding: 8px 12px 12px; border-top: 1px solid var(--line2); min-height: 56px; flex-wrap: wrap; }
   .pill { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 18px; border: 0; background: #f0f0f3; color: var(--ink); font-size: 15px; font-weight: 500; white-space: nowrap; }
   .pill:hover { background: #e8e8ed; }
@@ -156,7 +164,8 @@
   </div>
 
   <div class="cols">
-    <section class="write card">
+    <section class="write card" id="paper">
+      <div class="pv" id="pv" hidden></div>
       <div class="ed">
         <div class="mirror" id="mirror" aria-hidden="true"></div>
         <textarea id="text" spellcheck="false" autocomplete="off" placeholder="写点什么，或者把一坨字粘进来。&#10;手写的纸，点「拍」。" aria-label="写字框"></textarea>
@@ -170,8 +179,7 @@
     </section>
 
     <section class="look">
-      <div class="head"><h2>预览</h2><span class="hint" id="pv-hint">标题认错了？点预览里那一行。</span></div>
-      <div class="pv" id="pv"><div class="empty">写了字，这里出图。</div></div>
+      <p class="tip" id="tip" hidden>点纸上哪行，就接着改哪行；长按一行，这行当标题。</p>
       <div class="themes" id="themes" role="group" aria-label="版式"></div>
       <div class="opts">
         <span><label>比例</label><span class="seg" id="ratio"><button type="button" data-v="auto">跟着字</button><button type="button" data-v="3:4">3:4</button><button type="button" data-v="1:1">1:1</button></span></span>
@@ -185,7 +193,7 @@
 
 <div class="dock"><div class="in">
   <div class="note" id="dock-note"></div>
-  <button type="button" class="btn" id="share" disabled><svg><use href="#i-share"/></svg><span id="share-t">分享</span></button>
+  <button type="button" class="btn" id="share" disabled><svg><use href="#i-share"/></svg><span id="share-t">以图片分享</span></button>
 </div></div>
 
 <input type="file" id="pick-cam" accept="image/*" capture="environment" hidden>
@@ -729,7 +737,7 @@ self.onmessage = async (e) => {
 <script type="module">
 // 千叶（012 时叫誊抄僧）：写字框里的字 → 认出标题、名字＋数字、清单、「时间：」这类行 → 按版式排好，画成图分享。
 // 排版和出图是同一套 canvas 代码：预览看到什么，分享出去就是什么。
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
 const Q = new URLSearchParams(location.search);
 const $ = (s) => document.querySelector(s);
@@ -1393,7 +1401,7 @@ async function ensureFonts(t, text) {
 // ================================================================ 页面状态
 const S = {
   theme: store.get('theme', 'note'), ratio: store.get('ratio', 'auto'), fmt: store.get('fmt', 'png'),
-  title: null, marks: [], prev: '', model: null, blob: null, blobKey: '',
+  title: null, marks: [], prev: '', model: null,
 };
 if (!THEME[S.theme]) S.theme = 'note';
 const ta = $('#text'), mirror = $('#mirror');
@@ -1458,8 +1466,8 @@ async function refresh() {
   T.model = S.model;
   const has = S.model.blocks.length > 0;
   $('#share').disabled = !has;
-  $('#pv-hint').hidden = !has;
-  if (!has) { $('#pv').innerHTML = '<div class="empty">写了字，这里出图。</div>'; drawThumbs(); S.blob = null; return; }
+  $('#tip').hidden = !has;
+  if (!has) { $('#pv').innerHTML = ''; setView(false); drawThumbs(); return; }
   const t = THEME[S.theme];
   await ensureFonts(t, text);
   if (!pvCanvas.isConnected) { $('#pv').innerHTML = ''; $('#pv').appendChild(pvCanvas); }
@@ -1468,17 +1476,79 @@ async function refresh() {
   T.renderMs = Math.round(performance.now() - t0);
   $('#dock-note').textContent = R.over ? `字多，${S.ratio} 装不下，按长图出` : '';
   drawThumbs();
-  prebake();
+  skinEditor();
+  if (document.activeElement !== ta) setView(true);
 }
-pvCanvas.addEventListener('click', (e) => {
-  if (!S.hits) return;
+function hitAt(e) {
+  if (!S.hits) return null;
   const r = pvCanvas.getBoundingClientRect(), y = (e.clientY - r.top) / r.height * (pvCanvas.height / (pvCanvas.width / W)) - (S.dy || 0);
-  const h = S.hits.find((x) => y >= x.y0 - 4 && y <= x.y1 + 4);
-  if (!h) return;
-  S.title = h.title ? '' : h.id;            // 点标题：不要标题；点别的行：这行当标题
-  setStatus(h.title ? '好，不要标题。' : '好，这行当标题。');
-  refresh();
+  return S.hits.find((x) => y >= x.y0 - 4 && y <= x.y1 + 4) || null;
+}
+let press = null;
+pvCanvas.addEventListener('pointerdown', (e) => {
+  const h = hitAt(e);
+  press = { x: e.clientX, y: e.clientY, long: false, t: setTimeout(() => {
+    if (!press || !h) return;
+    press.long = true;
+    S.title = h.title ? '' : h.id;            // 长按标题：不要标题；长按别的行：这行当标题
+    setStatus(h.title ? '好，不要标题。' : '好，这行当标题。');
+    if (navigator.vibrate) navigator.vibrate(12);
+    refresh();
+  }, 450) };
 });
+pvCanvas.addEventListener('pointermove', (e) => { if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 8) { clearTimeout(press.t); press = null; } });
+pvCanvas.addEventListener('pointercancel', () => { if (press) clearTimeout(press.t); press = null; });
+pvCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
+pvCanvas.addEventListener('click', (e) => {
+  if (press) clearTimeout(press.t);
+  const long = press && press.long; press = null;
+  if (long) return;
+  // 点哪行：光标放到那一行末尾，接着写
+  const h = hitAt(e);
+  let at = ta.value.length;
+  if (h) {
+    const n = parseInt(String(h.id).split('.')[0], 10), lines = ta.value.split('\n');
+    if (n >= 0 && n < lines.length) at = lines.slice(0, n + 1).join('\n').length;
+  }
+  setView(false);
+  ta.focus({ preventScroll: true });
+  ta.setSelectionRange(at, at);
+});
+
+// 写字框穿上当前版式的皮：底色纹理、字体、字号、行距、颜色、边距都跟纸一样
+const skinCache = {};
+function skinEditor() {
+  const t = THEME[S.theme];
+  const k = $('#paper').clientWidth / W || 1;
+  if (!skinCache[t.id]) {
+    const c = document.createElement('canvas'); c.width = W * 2; c.height = 600 * 2;
+    const g = c.getContext('2d'); g.scale(2, 2); t.bg(g, W, 600);
+    skinCache[t.id] = c.toDataURL('image/jpeg', 0.85);
+  }
+  const pad = t.pad.map((v) => `${(v * k).toFixed(1)}px`).join(' ');
+  for (const el of [ta, mirror]) {
+    el.style.fontFamily = t.font;
+    el.style.fontSize = `${Math.max(16, t.size * k).toFixed(2)}px`;   // iPhone 上写字框字小于 16px 会自己放大页面，所以最小 16
+    el.style.lineHeight = String(t.lh);
+    el.style.padding = pad;
+  }
+  ta.style.color = t.body;
+  ta.style.caretColor = t.accent;
+  ta.style.setProperty('--ph', t.muted);
+  const ed = $('#paper .ed');
+  ed.style.backgroundImage = `url(${skinCache[t.id]})`;
+  ed.style.backgroundSize = '100% auto';
+  ed.style.backgroundRepeat = 'repeat-y';
+  grow();
+}
+function setView(on) {
+  on = on && !!(S.model && S.model.blocks.length);
+  $('#paper').classList.toggle('viewing', on);
+  $('#pv').hidden = !on;
+}
+ta.addEventListener('focus', () => { setView(false); skinEditor(); });
+ta.addEventListener('blur', () => { setTimeout(() => { if (document.activeElement !== ta) refresh(); }, 0); });
+window.addEventListener('resize', () => { clearTimeout(skinCache.rt); skinCache.rt = setTimeout(skinEditor, 150); });
 
 let thumbTimer = null;
 function drawThumbs() {
@@ -1490,7 +1560,7 @@ function drawThumbs() {
         const b = document.createElement('button');
         b.type = 'button'; b.className = 'th'; b.dataset.id = t.id;
         b.innerHTML = `<canvas width="168" height="224"></canvas><span>${t.name}</span>`;
-        b.onclick = () => { S.theme = t.id; store.set('theme', t.id); markThemes(); refresh(); };
+        b.onclick = () => { S.theme = t.id; store.set('theme', t.id); markThemes(); skinEditor(); refresh(); };
         box.appendChild(b);
       }
       markThemes();
@@ -1499,7 +1569,7 @@ function drawThumbs() {
     for (const b of box.children) {
       const t = THEME[b.dataset.id], cv = b.querySelector('canvas');
       const tmp = document.createElement('canvas');
-      paint(tmp, model, t, 'auto', 0.6);
+      paint(tmp, model, t, '3:4', 0.6);   // 缩略图按整张 3:4 画，底下不留白
       const c = cv.getContext('2d');
       c.clearRect(0, 0, cv.width, cv.height);
       c.drawImage(tmp, 0, 0, tmp.width, Math.min(tmp.height, tmp.width * 4 / 3), 0, 0, cv.width, Math.min(cv.height, cv.width * Math.min(tmp.height, tmp.width * 4 / 3) / tmp.width));
@@ -1518,40 +1588,44 @@ segs('#ratio', 'ratio'); segs('#fmt', 'fmt');
 
 // ---------------------------------------------------------------- 出图、分享
 function fileName() { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return `千叶_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.${S.fmt === 'jpg' ? 'jpg' : 'png'}`; }
-async function makeBlob() {
+function dataUrlBlob(u) {
+  const i = u.indexOf(','), mime = u.slice(5, u.indexOf(';')), bin = atob(u.slice(i + 1));
+  const a = new Uint8Array(bin.length);
+  for (let j = 0; j < bin.length; j++) a[j] = bin.charCodeAt(j);
+  return new Blob([a], { type: mime });
+}
+function showSheet(blob, name) {
+  const url = URL.createObjectURL(blob);
+  $('#sheet-img').src = url; $('#sheet-save').href = url; $('#sheet-save').download = name;
+  $('#sheet').hidden = false;
+}
+// 平时不画图、不存图。点「以图片分享」这一下才画：全程同步，iPhone 认这一下是人点的，分享面板才肯弹
+function share() {
+  S.model = parse(ta.value, S.title);
+  if (!S.model.blocks.length) return;
+  if (document.activeElement === ta) ta.blur();
   const t = THEME[S.theme], cv = document.createElement('canvas');
   const t0 = performance.now();
-  await ensureFonts(t, ta.value);
   paint(cv, S.model, t, S.ratio, 3);
   const type = S.fmt === 'jpg' ? 'image/jpeg' : 'image/png';
-  const blob = await new Promise((ok) => cv.toBlob(ok, type, 0.92));
+  const blob = dataUrlBlob(cv.toDataURL(type, 0.92));
   T.exportMs = Math.round(performance.now() - t0);
   T.exportSize = [cv.width, cv.height, blob.size];
-  return blob;
-}
-const keyNow = () => [ta.value, S.theme, S.ratio, S.fmt, S.title].join('\u0001');
-let bakeTimer = null;
-function prebake() {          // 先把图画好放着：点分享时手里已经有图，iPhone 的分享面板才肯弹
-  clearTimeout(bakeTimer);
-  bakeTimer = setTimeout(async () => { const k = keyNow(); const b = await makeBlob(); if (k === keyNow()) { S.blob = b; S.blobKey = k; } }, 500);
-}
-async function share() {
-  if (!S.model || !S.model.blocks.length) return;
-  let blob = S.blobKey === keyNow() ? S.blob : null;
-  if (!blob) { blob = await makeBlob(); S.blob = blob; S.blobKey = keyNow(); }
-  const file = new File([blob], fileName(), { type: blob.type });
-  T.shared = { name: file.name, size: blob.size, type: blob.type };
+  const file = new File([blob], fileName(), { type });
+  T.shared = { name: file.name, size: blob.size, type };
   if (navigator.canShare && navigator.share) {
-    try {
-      if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); T.shared.via = 'share'; return; }
-    } catch (e) {
-      if (e && e.name === 'AbortError') { T.shared.via = 'cancel'; return; }
+    let ok = false;
+    try { ok = navigator.canShare({ files: [file] }); } catch (e) { ok = false; }
+    if (ok) {
+      navigator.share({ files: [file] }).then(() => { T.shared.via = 'share'; }, (e) => {
+        if (e && e.name === 'AbortError') { T.shared.via = 'cancel'; return; }
+        T.shared.via = 'sheet'; showSheet(blob, file.name);
+      });
+      return;
     }
   }
   T.shared.via = 'sheet';
-  const url = URL.createObjectURL(blob);
-  $('#sheet-img').src = url; $('#sheet-save').href = url; $('#sheet-save').download = file.name;
-  $('#sheet').hidden = false;
+  showSheet(blob, file.name);
 }
 $('#share').onclick = share;
 $('#sheet-close').onclick = () => { $('#sheet').hidden = true; };
@@ -1899,7 +1973,7 @@ S.prev = ta.value;
 grow(); drawMirror();
 $('#clear').hidden = !ta.value;
 refresh();
-if (!/Mobi|Android|iPhone/i.test(navigator.userAgent)) ta.focus();
+if (!ta.value && !/Mobi|Android|iPhone/i.test(navigator.userAgent)) ta.focus();   // 有字就先给看纸；没字才把光标放好
 T.parse = parse; T.layout = layout; T.THEMES = THEMES; T.wordsToText = wordsToText; T.diffMarks = diffMarks; T.SAMPLE = SAMPLE;
 T.render = (text, theme, ratio = 'auto', scale = 3) => { const cv = document.createElement('canvas'); const R = paint(cv, parse(text), THEME[theme], ratio, scale); return { url: cv.toDataURL('image/png'), H: R.H, fs: R.fs, hits: R.hits, ops: R.ops }; };
 T.ensureFonts = (theme, text) => ensureFonts(THEME[theme], text);
