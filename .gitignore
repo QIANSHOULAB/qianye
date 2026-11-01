@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+tests/out/
+# 参照是别人的作品，对比图里也夹着它们：只留本机，不进仓库
+docs/参照/*.png
+docs/参照/_探路/
+docs/对比/*.png
+docs/对比/r0/
+docs/对比/r0_通知/
+docs/对比/final/

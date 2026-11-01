@@ -1,0 +1,15 @@
+# Line endings: text files stored as LF in git; Windows scripts always checked out as CRLF.
+* text=auto
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.png binary
+*.jpg binary
+*.ogg binary
+*.wav binary
+*.dll binary
+*.onnx binary
+*.gz binary
+*.part0 binary
+*.part1 binary
+*.part2 binary
