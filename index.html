@@ -720,7 +720,7 @@ self.onmessage = async (e) => {
 <script type="module">
 // 千叶（012 时叫誊抄僧）：写字框里的字 → 认出标题、名字＋数字、清单、「时间：」这类行 → 按版式排好，画成图分享。
 // 排版和出图是同一套 canvas 代码：预览看到什么，分享出去就是什么。
-const VERSION = '0.3.1';
+const VERSION = '0.3.2';
 const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
 const Q = new URLSearchParams(location.search);
 const $ = (s) => document.querySelector(s);
@@ -734,12 +734,6 @@ const store = {
 };
 const half = (s) => String(s).replace(/[！-～]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/　/g, ' ');
 const dw = (s) => { let n = 0; for (const ch of String(s)) n += CJK.test(ch) ? 2 : 1; return n; };     // 显示宽度：汉字算 2
-const WEEK = '日一二三四五六';
-function today() {
-  const d = new Date();
-  return { y: d.getFullYear(), m: d.getMonth() + 1, d: d.getDate(), w: WEEK[d.getDay()],
-    dot: `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}` };
-}
 
 // ================================================================ 认结构：一段字 → 标题、名字＋数字、清单、键值、正文、落款
 const UNIT_RE = '(?:[%％‰]|[a-zA-Z]{1,5}|[\\u4e00-\\u9fa5]{1,2})';
@@ -1130,35 +1124,27 @@ function layout(model, t, opt = {}) {
   let y = pt, cid = null;            // cid：接下来画的字是原文哪一行的（光标、点哪改哪靠它）
   const text = (s, x, yb, font, color, align = 'left', extra = {}) => ops.push({ k: 'text', s, x, y: yb, font, color, align, id: cid, ...extra });
   const line = (xa, ya, xb, yb, color, w = 1, dash = null) => ops.push({ k: 'line', xa, ya, xb, yb, color, w, dash });
-  const date = today();
   const blocks = model.blocks;
   const metaB = blocks.find((b) => b.k === 'meta');
   const metaText = metaB ? metaB.s : null, metaId = metaB ? metaB.id : null;
-  const hasTitle = blocks.some((b) => b.k === 'title');
 
-  // 标题里已经写了日期（「11月1日 各线产量」），版式就不再自动印今天的日期，免得重复
-  const titleB = blocks.find((b) => b.k === 'title');
-  const DATE_IN = /\d{1,2}\s*月\s*\d{1,2}\s*[日号]?|\d{4}\s*[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}/;
-  const signB = blocks.find((b) => b.k === 'sign');
-  const dateInTitle = (!!titleB && DATE_IN.test(titleB.s)) || (!!signB && signB.lines.some((l) => DATE_IN.test(l)));     // 落款里有日期也算
-  const autoDate = (full) => (metaText || (dateInTitle ? '' : full));
-  // 版式自带的抬头日期（便签、白纸、夜读、大字）：有标题时放在标题上面
+  // 版式不自己印日期（Song 2026-11-02：「把这些日期全部去掉，感觉在写日记」）。
+  // 只有自己在标题下面写了一行日期，才把它当副标题放到版式给的位置
+  // 便签、白纸、夜读、大字：放在标题上面
   if (t.meta.pos === 'top') {
-    const s = autoDate(`${date.y}年${date.m}月${date.d}日 星期${date.w}`);
-    cid = metaText ? metaId : null;
+    const s = metaText;
+    cid = metaId;
     if (s) {
       text(s, x0, y + S(t.meta.size), fontOf(t, S(t.meta.size), 500), t.muted);
       y += S(t.meta.size) + S(14);
     }
   }
   if (t.meta.pos === 'kicker') {
-    const s = (metaText || date.dot).toUpperCase();
     cid = metaText ? metaId : null;
-    text(`NOTES　·　${s}`, x0, y + S(11), fontOf(t, S(11), 700), t.accent, 'left', { ls: 1.2 });
+    text(metaText ? `NOTES　·　${metaText.toUpperCase()}` : 'NOTES', x0, y + S(11), fontOf(t, S(11), 700), t.accent, 'left', { ls: 1.2 });
     y += S(11) + S(12);
     line(x0, y, x1, y, t.rule, 2.2); y += S(14);
   }
-  let first = true;
   for (const b of blocks) {
     if (b.k === 'meta') continue;
     if (b.k === 'gap') { y += S(t.size) * 0.7; continue; }
@@ -1184,8 +1170,8 @@ function layout(model, t, opt = {}) {
       y += ls.length * lh + (tt.label ? 9 : 0);
       hits.push({ y0, y1: y, id: b.id, title: true });
       if (t.meta.pos === 'below') {
-        const s = autoDate(`${date.y}年${date.m}月${date.d}日`);
-        cid = metaText ? metaId : null;
+        const s = metaText;
+        cid = metaId;
         if (s) {
           y += S(4);
           text(s, t.meta.align === 'center' ? W / 2 : x0, y + S(t.meta.size), fontOf(t, S(t.meta.size), 400), t.muted, t.meta.align || 'left');
@@ -1195,16 +1181,8 @@ function layout(model, t, opt = {}) {
       if (tt.redline) { y += S(10); line(x0, y, x1, y, t.accent, 1.6); line(x0, y + 4, x1, y + 4, t.accent, 0.6); y += 4; }
       if (tt.rules) { y += S(12); line(x0, y, x1, y, t.rule, 0.8); }
       y += S(tt.gap) + S(6);
-      first = false;
       continue;
     }
-    if (first && !hasTitle && t.meta.pos === 'below' && (b.k !== 'sign')) {     // 没标题也要有个日期
-      const s = metaText || `${date.y}年${date.m}月${date.d}日`;
-      cid = metaText ? metaId : null;
-      text(s, t.meta.align === 'center' ? W / 2 : x0, y + S(t.meta.size), fontOf(t, S(t.meta.size), 400), t.muted, t.meta.align || 'left');
-      y += S(t.meta.size) + S(16);
-    }
-    first = false;
     cid = b.id;
     if (b.k === 'sub') {
       const st = t.sub, size = S(st.size), font = fontOf(t, size, st.weight);
@@ -1320,7 +1298,6 @@ function layout(model, t, opt = {}) {
   if (fk === 'note') {
     line(x0, y, x1, y, t.rule, 0.8); y += S(14);
     text('千叶', x1, y + fs, fontOf(t, fs, 500), t.muted, 'right', { ls: 1 });
-    text(`${date.dot}`, x0, y + fs, fontOf(t, fs, 500), t.muted);
     y += fs;
   } else if (fk === 'letter') {
     text('— 千叶 —', W / 2, y + fs + S(4), fontOf(t, fs, 400), t.muted, 'center', { ls: 2 });
@@ -1328,12 +1305,10 @@ function layout(model, t, opt = {}) {
   } else if (fk === 'kraft') {
     line(x0, y, x1, y, t.rule, 0.8, [3, 3]); y += S(14);
     text('千叶', x0, y + fs, fontOf(t, fs, 700), t.muted, 'left', { ls: 1.5 });
-    text(date.dot, x1, y + fs, fontOf(t, fs, 500), t.muted, 'right');
     y += fs;
   } else if (fk === 'mag') {
     line(x0, y, x1, y, '#111', 2.2); y += S(12);
     text('千叶', x0, y + fs, fontOf(t, fs, 700), '#111', 'left', { ls: 1.2 });
-    text(date.dot, x1, y + fs, fontOf(t, fs, 500), t.muted, 'right');
     y += fs;
   } else if (fk === 'notice') {
     text('千叶', W / 2, y + fs, fontOf(t, fs, 500), t.muted, 'center', { ls: 2 });
