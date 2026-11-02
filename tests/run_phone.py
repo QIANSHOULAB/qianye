@@ -9,6 +9,8 @@ G  点「保存相册」「分享」之前：toBlob 0 次、File 0 个
 H  微信（UA 带 MicroMessenger）：两个按钮都弹大图页，大图是 data 地址
 I  电脑宽屏：「保存相册」直接下文件；没有分享面板时「分享」把图放进剪贴板
 J  第一次打开下载多大；第一次认手写又下多大
+K  假键盘（弹起来 336 高，挡住屏幕下面）：键盘弹着时底下那条整条收起来；点键盘上的 ✓ 收键盘，它再出来。打字 → ✓ → 分享：2 下
+   （A–J 的模拟浏览器里没有键盘，底下那条一直在；真 iPhone 上打完字要先点 ✓，所以比 A、B、C 各多 1 下）
 手机的分享面板在测试浏览器里弹不出来，换成假的：记下分享出去的文件。结果写 tests/out/phone.json。"""
 import base64
 import json
@@ -38,6 +40,13 @@ navigator.share = async (d) => { const f = d.files[0]; const b = new Uint8Array(
 IPHONE_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
 WECHAT_UA = IPHONE_UA + " MicroMessenger/8.0.50(0x18003237) NetType/WIFI Language/zh_CN"
 TEXT = "今日产量\nA线 1280件\nB线 960件\n合计 2240件"
+FAKE_KB = """
+window.__kb = 0;
+Object.defineProperty(VisualViewport.prototype, 'height', { configurable: true, get() { return window.innerHeight - window.__kb; } });
+const kb = (h) => { window.__kb = h; window.visualViewport.dispatchEvent(new Event('resize')); };
+document.addEventListener('focusin', (e) => { if (e.target.id === 'text') kb(336); });
+document.addEventListener('focusout', (e) => { if (e.target.id === 'text') kb(0); });
+"""
 
 
 def phone(b, ua=IPHONE_UA, init=SHARE_MOCK):
@@ -252,6 +261,24 @@ def main():
         ocr = sum(s for _, s in sizes[n0:])
         rep["J_first_ocr_bytes"] = ocr
         say(f"J. 第一次打开：{n0} 个文件，{first / 1024:.0f} KB（本机不压缩）；第一次认手写又下 {ocr / 1048576:.1f} MB")
+        ctx.close()
+
+        # K. 假键盘：弹着时底下那条收起来，收了键盘再出来
+        ctx, pg = phone(b, init=SHARE_MOCK + FAKE_KB)
+        look = "() => { const d = document.querySelector('#dock'); return { hidden: getComputedStyle(d).visibility === 'hidden', h: d.offsetHeight, share: !!document.querySelector('#share').offsetParent && getComputedStyle(document.querySelector('#share')).visibility !== 'hidden' }; }"
+        idle = pg.evaluate(look)
+        tap_paper(pg)
+        pg.keyboard.insert_text(TEXT)
+        up = pg.evaluate(look)
+        taps = 0
+        pg.evaluate("document.querySelector('#text').blur()"); taps += 1      # 点键盘上的 ✓ 收键盘
+        down = pg.evaluate(look)
+        pg.tap("#share"); taps += 1
+        pg.wait_for_function("window.__shared.length === 1")
+        ok = not idle["hidden"] and up["hidden"] and not up["share"] and not down["hidden"] and down["share"]
+        rep["K_keyboard_hides_dock"] = {"idle": idle, "keyboard_up": up, "keyboard_down": down, "taps": taps, "ok": ok}
+        say(f"K. 假键盘：没写字时底下那条{'在' if not idle['hidden'] else '不在'}；键盘弹着{'收起来了' if up['hidden'] else '还挡着'}；"
+            f"点 ✓ 收键盘后{'又出来了' if not down['hidden'] else '还没出来'} · 打字 → ✓ → 分享：点了 {taps} 下")
         ctx.close()
         b.close()
     (ROOT / "tests" / "out").mkdir(parents=True, exist_ok=True)

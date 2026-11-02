@@ -75,7 +75,7 @@
   /* 底下一条：版式（苹果相册编辑照片时滤镜那排的位置），再下面「保存相册」「分享」 */
   .dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 8px 0 calc(10px + env(safe-area-inset-bottom));
           background: rgba(245,245,247,.88); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
-          border-top: 1px solid rgba(0,0,0,.06); transition: transform .12s; }
+          border-top: 1px solid rgba(0,0,0,.06); }
   .themes { display: flex; gap: 12px; overflow-x: auto; padding: 4px 16px 8px; scroll-snap-type: x proximity; scroll-padding: 0 16px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .themes::-webkit-scrollbar { display: none; }
   @media (min-width: 900px) { .themes { justify-content: center; } }
@@ -84,6 +84,7 @@
   .th span { display: block; margin-top: 6px; font-size: 12px; color: var(--grey); }
   .th[aria-pressed="true"] canvas { box-shadow: 0 0 0 2px var(--blue); }
   .th[aria-pressed="true"] span { color: var(--blue); font-weight: 600; }
+  .dock.typing { visibility: hidden; }   /* 手机键盘弹着：整条收起来，不挡写的字 */
   .dock.typing .themes { display: none; }
   .dock .note { max-width: 552px; margin: 0 auto; padding: 0 16px 6px; font-size: 13px; color: var(--grey); text-align: center; }
   .dock .note:empty { display: none; }
@@ -719,7 +720,7 @@ self.onmessage = async (e) => {
 <script type="module">
 // 千叶（012 时叫誊抄僧）：写字框里的字 → 认出标题、名字＋数字、清单、「时间：」这类行 → 按版式排好，画成图分享。
 // 排版和出图是同一套 canvas 代码：预览看到什么，分享出去就是什么。
-const VERSION = '0.3.0';
+const VERSION = '0.3.1';
 const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
 const Q = new URLSearchParams(location.search);
 const $ = (s) => document.querySelector(s);
@@ -1856,18 +1857,17 @@ $('#paste').onclick = async () => {
 };
 
 // ---------------------------------------------------------------- 底下一条：版式、保存相册、分享
-// 手机上键盘弹着的时候版式条让开，两个按钮贴在键盘上面
+// 手机上键盘弹着的时候整条收起来，不挡写的字（Song 2026-11-02：「输入法弹出这个去掉」）；收起键盘再出来
 const dock = $('#dock');
-let typing = false;
-function setTyping(on) { typing = on; liftDock(); }
-function liftDock() {
+let typing = false, fullH = window.innerHeight;   // fullH：没在写字时整屏多高（有的手机浏览器弹键盘连整页一起缩，拿它比）
+function setTyping(on) { typing = on; hideDock(); }
+function hideDock() {
   const vv = window.visualViewport;
-  const off = vv && typing ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
-  const kb = off > 120;                      // 屏幕下面被挡了一大块：键盘弹着
+  if (!typing) fullH = window.innerHeight;
+  const kb = !!vv && typing && Math.max(window.innerHeight, fullH) - vv.height > 120;   // 屏幕下面被挡了一大块：键盘弹着
   dock.classList.toggle('typing', kb);
-  dock.style.transform = kb ? `translateY(${-off}px)` : '';
 }
-if (window.visualViewport) { visualViewport.addEventListener('resize', liftDock); visualViewport.addEventListener('scroll', liftDock); }
+if (window.visualViewport) { visualViewport.addEventListener('resize', hideDock); visualViewport.addEventListener('scroll', hideDock); }
 new ResizeObserver(() => { document.body.style.paddingBottom = `${dock.offsetHeight + 12}px`; }).observe(dock);
 let lastW = 0;
 new ResizeObserver(() => { if (paper.clientWidth !== lastW) { lastW = paper.clientWidth; render(); } }).observe(paper);
