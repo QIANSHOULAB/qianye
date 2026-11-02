@@ -54,7 +54,7 @@ def main():
                 continue
             truth = (HAND / f"{jpg.stem}.txt").read_text(encoding="utf-8")
             pg = ctx.new_page()
-            pg.goto(f"http://127.0.0.1:{port}/tengchao/index.html")
+            pg.goto(f"http://127.0.0.1:{port}/qianye/index.html")
             pg.wait_for_function("window.__teng && window.__teng.ready")
             pg.evaluate("localStorage.clear(); document.querySelector('#text').value=''; document.querySelector('#text').dispatchEvent(new Event('input'))")
             t0 = time.time()

@@ -1,5 +1,5 @@
 """看一眼：look.py [宽 高] [--text 文字] [--theme id] [--out 文件] [--export 目录]
-本机起服务，iPhone 尺寸（默认 390x844、3 倍屏）打开誊抄僧，打印页面报错，整页截图。
+本机起服务，iPhone 尺寸（默认 390x844、3 倍屏）打开千叶，打印页面报错，整页截图。
 --export 目录：把 9 个版式各出一张 3 倍图存进去（用 __teng.render）。"""
 import base64
 import sys
@@ -23,18 +23,17 @@ srv, port = serve()
 with sync_playwright() as p:
     b = p.chromium.launch(channel="msedge")
     mobile = w < 700
-    ctx = b.new_context(viewport={"width": w, "height": h}, device_scale_factor=3 if mobile else 1, is_mobile=mobile, has_touch=mobile)
+    ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+    ctx = b.new_context(viewport={"width": w, "height": h}, device_scale_factor=3 if mobile else 1, is_mobile=mobile, has_touch=mobile, **({"user_agent": ua} if mobile else {}))
     pg = ctx.new_page()
     errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)))
     pg.on("console", lambda m: errs.append(m.text) if m.type == "error" else None)
     pg.add_init_script("localStorage.clear()")
-    pg.goto(f"http://127.0.0.1:{port}/tengchao/index.html")
+    pg.goto(f"http://127.0.0.1:{port}/qianye/index.html")
     pg.wait_for_function("window.__teng && window.__teng.ready", timeout=20000)
-    if theme:
-        pg.click(f".th[data-id={theme}]")
-    if text is not None:
-        pg.fill("#text", text.replace("\\n", "\n"))
+    if text is not None or theme:
+        pg.evaluate("([t, th]) => window.__teng.set(t, th)", [(text or "").replace("\\n", "\n"), theme])
     pg.wait_for_timeout(1500)
     pg.screenshot(path=out, full_page=True)
     print("截图", out)

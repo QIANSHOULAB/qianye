@@ -19,7 +19,7 @@
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.47 var(--sans); letter-spacing: -.01em;
-         -webkit-font-smoothing: antialiased; padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+         -webkit-font-smoothing: antialiased; padding-bottom: 240px; }
   button, input, select, textarea { font: inherit; color: inherit; }
   button { cursor: pointer; }
   a { color: var(--blue); text-decoration: none; }
@@ -34,90 +34,76 @@
   .icon-btn:hover { background: rgba(0,0,0,.05); color: var(--ink); }
   .icon-btn svg { width: 20px; height: 20px; }
 
-  main { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
-  .hero { padding: 26px 4px 14px; }
-  .hero h1 { margin: 0; font-size: 34px; line-height: 1.12; font-weight: 700; letter-spacing: -.02em; }
-  .hero p { margin: 6px 0 0; font-size: 17px; color: var(--grey); }
+  main { max-width: 552px; margin: 0 auto; padding: 16px 16px 0; }
 
-  .cols { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
-  .cols > * { min-width: 0; }
-  @media (min-width: 900px) {
-    .cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
-    .cols > .write { position: sticky; top: 64px; }
-    .hero { padding-top: 44px; padding-bottom: 22px; }
-    .hero h1 { font-size: 48px; }
+  /* 纸：canvas 画的，跟分享出去的图同一段代码；上面一层画光标、选区、黄字；看不见的写字框跟着光标走 */
+  .paper { position: relative; border-radius: 14px; overflow: hidden; background: #fff;
+           box-shadow: 0 1px 2px rgba(0,0,0,.05), 0 10px 32px rgba(0,0,0,.08); cursor: text; touch-action: manipulation;
+           -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  .paper canvas { display: block; width: 100%; }
+  .paper #over { position: absolute; left: 0; top: 0; pointer-events: none; }
+  .paper textarea { position: absolute; left: 0; top: 0; width: 1px; height: 24px; margin: 0; padding: 0; border: 0; outline: 0; resize: none; overflow: hidden;
+           opacity: 0; color: transparent; background: transparent; caret-color: transparent; font: 16px/1.2 var(--sans); white-space: pre-wrap; pointer-events: none; }
+  .paper textarea::selection { background: transparent; }
+  .caret { position: absolute; left: 0; top: 0; width: 2px; border-radius: 1px; pointer-events: none; }
+  .caret.blink { animation: blink 1.06s steps(1) .5s infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .comp { position: absolute; left: 0; top: 0; padding: 0 1px; white-space: pre; pointer-events: none; text-decoration: underline; text-underline-offset: 3px; border-radius: 2px; }
+  @media (max-width: 640px) {        /* 手机：纸铺满屏宽，跟图一样宽 */
+    main { padding: 0; }
+    .paper { border-radius: 0; box-shadow: none; }
+    .below { padding: 0 12px; }
   }
 
-  .card { background: var(--card); border-radius: var(--r); box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 24px rgba(0,0,0,.04); }
-
-  /* 写字框：透明的 textarea 叠在一层「镜像」上，镜像负责把拿不准的字涂黄 */
-  .ed { position: relative; }
-  .ed textarea, .ed .mirror { margin: 0; border: 0; width: 100%; padding: 18px 20px 12px; font: 17px/1.65 var(--sans); letter-spacing: -.005em;
-         white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; tab-size: 4; }
-  .ed .mirror { position: absolute; inset: 0; color: transparent; pointer-events: none; overflow: hidden; border-radius: var(--r) var(--r) 0 0; }
-  .ed .mirror mark { background: var(--mark); color: transparent; border-radius: 3px; box-shadow: 0 0 0 1px rgba(219,166,0,.35); }
-  .ed textarea { position: relative; display: block; min-height: 188px; resize: none; outline: none; background: transparent; color: var(--ink); overflow: hidden; caret-color: var(--blue); }
-  .ed textarea::placeholder { color: var(--ph, #a1a1a6); }
-  /* 纸：没在写的时候，写字框换成排好版的那张纸；一点就回到写字框，皮不变 */
-  .write { overflow: hidden; }
-  .write .ed, .write .ed textarea { transition: background-color .2s; }
-  .write.viewing .ed { display: none; }
-  .write .pv { padding: 0; background: transparent; border-radius: 0; display: block; }
-  .write .pv[hidden] { display: none; }
-  .write .pv canvas { width: 100%; max-width: none; border-radius: 0; box-shadow: none; cursor: text; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
-  .tip { margin: 0 4px 10px; font-size: 13px; color: var(--grey2); }
-  .tools { display: flex; align-items: center; gap: 8px; padding: 8px 12px 12px; border-top: 1px solid var(--line2); min-height: 56px; flex-wrap: wrap; }
-  .pill { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 18px; border: 0; background: #f0f0f3; color: var(--ink); font-size: 15px; font-weight: 500; white-space: nowrap; }
-  .pill:hover { background: #e8e8ed; }
+  .tools { display: flex; align-items: center; gap: 8px; padding: 10px 0 0; flex-wrap: wrap; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 18px; border: 0; background: #e8e8ed; color: var(--ink); font-size: 15px; font-weight: 500; white-space: nowrap; }
+  .pill:hover { background: #dedee3; }
   .pill svg { width: 18px; height: 18px; }
   .pill.text { background: transparent; color: var(--blue); padding: 0 8px; }
   .pill.text:hover { background: transparent; text-decoration: underline; }
-  .status { flex: 1 1 0; min-width: 0; font-size: 13px; color: var(--grey); line-height: 1.35; }
-  .status:not(:empty) { flex-basis: 100%; order: 9; padding: 2px 4px 0; }
+  .pill[hidden] { display: none; }
   #clear { margin-left: auto; }
+  .status { flex-basis: 100%; font-size: 13px; color: var(--grey); line-height: 1.4; padding: 2px 4px 0; }
+  .status:empty { display: none; }
   .status.warn { color: #b25000; }
   .status b { font-weight: 600; color: var(--mark-ink); background: var(--mark); border-radius: 3px; padding: 0 3px; }
   .barline { height: 3px; background: var(--line2); border-radius: 2px; overflow: hidden; margin-top: 6px; }
   .barline i { display: block; height: 100%; width: 0; background: var(--blue); transition: width .3s; }
+  .tip { margin: 8px 4px 0; font-size: 12px; color: var(--grey2); }
+  .tip[hidden] { display: none; }
 
-  .look .head { display: flex; align-items: baseline; justify-content: space-between; padding: 2px 4px 10px; }
-  .look h2 { margin: 0; font-size: 21px; font-weight: 600; letter-spacing: -.01em; }
-  .look .hint { font-size: 13px; color: var(--grey2); }
-  .pv { padding: 14px; background: #ececef; border-radius: var(--r); display: grid; place-items: center; }
-  .pv canvas { width: 100%; max-width: 420px; height: auto; display: block; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 8px 28px rgba(0,0,0,.10); cursor: pointer; background: #fff; }
-  .pv .empty { padding: 48px 12px; color: var(--grey2); font-size: 15px; text-align: center; }
-
-  .themes { display: flex; gap: 12px; overflow-x: auto; padding: 14px 4px 6px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  /* 底下一条：版式（苹果相册编辑照片时滤镜那排的位置），再下面「保存相册」「分享」 */
+  .dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 8px 0 calc(10px + env(safe-area-inset-bottom));
+          background: rgba(245,245,247,.88); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+          border-top: 1px solid rgba(0,0,0,.06); transition: transform .12s; }
+  .themes { display: flex; gap: 12px; overflow-x: auto; padding: 4px 16px 8px; scroll-snap-type: x proximity; scroll-padding: 0 16px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .themes::-webkit-scrollbar { display: none; }
+  @media (min-width: 900px) { .themes { justify-content: center; } }
   .th { flex: 0 0 auto; width: 84px; border: 0; background: none; padding: 0; scroll-snap-align: start; text-align: center; }
   .th canvas { width: 84px; height: 112px; display: block; border-radius: 8px; box-shadow: 0 0 0 1px rgba(0,0,0,.08); background: #fff; }
   .th span { display: block; margin-top: 6px; font-size: 12px; color: var(--grey); }
   .th[aria-pressed="true"] canvas { box-shadow: 0 0 0 2px var(--blue); }
   .th[aria-pressed="true"] span { color: var(--blue); font-weight: 600; }
-
-  .opts { display: flex; flex-wrap: wrap; gap: 10px 16px; padding: 10px 4px 0; align-items: center; }
-  .seg { display: inline-flex; background: #e3e3e8; border-radius: 9px; padding: 2px; }
-  .seg button { border: 0; background: transparent; height: 30px; padding: 0 12px; border-radius: 7px; font-size: 13px; color: var(--ink2); }
-  .seg button[aria-pressed="true"] { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
-  .opts label { font-size: 13px; color: var(--grey); margin-right: 6px; }
-
-  .dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-          background: rgba(245,245,247,.86); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-top: 1px solid rgba(0,0,0,.06); }
-  .dock .in { max-width: 1080px; margin: 0 auto; display: flex; gap: 10px; align-items: center; }
-  .dock .note { flex: 1; min-width: 0; font-size: 13px; color: var(--grey); }
-  @media (max-width: 640px) {        /* 手机：分享按钮通栏，提示挪到按钮上面 */
-    .dock .in { flex-direction: column; align-items: stretch; gap: 6px; }
-    .dock .note:empty { display: none; }
-    .dock .note { text-align: center; }
-    .dock .btn { width: 100%; }
-  }
+  .dock.typing .themes { display: none; }
+  .dock .note { max-width: 552px; margin: 0 auto; padding: 0 16px 6px; font-size: 13px; color: var(--grey); text-align: center; }
+  .dock .note:empty { display: none; }
+  .acts2 { max-width: 552px; margin: 0 auto; padding: 0 16px; display: flex; gap: 10px; }
+  .acts2 .btn { flex: 1 1 0; min-width: 0; padding: 0 12px; }
+  .toast { position: absolute; left: 50%; bottom: calc(100% + 10px); transform: translateX(-50%); background: rgba(29,29,31,.9); color: #fff; font-size: 14px; padding: 8px 14px; border-radius: 18px; white-space: nowrap; pointer-events: none; }
+  .toast[hidden] { display: none; }
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px; padding: 0 26px; border: 0; border-radius: 23px;
          background: var(--blue); color: #fff; font-size: 17px; font-weight: 600; letter-spacing: 0; white-space: nowrap; }
   .btn:hover { background: var(--blue2); }
   .btn:disabled { background: #b8d4f5; cursor: default; }
   .btn svg { width: 19px; height: 19px; }
   .btn.grey { background: #e8e8ed; color: var(--ink); font-weight: 500; }
+  .btn.tint { background: rgba(0,113,227,.12); color: var(--blue); }
+  .btn.tint:hover { background: rgba(0,113,227,.17); }
+  .btn.tint:disabled { background: rgba(0,113,227,.06); color: #9cc3ee; }
   .btn.small { height: 36px; padding: 0 16px; font-size: 15px; border-radius: 18px; }
+  .seg { display: inline-flex; background: #e3e3e8; border-radius: 9px; padding: 2px; }
+  .seg button { border: 0; background: transparent; height: 30px; padding: 0 12px; border-radius: 7px; font-size: 13px; color: var(--ink2); }
+  .seg button[aria-pressed="true"] { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 
   footer { max-width: 1080px; margin: 0 auto; padding: 28px 20px 8px; font-size: 12px; color: var(--grey2); }
   footer a { color: var(--grey); }
@@ -141,6 +127,7 @@
   .sheet img { width: 100%; height: auto; max-height: calc(100vh - 160px); object-fit: contain; border-radius: 8px; background: #fff; }
   .sheet p { margin: 0; color: #f5f5f7; font-size: 14px; text-align: center; }
   .sheet .acts { display: flex; gap: 10px; justify-content: center; }
+  .sheet .acts [hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -158,55 +145,50 @@
 </div></div>
 
 <main>
-  <div class="hero">
-    <h1>千叶</h1>
-    <p>施主乱写，贫僧誊抄</p>
-  </div>
-
-  <div class="cols">
-    <section class="write card" id="paper">
-      <div class="pv" id="pv" hidden></div>
-      <div class="ed">
-        <div class="mirror" id="mirror" aria-hidden="true"></div>
-        <textarea id="text" spellcheck="false" autocomplete="off" placeholder="写点什么，或者把一坨字粘进来。&#10;手写的纸，点「拍」。" aria-label="写字框"></textarea>
-      </div>
-      <div class="tools">
-        <button type="button" class="pill" id="snap"><svg><use href="#i-cam"/></svg>拍</button>
-        <button type="button" class="pill text" id="album">相册</button>
-        <div class="status" id="status"></div>
-        <button type="button" class="pill text" id="clear" hidden>清空</button>
-      </div>
-    </section>
-
-    <section class="look">
-      <p class="tip" id="tip" hidden>点纸上哪行，就接着改哪行；长按一行，这行当标题。</p>
-      <div class="themes" id="themes" role="group" aria-label="版式"></div>
-      <div class="opts">
-        <span><label>比例</label><span class="seg" id="ratio"><button type="button" data-v="auto">跟着字</button><button type="button" data-v="3:4">3:4</button><button type="button" data-v="1:1">1:1</button></span></span>
-        <span><label>格式</label><span class="seg" id="fmt"><button type="button" data-v="png">PNG</button><button type="button" data-v="jpg">JPG</button></span></span>
-      </div>
-    </section>
+  <section class="paper" id="paper" aria-label="纸：点哪改哪">
+    <canvas id="paper-cv"></canvas>
+    <canvas id="over" aria-hidden="true"></canvas>
+    <div class="caret" id="caret" hidden></div>
+    <div class="comp" id="comp" hidden></div>
+    <textarea id="text" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="写字"></textarea>
+  </section>
+  <div class="below">
+    <div class="tools">
+      <button type="button" class="pill" id="snap"><svg><use href="#i-cam"/></svg>拍</button>
+      <button type="button" class="pill" id="album">相册</button>
+      <button type="button" class="pill" id="paste">粘贴</button>
+      <button type="button" class="pill text" id="clear" hidden>清空</button>
+      <div class="status" id="status"></div>
+    </div>
+    <p class="tip" id="tip" hidden>点哪改哪；长按一行，这行当标题。</p>
   </div>
 </main>
 
 <footer>千手院 · QIANSHOU LAB　·　<a href="/" target="_blank" rel="noopener">千手院总舵</a></footer>
 
-<div class="dock"><div class="in">
+<div class="dock" id="dock">
+  <div class="toast" id="toast" hidden></div>
+  <div class="themes" id="themes" role="group" aria-label="版式"></div>
   <div class="note" id="dock-note"></div>
-  <button type="button" class="btn" id="share" disabled><svg><use href="#i-share"/></svg><span id="share-t">以图片分享</span></button>
-</div></div>
+  <div class="acts2">
+    <button type="button" class="btn tint" id="save" disabled>保存相册</button>
+    <button type="button" class="btn" id="share" disabled><svg><use href="#i-share"/></svg>分享</button>
+  </div>
+</div>
 
 <input type="file" id="pick-cam" accept="image/*" capture="environment" hidden>
 <input type="file" id="pick-album" accept="image/*" hidden>
 
 <div class="sheet" id="sheet" hidden><div class="box">
   <img id="sheet-img" alt="生成的图">
-  <p>长按图片存进相册，或者点「存图」。</p>
+  <p id="sheet-tip">长按图片存进相册，或者点「存图」。</p>
   <div class="acts"><a class="btn small" id="sheet-save" download>存图</a><button type="button" class="btn small grey" id="sheet-close">关掉</button></div>
 </div></div>
 
 <dialog id="dlg-set"><div class="dcard">
   <h2>设置</h2>
+  <div class="row"><label>比例</label><span class="seg" id="ratio"><button type="button" data-v="auto">跟着字</button><button type="button" data-v="3:4">3:4</button><button type="button" data-v="1:1">1:1</button></span></div>
+  <div class="row"><label>格式</label><span class="seg" id="fmt"><button type="button" data-v="png">PNG</button><button type="button" data-v="jpg">JPG</button></span></div>
   <div class="row"><label for="k1">钥匙 1</label><input class="field" id="k1" type="password" autocomplete="off" spellcheck="false" placeholder="只有认手写才用得上"></div>
   <div class="row"><label for="k2">钥匙 2</label><input class="field" id="k2" type="password" autocomplete="off" spellcheck="false" placeholder="备胎，平时空着"><div class="h">贴了钥匙，手写借谷歌的眼睛认，认两遍对答案，更准；不贴就在你手机里认，不上传。1 号今天用完了自动换 2 号。钥匙只存在这个浏览器里。<a href="/luruseng/key.html" target="_blank" rel="noopener">免费领钥匙</a></div></div>
   <div class="row"><label for="model">模型</label><select class="field" id="model"></select></div>
@@ -737,7 +719,7 @@ self.onmessage = async (e) => {
 <script type="module">
 // 千叶（012 时叫誊抄僧）：写字框里的字 → 认出标题、名字＋数字、清单、「时间：」这类行 → 按版式排好，画成图分享。
 // 排版和出图是同一套 canvas 代码：预览看到什么，分享出去就是什么。
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
 const Q = new URLSearchParams(location.search);
 const $ = (s) => document.querySelector(s);
@@ -840,13 +822,14 @@ function titleish(s) {
   return dw(t) <= 30 && !END_PUNCT.test(t.replace(/[:：]$/, ''));
 }
 
-// lines：[{s, id}]，id 是原文第几行（拆开的一坨用 "5.2" 这种）
-function toLines(text) {
+// lines：[{s, id}]，id 是原文第几行（拆开的一坨用 "5.2" 这种）。holdN：正在写的那一行，不拆、空着也留着
+function toLines(text, holdN = -1) {
   const out = [];
   // 只把全角的字母数字、全角空格换成半角；中文标点照原样留着（显示用）
   String(text).replace(/[０-９Ａ-Ｚａ-ｚ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/　/g, ' ')
     .replace(/\r/g, '').replace(/\t/g, '  ').split('\n').forEach((raw, i) => {
     const s = raw.replace(/\s+$/, '');
+    if (i === holdN) { out.push({ s: s.trim(), id: String(i), held: true }); return; }
     if (!s.trim()) { out.push({ s: '', id: String(i) }); return; }
     const parts = splitBlob(s);
     parts.forEach((p, j) => out.push({ s: p.trim(), id: parts.length > 1 ? `${i}.${j}` : String(i) }));
@@ -855,11 +838,16 @@ function toLines(text) {
 }
 
 // title：null = 自动认；'' = 不要标题；'行号' = 用这一行
-function parse(text, title = null) {
-  const lines = toLines(text);
+// hold：正在写的那一行先不落定 { n: 第几行, kind: 进这行时它是啥, sign: 落款是哪几行 }。
+// 这行要是还认得成原来那样就照原来排，认不成就按原样一行字排；别的行、标题、落款都照进这行时的样子，不跟着变
+function parse(text, title = null, hold = null) {
+  const lines = toLines(text, hold ? hold.n : -1);
   const blocks = [];
   const live = lines.filter((l) => l.s);
-  if (!live.length) return { blocks, title: null };
+  if (!live.length) {
+    const h = lines.find((l) => l.held);
+    return { blocks: h ? [{ k: 'para', s: '', id: h.id, raw: true }] : [], title: null, lines };
+  }
   let tIdx = -1, meta = '';
   if (title === null) {
     const first = live[0], second = live[1];
@@ -873,16 +861,21 @@ function parse(text, title = null) {
     // 标题下面紧跟一行日期：当副标题
     const after = lines.slice(tIdx + 1).find((l) => l.s);
     if (!meta && after && DATE_ONLY.test(after.s)) { meta = after.s; after.used = true; }
-    if (meta) blocks.push({ k: 'meta', s: meta });
-    if (meta) for (const l of lines) if (l.s === meta && l !== lines[tIdx]) { l.used = true; break; }
+    let metaId = null;
+    if (meta) for (const l of lines) if (l.s === meta && l !== lines[tIdx]) { l.used = true; metaId = l.id; break; }
+    if (meta) blocks.push({ k: 'meta', s: meta, id: metaId });
   }
   const body = lines.filter((l, i) => i !== tIdx && !l.used);
-  while (body.length && !body[0].s) body.shift();
-  while (body.length && !body[body.length - 1].s) body.pop();
+  while (body.length && !body[0].s && !body[0].held) body.shift();
+  while (body.length && !body[body.length - 1].s && !body[body.length - 1].held) body.pop();
   // 落款：最后一两行短字（部门、日期），前面空了一行、或者以「——」开头、或者里面有日期；上面得有正文
   const hasPara = body.some((l) => l.s && !asPair(l.s) && !asList(l.s) && !KV.test(l.s) && dw(l.s) > 30);
   let sign = [];
-  if (hasPara) {
+  if (hold) {
+    const ids = new Set(hold.sign || []);
+    sign = body.filter((l) => ids.has(l.id) && l.s && !l.held);
+    for (const l of sign) body.splice(body.indexOf(l), 1);
+  } else if (hasPara) {
     let k = body.length - 1;
     const cand = [];
     while (k >= 0 && cand.length < 2) {
@@ -898,6 +891,12 @@ function parse(text, title = null) {
   }
   // 逐行认类型，相邻同类并成一块
   const kindOf = (l) => {
+    if (l.held) {
+      if (!l.s) return { k: 'para', s: '', id: l.id, raw: true };
+      const x = kindOf({ s: l.s, id: l.id });
+      if (hold.kind === 'row' && x.k !== 'row') { const li = asList(l.s); return { k: 'row', ...(li ? { marker: li.marker, label: li.body } : { label: l.s }), id: l.id, raw: true }; }
+      return x;
+    }
     if (!l.s) return { k: 'gap' };
     const li = asList(l.s);
     if (li) { const p = asPair(li.body); return { k: 'row', marker: li.marker, ...(p || { label: li.body }), id: l.id }; }
@@ -931,7 +930,7 @@ function parse(text, title = null) {
   // 「周一 张师傅 / 周二 李师傅 / 周三 王师傅」：连着 3 行以上「短词 空格 短词」，也按两列对齐（不加冒号）
   for (let i = 0; i < blocks.length; i++) {
     let j = i;
-    const two = (b) => b && b.k === 'para' && /^\S{1,8}\s+\S.{0,20}$/.test(b.s) && !/\s\S+\s/.test(b.s.replace(/^\S+\s+/, ' '));
+    const two = (b) => b && b.k === 'para' && !b.raw && !(hold && b.id === String(hold.n)) && /^\S{1,8}\s+\S.{0,20}$/.test(b.s) && !/\s\S+\s/.test(b.s.replace(/^\S+\s+/, ' '));
     while (two(blocks[j])) j++;
     if (j - i >= 3) {
       const items = blocks.slice(i, j).map((b) => { const m = b.s.match(/^(\S+)\s+(.+)$/); return { k: 'kv', key: m[1], val: m[2], id: b.id, bare: true }; });
@@ -945,7 +944,38 @@ function parse(text, title = null) {
     blocks[firstBody] = { k: 'para', s: b.raw, id: b.id, salute: true };
   }
   if (sign.length) blocks.push({ k: 'sign', lines: sign.map((l) => l.s.replace(/^[—-]{1,2}\s*/, '')), dash: /^[—-]/.test(sign[0].s), ids: sign.map((l) => l.id) });
+  // 正在写的那行：认出来的跟进这行时不一样（打到一半像标题了、数字冒出来了），就按原样一行字排，等落定了再说
+  if (hold) {
+    const id = String(hold.n), now = kindsOf(blocks)[id];
+    if (now && now !== hold.kind && now !== 'title') {
+      const l = lines.find((x) => x.id === id);
+      for (let i = 0; i < blocks.length; i++) {
+        const b = blocks[i];
+        if (b.id === id) { blocks[i] = { k: 'para', s: l.s, id, raw: true }; break; }
+        if (b.items) {
+          const j = b.items.findIndex((it) => it.id === id);
+          if (j < 0) continue;
+          if (b.k === 'rows' && hold.kind === 'row') { const li = asList(l.s); b.items[j] = { k: 'row', ...(li ? { marker: li.marker, label: li.body } : { label: l.s }), id, raw: true }; }
+          else { blocks.splice(i, 1, ...[b.items.slice(0, j), null, b.items.slice(j + 1)].map((x) => (x ? x.length && { ...b, items: x } : { k: 'para', s: l.s, id, raw: true })).filter(Boolean)); }
+          break;
+        }
+      }
+    }
+  }
   return { blocks, title: tIdx >= 0 ? lines[tIdx].id : null, titleText, lines };
+}
+// 每一行（按原文行号）落成了啥：title / meta / row / kv / bare / sub / para / salute / sign / blob（一坨拆开的）
+function kindsOf(blocks) {
+  const out = {};
+  const put = (id, k) => { if (id == null) return; const s = String(id); if (s.includes('.')) { out[s.split('.')[0]] = 'blob'; return; } out[s] = k; };
+  for (const b of blocks) {
+    if (b.k === 'rows') b.items.forEach((it) => put(it.id, 'row'));
+    else if (b.k === 'kvs') b.items.forEach((it) => put(it.id, b.bare ? 'bare' : 'kv'));
+    else if (b.k === 'sign') b.ids.forEach((id) => put(id, 'sign'));
+    else if (b.k === 'para') put(b.id, b.salute ? 'salute' : 'para');
+    else if (b.k !== 'gap') put(b.id, b.k);
+  }
+  return out;
 }
 
 // ================================================================ 版式
@@ -954,15 +984,18 @@ const SERIF = '"Noto Serif SC", "Songti SC", "STSong", "Source Han Serif SC", "N
 // 一张图的宽固定 390（逻辑像素），分享时按 3 倍画
 const W = 390;
 
-// 噪点纹理：纸感。按种子算，同一张图每次画得一样
+// 噪点纹理：纸感。按种子算，同一张图每次画得一样。按 128 高一块一块撒：纸变长只是往下多撒几块，上面的纹理不跟着变
+const TILE = 128;
 function noise(ctx, w, h, alpha, seed = 7, size = 1) {
-  let s = seed;
-  const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
   ctx.save();
-  for (let i = 0; i < w * h / (size * size) * 0.18; i++) {
-    const v = rnd() < 0.5 ? 0 : 255;
-    ctx.fillStyle = `rgba(${v},${v},${v},${alpha * rnd()})`;
-    ctx.fillRect(rnd() * w, rnd() * h, size, size);
+  for (let ty = 0; ty * TILE < h; ty++) {
+    let s = (seed * 7919 + ty * 104729) % 2147483647 || 1;
+    const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < w * TILE / (size * size) * 0.18; i++) {
+      const v = rnd() < 0.5 ? 0 : 255;
+      ctx.fillStyle = `rgba(${v},${v},${v},${alpha * rnd()})`;
+      ctx.fillRect(rnd() * w, ty * TILE + rnd() * TILE, size, size);
+    }
   }
   ctx.restore();
 }
@@ -989,9 +1022,11 @@ const THEMES = [
   { id: 'kraft', name: '牛皮纸',
     bg: (c, w, h) => {
       c.fillStyle = '#CDB18C'; c.fillRect(0, 0, w, h); noise(c, w, h, 0.08, 3, 1.3);
-      let s = 3; const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
       c.save(); c.strokeStyle = 'rgba(92,62,30,.10)'; c.lineWidth = 0.6;
-      for (let i = 0; i < w * h / 900; i++) { const x = r() * w, y = r() * h, l = 6 + r() * 16, a = r() * Math.PI; c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); c.stroke(); }
+      for (let ty = 0; ty * TILE < h; ty++) {
+        let s = 3 + ty * 7717; const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+        for (let i = 0; i < w * TILE / 900; i++) { const x = r() * w, y = ty * TILE + r() * TILE, l = 6 + r() * 16, a = r() * Math.PI; c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); c.stroke(); }
+      }
       c.restore();
     },
     pad: [30, 28, 26, 28], font: SANS, ink: '#2F2114', body: '#3B2A19', muted: '#6E5338', accent: '#7A3B12', rule: 'rgba(60,38,16,.22)',
@@ -999,7 +1034,7 @@ const THEMES = [
     sub: { size: 13.5, weight: 700, color: '#2F2114', rule: true }, marker: { color: '#7A3B12' },
     footer: { kind: 'kraft' } },
   { id: 'night', name: '夜读',
-    bg: (c, w, h) => { c.fillStyle = '#141416'; c.fillRect(0, 0, w, h); const g = c.createRadialGradient(w * 0.2, 0, 0, w * 0.2, 0, Math.max(w, h)); g.addColorStop(0, 'rgba(255,190,90,.07)'); g.addColorStop(1, 'rgba(255,190,90,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); },
+    bg: (c, w, h) => { c.fillStyle = '#141416'; c.fillRect(0, 0, w, h); const g = c.createRadialGradient(w * 0.2, 0, 0, w * 0.2, 0, Math.max(w, Math.min(h, 520))); g.addColorStop(0, 'rgba(255,190,90,.07)'); g.addColorStop(1, 'rgba(255,190,90,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); },
     pad: [36, 28, 26, 28], font: SANS, ink: '#F5F3EF', body: '#D8D5CE', muted: '#8B877F', accent: '#F2B354', rule: 'rgba(255,255,255,.12)',
     title: { size: 25, weight: 700, lh: 1.3, gap: 10 }, meta: { size: 12.5, pos: 'top' }, size: 16, lh: 1.72, rowLh: 1.95,
     sub: { size: 13, weight: 600, color: '#F2B354', rule: true }, marker: { color: '#F2B354' }, numColor: '#F2B354',
@@ -1091,13 +1126,13 @@ function layout(model, t, opt = {}) {
   const x0 = pl, x1 = W - pr, cw = x1 - x0;
   const S = (n) => n * f;
   const bodyFont = fontOf(t, S(t.size), 400), bodyLh = S(t.size) * t.lh, rowLh = S(t.size) * t.rowLh;
-  let y = pt;
-  const text = (s, x, yb, font, color, align = 'left', extra = {}) => ops.push({ k: 'text', s, x, y: yb, font, color, align, ...extra });
+  let y = pt, cid = null;            // cid：接下来画的字是原文哪一行的（光标、点哪改哪靠它）
+  const text = (s, x, yb, font, color, align = 'left', extra = {}) => ops.push({ k: 'text', s, x, y: yb, font, color, align, id: cid, ...extra });
   const line = (xa, ya, xb, yb, color, w = 1, dash = null) => ops.push({ k: 'line', xa, ya, xb, yb, color, w, dash });
   const date = today();
   const blocks = model.blocks;
   const metaB = blocks.find((b) => b.k === 'meta');
-  const metaText = metaB ? metaB.s : null;
+  const metaText = metaB ? metaB.s : null, metaId = metaB ? metaB.id : null;
   const hasTitle = blocks.some((b) => b.k === 'title');
 
   // 标题里已经写了日期（「11月1日 各线产量」），版式就不再自动印今天的日期，免得重复
@@ -1109,6 +1144,7 @@ function layout(model, t, opt = {}) {
   // 版式自带的抬头日期（便签、白纸、夜读、大字）：有标题时放在标题上面
   if (t.meta.pos === 'top') {
     const s = autoDate(`${date.y}年${date.m}月${date.d}日 星期${date.w}`);
+    cid = metaText ? metaId : null;
     if (s) {
       text(s, x0, y + S(t.meta.size), fontOf(t, S(t.meta.size), 500), t.muted);
       y += S(t.meta.size) + S(14);
@@ -1116,6 +1152,7 @@ function layout(model, t, opt = {}) {
   }
   if (t.meta.pos === 'kicker') {
     const s = (metaText || date.dot).toUpperCase();
+    cid = metaText ? metaId : null;
     text(`NOTES　·　${s}`, x0, y + S(11), fontOf(t, S(11), 700), t.accent, 'left', { ls: 1.2 });
     y += S(11) + S(12);
     line(x0, y, x1, y, t.rule, 2.2); y += S(14);
@@ -1124,6 +1161,7 @@ function layout(model, t, opt = {}) {
   for (const b of blocks) {
     if (b.k === 'meta') continue;
     if (b.k === 'gap') { y += S(t.size) * 0.7; continue; }
+    cid = b.id;
     if (b.k === 'title') {
       const tt = t.title, fam = t.titleFont || t.font, size = S(tt.size);
       let s = b.s;
@@ -1146,6 +1184,7 @@ function layout(model, t, opt = {}) {
       hits.push({ y0, y1: y, id: b.id, title: true });
       if (t.meta.pos === 'below') {
         const s = autoDate(`${date.y}年${date.m}月${date.d}日`);
+        cid = metaText ? metaId : null;
         if (s) {
           y += S(4);
           text(s, t.meta.align === 'center' ? W / 2 : x0, y + S(t.meta.size), fontOf(t, S(t.meta.size), 400), t.muted, t.meta.align || 'left');
@@ -1160,10 +1199,12 @@ function layout(model, t, opt = {}) {
     }
     if (first && !hasTitle && t.meta.pos === 'below' && (b.k !== 'sign')) {     // 没标题也要有个日期
       const s = metaText || `${date.y}年${date.m}月${date.d}日`;
+      cid = metaText ? metaId : null;
       text(s, t.meta.align === 'center' ? W / 2 : x0, y + S(t.meta.size), fontOf(t, S(t.meta.size), 400), t.muted, t.meta.align || 'left');
       y += S(t.meta.size) + S(16);
     }
     first = false;
+    cid = b.id;
     if (b.k === 'sub') {
       const st = t.sub, size = S(st.size), font = fontOf(t, size, st.weight);
       y += S(6);
@@ -1185,7 +1226,7 @@ function layout(model, t, opt = {}) {
     }
     if (b.k === 'para') {
       const size = S(t.size);
-      const indent = t.indent && !b.salute && CJK.test(b.s[0]) ? mw('　　', bodyFont) : 0;
+      const indent = t.indent && !b.salute && !b.raw && CJK.test(b.s[0]) ? mw('　　', bodyFont) : 0;
       const ls = wrapIndent(b.s, bodyFont, cw, indent);
       const y0 = y;
       ls.forEach((l, i) => {
@@ -1202,6 +1243,7 @@ function layout(model, t, opt = {}) {
       const vx = x0 + Math.min(kw + S(6), cw * 0.45);
       for (const it of b.items) {
         const ls = wrapIndent(it.val, vFont, x1 - vx, 0), y0 = y;
+        cid = it.id;
         text(it.key + (b.bare ? '' : '：'), x0, y + size * 0.92 + (rowLh - size) / 2, kFont, t.muted);
         ls.forEach((l, i) => text(l, vx, y + (i === 0 ? 0 : bodyLh * i) + size * 0.92 + (rowLh - size) / 2, vFont, t.body));
         if (t.ruled) line(x0, y + rowLh - S(5) + (ls.length - 1) * bodyLh, x1, y + rowLh - S(5) + (ls.length - 1) * bodyLh, t.rule, 0.7);
@@ -1229,6 +1271,7 @@ function layout(model, t, opt = {}) {
       const anchor = valX + intW;
       for (const it of b.items) {
         const y0 = y;
+        cid = it.id;
         const avail = (it.num ? valX - S(16) : x1) - labX;
         const lab = wrapIndent(it.label, it.total ? fontOf(t, size, 700) : labFont, avail, 0);
         const hRow = rowLh + (lab.length - 1) * bodyLh;
@@ -1263,13 +1306,14 @@ function layout(model, t, opt = {}) {
       const size = S(t.size), font = bodyFont;
       y += S(12);
       const y0 = y;
-      b.lines.forEach((l, i) => { text((b.dash && i === 0 ? '—— ' : '') + l, x1, y + bodyLh * i + size * 0.92 + (bodyLh - size) / 2, font, t.body, 'right'); });
+      b.lines.forEach((l, i) => { cid = b.ids[i]; text((b.dash && i === 0 ? '—— ' : '') + l, x1, y + bodyLh * i + size * 0.92 + (bodyLh - size) / 2, font, t.body, 'right'); });
       y += b.lines.length * bodyLh;
       hits.push({ y0, y1: y, id: b.ids[0] });
       continue;
     }
   }
   // 页脚
+  cid = null;
   const fk = t.footer.kind, fs = S(11);
   y += S(18);
   if (fk === 'note') {
@@ -1328,24 +1372,57 @@ function wrapIndent(s, font, cw, indent = 0) {
   return ls;
 }
 
-// 固定比例：装不下先把字缩一点（最多缩到 0.78），还装不下就让图变长
-function fit(model, t, ratio) {
+// 固定比例：装不下先把字缩一点（最多缩到 0.78），还装不下就让图变长。
+// fsHold：正在写的时候字号先别缩（不然打一个字整张纸的字一起变小），等落定了再缩
+function fit(model, t, ratio, fsHold = null) {
   if (ratio === 'auto') { const L = layout(model, t); return { ...L, H: Math.ceil(L.h), fs: 1 }; }
   const target = ratio === '1:1' ? W : Math.round(W * 4 / 3);
-  let fs = 1, L = layout(model, t, { fs });
-  while (L.h > target && fs > 0.78) { fs = Math.round((fs - 0.04) * 100) / 100; L = layout(model, t, { fs }); }
+  let fs = fsHold || 1, L = layout(model, t, { fs });
+  while (!fsHold && L.h > target && fs > 0.78) { fs = Math.round((fs - 0.04) * 100) / 100; L = layout(model, t, { fs }); }
   const H = Math.max(target, Math.ceil(L.h));
   let dy = 0;
   if (H > L.h && t.vcenter) dy = Math.floor((H - L.h) / 2);
   return { ...L, H, fs, dy, over: L.h > target };
 }
 
-function paint(canvas, model, t, ratio, scale) {
-  const R = fit(model, t, ratio);
-  canvas.width = Math.round(W * scale); canvas.height = Math.round(R.H * scale);
-  const c = canvas.getContext('2d');
+// 上面的纸、分享的图都叫浏览器用 CPU 画：放在页面上的画布浏览器爱交给显卡画，大号字的边缘跟 CPU 画的差一点点，纸和图就对不上了
+const CPU = { willReadFrequently: true };
+// 纸底（纹理）先画在一张备用画布上，同一个版式、同样大小再用就直接贴：上面的纸和分享出去的图走的是同一份
+const bgCache = new Map();
+function paperBg(t, H, scale) {
+  const w = Math.round(W * scale), h = Math.round(H * scale), key = `${t.id}|${H}|${scale}`;
+  let cv = bgCache.get(key);
+  if (!cv) {
+    cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const g = cv.getContext('2d', CPU);
+    g.setTransform(scale, 0, 0, scale, 0, 0);
+    t.bg(g, W, H);
+    if (bgCache.size > 24) bgCache.delete(bgCache.keys().next().value);
+    bgCache.set(key, cv);
+  }
+  return cv;
+}
+// 画一张纸。上面那张纸和分享出去的图都是它画的，只是 scale 不同
+// 挂在页面上的画布写字时会沾上页面的样式（body 的字间距），跟没挂上的图对不上：先画在一张没挂上的画布上，再原样贴过去
+const scratch = document.createElement('canvas');
+function paint(canvas, model, t, ratio, scale, R = fit(model, t, ratio)) {
+  if (canvas.isConnected) {
+    paint(scratch, model, t, ratio, scale, R);
+    if (canvas.width !== scratch.width || canvas.height !== scratch.height) { canvas.width = scratch.width; canvas.height = scratch.height; }
+    const g = canvas.getContext('2d', CPU);
+    g.globalCompositeOperation = 'copy';
+    g.drawImage(scratch, 0, 0);
+    g.globalCompositeOperation = 'source-over';
+    return R;
+  }
+  const w = Math.round(W * scale), h = Math.round(R.H * scale);
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+  const c = canvas.getContext('2d', CPU);
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.globalCompositeOperation = 'copy';
+  c.drawImage(paperBg(t, R.H, scale), 0, 0);
+  c.globalCompositeOperation = 'source-over';
   c.setTransform(scale, 0, 0, scale, 0, 0);
-  t.bg(c, W, R.H);
   c.translate(0, R.dy || 0);
   c.textBaseline = 'alphabetic';
   for (const o of R.ops) {
@@ -1399,33 +1476,243 @@ async function ensureFonts(t, text) {
 }
 
 // ================================================================ 页面状态
+// 整页只有一张纸：用 paint() 画在 canvas 上，跟分享出去的图是同一段代码画的。
+// 打字、拼音、删改都落在一个看不见的 textarea 里（它跟着光标走，输入法的候选框就冒在光标旁边）；光标、选区、黄字自己画在纸上。
 const S = {
-  theme: store.get('theme', 'note'), ratio: store.get('ratio', 'auto'), fmt: store.get('fmt', 'png'),
+  theme: 'note',                                   // 每次打开都从便签开始，上次写的字照旧留着
+  ratio: store.get('ratio', 'auto'), fmt: store.get('fmt', 'png'),
   title: null, marks: [], prev: '', model: null,
+  hold: null,         // 正在写的那一行先不落定：{ n, kind, sign, title, fs, lines }
+  R: null, map: null, k: 1, comp: null,
 };
-if (!THEME[S.theme]) S.theme = 'note';
-const ta = $('#text'), mirror = $('#mirror');
+if (!['auto', '3:4', '1:1'].includes(S.ratio)) S.ratio = 'auto';
+const ta = $('#text'), paper = $('#paper'), cv = $('#paper-cv'), over = $('#over'), caretEl = $('#caret'), compEl = $('#comp');
+const UA = navigator.userAgent;
+const WECHAT = /MicroMessenger/i.test(UA);
+const IOS = /iPhone|iPad|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
+const ANDROID = /Android/i.test(UA);
+const PHONE = IOS || ANDROID || /Mobi/i.test(UA);
+const focused = () => document.activeElement === ta;
 
 function setStatus(html, warn = false) { const el = $('#status'); el.innerHTML = html; el.classList.toggle('warn', warn); T.log.push(el.textContent); }
 const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+let toastT = null;
+function toast(s) { const el = $('#toast'); el.textContent = s; el.hidden = false; T.log.push(s); clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 2600); }
+const lineOf = (v, i) => { let n = 0; for (let j = 0; j < i; j++) if (v.charCodeAt(j) === 10) n++; return n; };
 
-function grow() {
-  ta.style.height = 'auto';
-  ta.style.height = Math.max(188, ta.scrollHeight) + 'px';
-  mirror.style.height = ta.style.height;
+// ---------------------------------------------------------------- 正在写的那一行
+// 光标进了哪一行，就记下这时候整张纸认成了啥；在这行里打字，别的行、标题、落款、字号都照这时的样子不动，
+// 这行自己认得成原来那样就照原来排，认不成（打到一半）就按原样一行字排。换行、光标挪到别的行、收起键盘，才整张重新落定。
+function beginHold() {
+  const v = ta.value, n = lineOf(v, ta.selectionStart);
+  const snap = parse(v, S.title);
+  const kind = kindsOf(snap.blocks)[String(n)];
+  const sign = (snap.blocks.find((b) => b.k === 'sign') || {}).ids || [];
+  S.hold = { n: kind === 'blob' ? -1 : n, line: n, kind, sign, title: snap.title == null ? '' : snap.title,
+    fs: fit(snap, THEME[S.theme], S.ratio).fs, lines: v.split('\n').length };
 }
-function drawMirror() {
+function curModel() {
   const v = ta.value;
-  T.marks = S.marks;
-  if (!S.marks.length) { mirror.innerHTML = ''; return; }
-  let html = '', at = 0;
-  for (const [a, b] of [...S.marks].sort((p, q) => p[0] - q[0])) {
-    if (a < at) continue;
-    html += esc(v.slice(at, a)) + '<mark>' + esc(v.slice(a, b)) + '</mark>';
-    at = b;
-  }
-  mirror.innerHTML = html + esc(v.slice(at)) + '\n';
+  if (S.hold && focused()) return parse(v, S.hold.title, S.hold.n >= 0 ? S.hold : null);
+  return parse(v, S.title);
 }
+
+// ---------------------------------------------------------------- 画纸
+const fontReady = {};
+function render() {
+  const v = ta.value, t = THEME[S.theme];
+  const t0 = performance.now();
+  const holding = !!(S.hold && focused());
+  let model = curModel();
+  S.model = model; T.model = model;
+  const has = !!v.trim();
+  for (const id of ['#share', '#save']) $(id).disabled = !has;
+  $('#tip').hidden = !has;
+  $('#paste').hidden = has;
+  // 空纸：留两行写字的地方，提示字画在上面（提示字不进图，空纸也出不了图）
+  if (!has) model = { blocks: [{ k: 'para', s: '', id: '0', raw: true }, { k: 'para', s: '', id: null, raw: true }] };
+  const R = fit(model, t, S.ratio, holding ? S.hold.fs : null);
+  S.k = paper.clientWidth / W || 1;
+  const dpr = window.devicePixelRatio || 1;
+  paint(cv, model, t, S.ratio, S.k * dpr, R);
+  cv.style.height = `${R.H * S.k}px`;
+  S.R = R; S.hits = R.hits; S.dy = R.dy || 0;
+  S.map = caretMap(R, has ? v : '');
+  T.renderMs = Math.round(performance.now() - t0);
+  T.renders = (T.renders || 0) + 1;
+  $('#dock-note').textContent = R.over && !holding ? `字多，${S.ratio} 装不下，按长图出` : '';
+  overlay();
+  drawThumbs();
+  // 衬线版式：字体按用到的字一块一块下，下好了再画一遍
+  if (t.serif && fontReady[t.id] !== v) {
+    fontReady[t.id] = v;
+    ensureFonts(t, v).then(() => { if (THEME[S.theme] === t && !S.comp) render(); });
+  }
+}
+
+// 原文第几个字 ↔ 纸上哪个位置。layout() 画的每段字都记着是原文哪一行的，这里一个字一个字对回去：
+// 一样的字（全角半角、大小写不算不一样，标点对标点）对上；纸上自己加的（「：」「—— 」、公告标题字间的空格）、
+// 原文里没画出来的（名字和数字中间的空格、【】、「-」换成的圆点）跳过
+const normCh = (c) => half(c).toUpperCase();
+const isPunct = (c) => /[^\p{L}\p{N}\s]/u.test(c);
+const sameCh = (a, b) => normCh(a) === normCh(b) || (isPunct(a) && isPunct(b));
+const sizeOf = (font) => parseFloat(font.match(/([\d.]+)px/)[1]);
+function caretMap(R, v) {
+  const lines = v.split('\n'), dy = R.dy || 0;
+  const byLine = new Map();
+  for (const o of R.ops) {
+    if (o.k !== 'text' || o.id == null) continue;
+    const n = parseInt(String(o.id), 10);
+    if (!byLine.has(n)) byLine.set(n, []);
+    byLine.get(n).push(o);
+  }
+  const pos = new Array(v.length + 1), box = new Array(v.length);
+  const hasLs = 'letterSpacing' in measureCtx;
+  let st = 0, lastY = null, lastS = THEME[S.theme].size, x0 = THEME[S.theme].pad[3];
+  lines.forEach((L, n) => {
+    const D = [];
+    for (const o of byLine.get(n) || []) {
+      measureCtx.font = o.font;
+      if (hasLs) measureCtx.letterSpacing = `${o.ls || 0}px`;
+      const tot = measureCtx.measureText(o.s).width;
+      const xa = o.align === 'right' ? o.x - tot : o.align === 'center' ? o.x - tot / 2 : o.x;
+      const size = sizeOf(o.font);
+      let acc = '', px = xa;
+      for (const ch of o.s) { acc += ch; const nx = xa + measureCtx.measureText(acc).width; D.push({ ch, x0: px, x1: nx, y: o.y + dy, s: size, f: o.font, xa, pre: acc, ls: o.ls || 0 }); px = nx; }
+      if (!o.s) D.push({ ch: '', x0: xa, x1: xa, y: o.y + dy, s: size, f: o.font, empty: true });
+    }
+    if (hasLs) measureCtx.letterSpacing = '0px';
+    const Lc = [];
+    for (let u = 0; u < L.length;) { const ch = String.fromCodePoint(L.codePointAt(u)); Lc.push({ ch, u }); u += ch.length; }
+    const Dn = D.filter((d) => !d.empty);
+    const m = new Array(Lc.length).fill(null);
+    let i = 0, j = 0;
+    while (i < Lc.length && j < Dn.length) {
+      if (sameCh(Lc[i].ch, Dn[j].ch)) { m[i] = Dn[j]; i++; j++; continue; }
+      const back = Lc.slice(i, i + 4).findIndex((c) => sameCh(c.ch, Dn[j].ch));
+      const ahead = Dn.slice(j, j + 12).findIndex((d) => sameCh(Lc[i].ch, d.ch));
+      if (back > 0 && (ahead < 0 || back <= ahead)) i += back;
+      else if (ahead > 0) j += ahead;
+      else { i++; j++; }
+    }
+    const first = D[0];
+    const fallback = first ? { x: first.x0, y: first.y, s: first.s, f: first.f }
+      : { x: x0, y: lastY == null ? R.ops.find((o) => o.k === 'text')?.y || 40 : lastY + lastS * 1.7, s: lastS, f: fontOf(THEME[S.theme], lastS) };
+    const at = (k) => {          // 第 k 个字前面
+      if (k < Lc.length && m[k]) return { x: m[k].x0, y: m[k].y, s: m[k].s, f: m[k].f };
+      let p = k - 1;
+      while (p >= 0 && !m[p]) p--;
+      if (p >= 0) {             // 接在前一个对上的字后面；中间没画出来的空格照样占位（行尾打的空格光标也往前走）
+        const d = m[p];
+        let sp = '';
+        for (let q = p + 1; q < k; q++) if (/\s/.test(Lc[q].ch)) sp += ' ';
+        if (!sp) return { x: d.x1, y: d.y, s: d.s, f: d.f };
+        measureCtx.font = d.f;                 // 连着前面的字一起量：浏览器在汉字和字母数字之间会自己加一点空
+        if (hasLs) measureCtx.letterSpacing = `${d.ls}px`;
+        const x = d.xa + measureCtx.measureText(d.pre + sp).width;
+        if (hasLs) measureCtx.letterSpacing = '0px';
+        return { x, y: d.y, s: d.s, f: d.f };
+      }
+      let q = k;
+      while (q < Lc.length && !m[q]) q++;
+      if (q < Lc.length) return { x: m[q].x0, y: m[q].y, s: m[q].s, f: m[q].f };
+      return fallback;
+    };
+    for (let k = 0; k <= Lc.length; k++) {
+      const p = at(k), u = k < Lc.length ? Lc[k].u : L.length;
+      pos[st + u] = p;
+      if (k < Lc.length) {
+        if (Lc[k].ch.length > 1) pos[st + u + 1] = p;
+        if (m[k]) box[st + u] = m[k];
+      }
+      lastY = p.y; lastS = p.s;
+    }
+    st += L.length + 1;
+  });
+  const list = [];
+  for (let i = 0; i < pos.length; i++) if (pos[i]) list.push([i, pos[i]]);
+  return { pos, box, list };
+}
+// 纸上一个点（排版坐标）→ 原文第几个字前面：先找最近的一行，再在这行里找最近的缝
+function indexAt(x, y) {
+  const L = S.map.list;
+  if (!L.length) return 0;
+  let by = null, bd = Infinity;
+  for (const [, p] of L) { const d = Math.abs(y - (p.y - p.s * 0.35)); if (d < bd - 0.01) { bd = d; by = p.y; } }
+  let bi = 0, bx = Infinity;
+  for (const [i, p] of L) { if (Math.abs(p.y - by) > 1) continue; const d = Math.abs(x - p.x); if (d <= bx) { bx = d; bi = i; } }
+  return bi;
+}
+function toPaper(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / S.k, y: (e.clientY - r.top) / S.k }; }
+function hitAt(y) { return (S.hits || []).find((h) => y - S.dy >= h.y0 - 4 && y - S.dy <= h.y1 + 4) || null; }
+
+// 光标、选区、黄字、空纸上的提示字：画在纸上面一层，不进图
+function overlay() {
+  if (!S.map) return;
+  const dpr = window.devicePixelRatio || 1, k = S.k;
+  const w = Math.round(cv.width), h = Math.round(cv.height);
+  if (over.width !== w || over.height !== h) { over.width = w; over.height = h; }
+  over.style.height = cv.style.height;
+  const c = over.getContext('2d');
+  c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, w, h);
+  c.setTransform(k * dpr, 0, 0, k * dpr, 0, 0);
+  const t = THEME[S.theme];
+  const fill = (a, b, color) => {
+    c.fillStyle = color;
+    for (let i = a; i < b; i++) { const d = S.map.box[i]; if (d) c.fillRect(d.x0, d.y - d.s * 0.92, Math.max(1, d.x1 - d.x0), d.s * 1.22); }
+  };
+  T.marks = S.marks;
+  for (const [a, b] of S.marks) fill(a, b, t.id === 'night' ? 'rgba(255,214,0,.30)' : 'rgba(255,212,0,.42)');
+  const a = ta.selectionStart, b = ta.selectionEnd, on = focused() && !S.comp;
+  if (on && a !== b) fill(a, b, t.id === 'night' ? 'rgba(120,170,255,.35)' : 'rgba(0,113,227,.20)');
+  if (!ta.value) {
+    const p = S.map.pos[0];
+    if (p) {
+      c.font = p.f; c.fillStyle = t.muted; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+      const lh = t.size * t.lh;
+      ['写点什么，或者把一坨字粘进来。', '手写的纸，点「拍」。'].forEach((s, i) => c.fillText(s, p.x, p.y + lh * i));
+    }
+  }
+  // 光标：在选中一段的时候不画
+  const at = ta.selectionDirection === 'backward' ? a : b;
+  const p = S.map.pos[Math.min(at, ta.value.length)] || S.map.pos[0];
+  caretEl.hidden = !(on && a === b && p);
+  if (p) {
+    const top = (p.y - p.s * 0.95) * k, hh = p.s * 1.22 * k;
+    caretEl.style.transform = `translate(${(p.x * k - 1).toFixed(2)}px, ${top.toFixed(2)}px)`;
+    caretEl.style.height = `${hh.toFixed(1)}px`;
+    caretEl.style.background = t.accent;
+    caretEl.classList.remove('blink'); void caretEl.offsetWidth; caretEl.classList.add('blink');
+    // 看不见的写字框跟着光标走：输入法候选框冒在光标旁边，iPhone 弹键盘时也知道往哪儿滚
+    ta.style.transform = `translate(${(p.x * k).toFixed(1)}px, ${top.toFixed(1)}px)`;
+    ta.style.height = `${Math.max(20, hh).toFixed(0)}px`;
+  }
+}
+
+// 拼音组字中：纸一点都不动，组的字浮在光标那儿
+function drawComp() {
+  const c = S.comp;
+  if (!c || !c.text || !S.map) { compEl.hidden = true; return; }
+  const p = S.map.pos[Math.min(c.start, S.map.pos.length - 1)] || S.map.pos[0];
+  if (!p) return;
+  const k = S.k, t = THEME[S.theme];
+  let bg = '#fff';
+  try {
+    const dpr = window.devicePixelRatio || 1;
+    const px = cv.getContext('2d', CPU).getImageData(Math.max(0, Math.round(p.x * k * dpr) - 2), Math.max(0, Math.round((p.y - p.s * 0.5) * k * dpr)), 1, 1).data;
+    bg = `rgb(${px[0]},${px[1]},${px[2]})`;
+  } catch (e) { /* 取不到底色就用白的 */ }
+  compEl.textContent = c.text;
+  compEl.style.font = p.f.replace(/([\d.]+)px/, (s, n) => `${(n * k).toFixed(2)}px`);
+  compEl.style.color = t.body; compEl.style.background = bg;
+  compEl.style.transform = `translate(${(p.x * k).toFixed(1)}px, ${((p.y - p.s * 0.95) * k).toFixed(1)}px)`;
+  compEl.style.height = `${(p.s * 1.22 * k).toFixed(1)}px`;
+  compEl.style.lineHeight = compEl.style.height;
+  compEl.hidden = false;
+  caretEl.hidden = true;
+}
+
+// ---------------------------------------------------------------- 改字
 // 改了字：没碰到的黄字跟着挪，碰到的就算改过了，不再标
 function shiftMarks(oldV, newV) {
   if (!S.marks.length) return;
@@ -1436,121 +1723,156 @@ function shiftMarks(oldV, newV) {
   const d = newV.length - oldV.length;
   S.marks = S.marks.flatMap(([x, y]) => (y <= p ? [[x, y]] : x >= a ? [[x + d, y + d]] : []));
 }
-function onText() {
+function noteText() {
   shiftMarks(S.prev, ta.value);
   S.prev = ta.value;
-  grow(); drawMirror();
   store.set('text', ta.value);
   $('#clear').hidden = !ta.value;
   if (!S.marks.length && /拿不准/.test($('#status').textContent)) setStatus('');
-  schedule();
 }
-ta.addEventListener('input', onText);
-// 点到黄字上：把那几个字选中，直接打字就替换了
-ta.addEventListener('click', () => {
-  if (ta.selectionStart !== ta.selectionEnd) return;
-  const c = ta.selectionStart;
-  const m = S.marks.find(([a, b]) => c >= a && c <= b);
-  if (m) ta.setSelectionRange(m[0], m[1]);
+// 程序改的字（认完手写、清空、粘贴）：整张落定重排
+function onText() {
+  noteText();
+  if (focused()) beginHold(); else S.hold = null;
+  render();
+}
+function edited(e) {
+  noteText();
+  if ((e && e.isComposing) || S.comp) { drawComp(); return; }
+  // 换了行、粘进来一段：整张落定，再从光标那行重新记
+  if (!S.hold || ta.value.split('\n').length !== S.hold.lines || /Paste|Drop/.test((e && e.inputType) || '')) beginHold();
+  render();
+}
+ta.addEventListener('input', edited);
+ta.addEventListener('compositionstart', () => { S.comp = { start: ta.selectionStart, text: '' }; T.composing = true; });
+ta.addEventListener('compositionupdate', (e) => { if (S.comp) { S.comp.text = e.data || ''; drawComp(); } });
+ta.addEventListener('compositionend', () => { S.comp = null; T.composing = false; compEl.hidden = true; edited(null); });
+// 光标挪到了别的行：刚才那行落定排版；挪动就只挪光标
+let selKey = '';
+function onSel() {
+  if (S.comp) return;
+  const key = `${ta.selectionStart},${ta.selectionEnd},${ta.selectionDirection},${ta.value.length}`;
+  if (key === selKey) return;
+  selKey = key;
+  if (S.hold && lineOf(ta.value, ta.selectionStart) !== S.hold.line) { beginHold(); render(); return; }
+  overlay();
+}
+function poll() { if (!focused()) return; onSel(); requestAnimationFrame(poll); }
+ta.addEventListener('focus', () => { beginHold(); selKey = ''; render(); setTyping(true); requestAnimationFrame(poll); });
+ta.addEventListener('blur', () => { S.hold = null; S.comp = null; compEl.hidden = true; setTyping(false); render(); });
+// 上下键、Home/End：按纸上的行走，不按看不见的那个框
+ta.addEventListener('keydown', (e) => {
+  if (e.isComposing || S.comp || !S.map || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
+  const back = ta.selectionDirection === 'backward';
+  const head = back ? ta.selectionStart : ta.selectionEnd, anchor = back ? ta.selectionEnd : ta.selectionStart;
+  const p = S.map.pos[head];
+  if (!p) return;
+  const L = S.map.list;
+  let to = null;
+  if (e.key === 'Home' || e.key === 'End') {
+    const row = L.filter(([, q]) => Math.abs(q.y - p.y) <= 1);
+    row.sort((u, w) => u[1].x - w[1].x || u[0] - w[0]);
+    to = e.key === 'Home' ? row[0][0] : row[row.length - 1][0];
+  } else {
+    const ys = [...new Set(L.map(([, q]) => Math.round(q.y * 10) / 10))].sort((u, w) => u - w);
+    const cur = ys.findIndex((y) => Math.abs(y - p.y) <= 1);
+    const ny = ys[cur + (e.key === 'ArrowUp' ? -1 : 1)];
+    if (ny == null) to = e.key === 'ArrowUp' ? 0 : ta.value.length;
+    else { let bx = Infinity; for (const [i, q] of L) { if (Math.abs(q.y - ny) > 1) continue; const d = Math.abs(q.x - p.x); if (d < bx) { bx = d; to = i; } } }
+  }
+  if (to == null) return;
+  e.preventDefault();
+  if (e.shiftKey) ta.setSelectionRange(Math.min(anchor, to), Math.max(anchor, to), to < anchor ? 'backward' : 'forward');
+  else ta.setSelectionRange(to, to);
+  onSel();
 });
-$('#clear').onclick = () => { ta.value = ''; S.marks = []; S.title = null; onText(); ta.focus(); };
 
-// ---------------------------------------------------------------- 预览、版式缩略图
-let timer = null;
-function schedule() { clearTimeout(timer); timer = setTimeout(refresh, 120); }
-const pvCanvas = document.createElement('canvas');
-async function refresh() {
-  const text = ta.value;
-  const t0 = performance.now();
-  S.model = parse(text, S.title);
-  T.model = S.model;
-  const has = S.model.blocks.length > 0;
-  $('#share').disabled = !has;
-  $('#tip').hidden = !has;
-  if (!has) { $('#pv').innerHTML = ''; setView(false); drawThumbs(); return; }
-  const t = THEME[S.theme];
-  await ensureFonts(t, text);
-  if (!pvCanvas.isConnected) { $('#pv').innerHTML = ''; $('#pv').appendChild(pvCanvas); }
-  const R = paint(pvCanvas, S.model, t, S.ratio, Math.min(3, (window.devicePixelRatio || 1) * 1.25));
-  S.hits = R.hits; S.dy = R.dy || 0;
-  T.renderMs = Math.round(performance.now() - t0);
-  $('#dock-note').textContent = R.over ? `字多，${S.ratio} 装不下，按长图出` : '';
-  drawThumbs();
-  skinEditor();
-  if (document.activeElement !== ta) setView(true);
+// ---------------------------------------------------------------- 点纸、长按、拖选
+// 点哪改哪：光标放到点的那个字前面；点到黄字，那几个字整个选中，直接打字就替换了；长按一行，这行当标题；鼠标拖着选
+function put(i, j = i, dir = 'none') {
+  if (!focused()) ta.focus({ preventScroll: true });
+  ta.setSelectionRange(i, j, dir);
+  onSel();
 }
-function hitAt(e) {
-  if (!S.hits) return null;
-  const r = pvCanvas.getBoundingClientRect(), y = (e.clientY - r.top) / r.height * (pvCanvas.height / (pvCanvas.width / W)) - (S.dy || 0);
-  return S.hits.find((x) => y >= x.y0 - 4 && y <= x.y1 + 4) || null;
+function wordAt(i) {
+  const v = ta.value, kind = (c) => (/\s/.test(c) ? 0 : /[\p{L}\p{N}.,，%]/u.test(c) ? (CJK.test(c) ? 1 : 2) : 3);
+  let a = i, b = i;
+  const k0 = kind(v[i] || v[i - 1] || ' ');
+  if (k0 === 0 || k0 === 3) return [Math.max(0, i - (v[i] ? 0 : 1)), Math.min(v.length, i + 1)];
+  while (a > 0 && kind(v[a - 1]) === k0) a--;
+  while (b < v.length && kind(v[b]) === k0) b++;
+  return [a, b];
 }
 let press = null;
-pvCanvas.addEventListener('pointerdown', (e) => {
-  const h = hitAt(e);
-  press = { x: e.clientX, y: e.clientY, long: false, t: setTimeout(() => {
-    if (!press || !h) return;
-    press.long = true;
-    S.title = h.title ? '' : h.id;            // 长按标题：不要标题；长按别的行：这行当标题
-    setStatus(h.title ? '好，不要标题。' : '好，这行当标题。');
-    if (navigator.vibrate) navigator.vibrate(12);
-    refresh();
-  }, 450) };
+paper.addEventListener('mousedown', (e) => e.preventDefault());       // 点纸不让写字框丢焦点，也不让浏览器自己选字
+paper.addEventListener('pointerdown', (e) => {
+  if (e.button || !S.map) return;
+  const pt = toPaper(e), i = indexAt(pt.x, pt.y);
+  press = { x: e.clientX, y: e.clientY, i, type: e.pointerType, long: false, moved: false,
+    t: setTimeout(() => {
+      if (!press || press.moved || !ta.value.trim()) return;
+      const h = hitAt(pt.y);
+      if (!h) return;
+      press.long = true;
+      S.title = h.title ? '' : h.id;            // 长按标题：不要标题；长按别的行：这行当标题
+      setStatus(h.title ? '好，不要标题。' : '好，这行当标题。');
+      if (navigator.vibrate) navigator.vibrate(12);
+      if (focused()) beginHold(); else S.hold = null;
+      render();
+    }, 480) };
+  if (e.pointerType === 'mouse') { put(i); paper.setPointerCapture(e.pointerId); }
 });
-pvCanvas.addEventListener('pointermove', (e) => { if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 8) { clearTimeout(press.t); press = null; } });
-pvCanvas.addEventListener('pointercancel', () => { if (press) clearTimeout(press.t); press = null; });
-pvCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
-pvCanvas.addEventListener('click', (e) => {
-  if (press) clearTimeout(press.t);
-  const long = press && press.long; press = null;
-  if (long) return;
-  // 点哪行：光标放到那一行末尾，接着写
-  const h = hitAt(e);
-  let at = ta.value.length;
-  if (h) {
-    const n = parseInt(String(h.id).split('.')[0], 10), lines = ta.value.split('\n');
-    if (n >= 0 && n < lines.length) at = lines.slice(0, n + 1).join('\n').length;
+paper.addEventListener('pointermove', (e) => {
+  if (!press) return;
+  if (Math.hypot(e.clientX - press.x, e.clientY - press.y) > 8) { press.moved = true; clearTimeout(press.t); }
+  if (press.type === 'mouse' && press.moved && e.buttons & 1) {
+    const pt = toPaper(e), j = indexAt(pt.x, pt.y);
+    put(Math.min(press.i, j), Math.max(press.i, j), j < press.i ? 'backward' : 'forward');
   }
-  setView(false);
-  ta.focus({ preventScroll: true });
-  ta.setSelectionRange(at, at);
 });
+paper.addEventListener('pointercancel', () => { if (press) clearTimeout(press.t); press = null; });
+paper.addEventListener('contextmenu', (e) => e.preventDefault());
+paper.addEventListener('click', (e) => {
+  const p = press; press = null;
+  if (p) clearTimeout(p.t);
+  if (!S.map || (p && (p.long || (p.moved && p.type === 'mouse')))) return;
+  if (p && p.moved) return;                      // 手指划过去是在滚页面
+  const pt = toPaper(e), i = p ? p.i : indexAt(pt.x, pt.y);
+  const m = S.marks.find(([a, b]) => i >= a && i <= b);
+  if (m) put(m[0], m[1]);
+  else put(i);
+});
+paper.addEventListener('dblclick', (e) => { if (!S.map) return; const pt = toPaper(e), [a, b] = wordAt(indexAt(pt.x, pt.y)); put(a, b); });
+$('#clear').onclick = () => { ta.value = ''; S.marks = []; S.title = null; onText(); ta.focus(); };
+$('#paste').onclick = async () => {
+  let s = '';
+  try { s = await navigator.clipboard.readText(); } catch (e) { s = null; }
+  if (s == null) { setStatus('浏览器不让读剪贴板。电脑上点纸再按 Ctrl+V。', true); return; }
+  if (!s.trim()) { setStatus('剪贴板里没有字。'); return; }
+  const a = ta.selectionStart, b = ta.selectionEnd;
+  ta.setRangeText(s.replace(/\r\n?/g, '\n'), a, b, 'end');
+  onText();
+};
 
-// 写字框穿上当前版式的皮：底色纹理、字体、字号、行距、颜色、边距都跟纸一样
-const skinCache = {};
-function skinEditor() {
-  const t = THEME[S.theme];
-  const k = $('#paper').clientWidth / W || 1;
-  if (!skinCache[t.id]) {
-    const c = document.createElement('canvas'); c.width = W * 2; c.height = 600 * 2;
-    const g = c.getContext('2d'); g.scale(2, 2); t.bg(g, W, 600);
-    skinCache[t.id] = c.toDataURL('image/jpeg', 0.85);
-  }
-  const pad = t.pad.map((v) => `${(v * k).toFixed(1)}px`).join(' ');
-  for (const el of [ta, mirror]) {
-    el.style.fontFamily = t.font;
-    el.style.fontSize = `${Math.max(16, t.size * k).toFixed(2)}px`;   // iPhone 上写字框字小于 16px 会自己放大页面，所以最小 16
-    el.style.lineHeight = String(t.lh);
-    el.style.padding = pad;
-  }
-  ta.style.color = t.body;
-  ta.style.caretColor = t.accent;
-  ta.style.setProperty('--ph', t.muted);
-  const ed = $('#paper .ed');
-  ed.style.backgroundImage = `url(${skinCache[t.id]})`;
-  ed.style.backgroundSize = '100% auto';
-  ed.style.backgroundRepeat = 'repeat-y';
-  grow();
+// ---------------------------------------------------------------- 底下一条：版式、保存相册、分享
+// 手机上键盘弹着的时候版式条让开，两个按钮贴在键盘上面
+const dock = $('#dock');
+let typing = false;
+function setTyping(on) { typing = on; liftDock(); }
+function liftDock() {
+  const vv = window.visualViewport;
+  const off = vv && typing ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
+  const kb = off > 120;                      // 屏幕下面被挡了一大块：键盘弹着
+  dock.classList.toggle('typing', kb);
+  dock.style.transform = kb ? `translateY(${-off}px)` : '';
 }
-function setView(on) {
-  on = on && !!(S.model && S.model.blocks.length);
-  $('#paper').classList.toggle('viewing', on);
-  $('#pv').hidden = !on;
-}
-ta.addEventListener('focus', () => { setView(false); skinEditor(); });
-ta.addEventListener('blur', () => { setTimeout(() => { if (document.activeElement !== ta) refresh(); }, 0); });
-window.addEventListener('resize', () => { clearTimeout(skinCache.rt); skinCache.rt = setTimeout(skinEditor, 150); });
+if (window.visualViewport) { visualViewport.addEventListener('resize', liftDock); visualViewport.addEventListener('scroll', liftDock); }
+new ResizeObserver(() => { document.body.style.paddingBottom = `${dock.offsetHeight + 12}px`; }).observe(dock);
+let lastW = 0;
+new ResizeObserver(() => { if (paper.clientWidth !== lastW) { lastW = paper.clientWidth; render(); } }).observe(paper);
 
-let thumbTimer = null;
+let thumbTimer = null, thumbKey = '';
 function drawThumbs() {
   clearTimeout(thumbTimer);
   thumbTimer = setTimeout(() => {
@@ -1560,33 +1882,41 @@ function drawThumbs() {
         const b = document.createElement('button');
         b.type = 'button'; b.className = 'th'; b.dataset.id = t.id;
         b.innerHTML = `<canvas width="168" height="224"></canvas><span>${t.name}</span>`;
-        b.onclick = () => { S.theme = t.id; store.set('theme', t.id); markThemes(); skinEditor(); refresh(); };
+        b.addEventListener('mousedown', (e) => e.preventDefault());      // 电脑上点版式，光标留在纸上
+        b.onclick = () => {
+          S.theme = t.id; markThemes();
+          if (focused()) beginHold();
+          render();
+        };
         box.appendChild(b);
       }
       markThemes();
     }
-    const model = S.model && S.model.blocks.length ? S.model : parse(SAMPLE);
+    const model = ta.value.trim() ? parse(ta.value, S.title) : parse(SAMPLE);
+    const key = JSON.stringify(model.blocks);
+    if (key === thumbKey) return;
+    thumbKey = key;
     for (const b of box.children) {
-      const t = THEME[b.dataset.id], cv = b.querySelector('canvas');
+      const t = THEME[b.dataset.id], c = b.querySelector('canvas').getContext('2d');
       const tmp = document.createElement('canvas');
       paint(tmp, model, t, '3:4', 0.6);   // 缩略图按整张 3:4 画，底下不留白
-      const c = cv.getContext('2d');
-      c.clearRect(0, 0, cv.width, cv.height);
-      c.drawImage(tmp, 0, 0, tmp.width, Math.min(tmp.height, tmp.width * 4 / 3), 0, 0, cv.width, Math.min(cv.height, cv.width * Math.min(tmp.height, tmp.width * 4 / 3) / tmp.width));
+      c.clearRect(0, 0, 168, 224);
+      c.drawImage(tmp, 0, 0, tmp.width, Math.min(tmp.height, tmp.width * 4 / 3), 0, 0, 168, Math.min(224, 168 * Math.min(tmp.height, tmp.width * 4 / 3) / tmp.width));
     }
-  }, 260);
+  }, focused() ? 600 : 200);
 }
 function markThemes() { for (const b of $('#themes').children) b.setAttribute('aria-pressed', String(b.dataset.id === S.theme)); }
 
 function segs(id, key) {
   const box = $(id);
   const mark = () => { for (const b of box.children) b.setAttribute('aria-pressed', String(b.dataset.v === S[key])); };
-  for (const b of box.children) b.onclick = () => { S[key] = b.dataset.v; store.set(key, S[key]); mark(); refresh(); };
+  for (const b of box.children) b.onclick = () => { S[key] = b.dataset.v; store.set(key, S[key]); mark(); render(); };
   mark();
 }
 segs('#ratio', 'ratio'); segs('#fmt', 'fmt');
 
-// ---------------------------------------------------------------- 出图、分享
+// ---------------------------------------------------------------- 出图：保存相册、分享
+// 平时不画图、不出文件。点按钮这一下才画：全程同步，iPhone 认这一下是人点的，系统面板才肯弹
 function fileName() { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return `千叶_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.${S.fmt === 'jpg' ? 'jpg' : 'png'}`; }
 function dataUrlBlob(u) {
   const i = u.indexOf(','), mime = u.slice(5, u.indexOf(';')), bin = atob(u.slice(i + 1));
@@ -1594,40 +1924,77 @@ function dataUrlBlob(u) {
   for (let j = 0; j < bin.length; j++) a[j] = bin.charCodeAt(j);
   return new Blob([a], { type: mime });
 }
-function showSheet(blob, name) {
-  const url = URL.createObjectURL(blob);
-  $('#sheet-img').src = url; $('#sheet-save').href = url; $('#sheet-save').download = name;
-  $('#sheet').hidden = false;
-}
-// 平时不画图、不存图。点「以图片分享」这一下才画：全程同步，iPhone 认这一下是人点的，分享面板才肯弹
-function share() {
-  S.model = parse(ta.value, S.title);
-  if (!S.model.blocks.length) return;
-  if (document.activeElement === ta) ta.blur();
-  const t = THEME[S.theme], cv = document.createElement('canvas');
+function makeImage() {
+  if (focused()) ta.blur();                    // 收键盘；正在写的那行落定
+  S.hold = null;
+  const model = parse(ta.value, S.title);
+  if (!model.blocks.length) return null;
+  const t = THEME[S.theme], out = document.createElement('canvas');
   const t0 = performance.now();
-  paint(cv, S.model, t, S.ratio, 3);
+  paint(out, model, t, S.ratio, 3);
   const type = S.fmt === 'jpg' ? 'image/jpeg' : 'image/png';
-  const blob = dataUrlBlob(cv.toDataURL(type, 0.92));
+  const url = out.toDataURL(type, 0.92);
+  const blob = dataUrlBlob(url);
   T.exportMs = Math.round(performance.now() - t0);
-  T.exportSize = [cv.width, cv.height, blob.size];
-  const file = new File([blob], fileName(), { type });
-  T.shared = { name: file.name, size: blob.size, type };
-  if (navigator.canShare && navigator.share) {
-    let ok = false;
-    try { ok = navigator.canShare({ files: [file] }); } catch (e) { ok = false; }
-    if (ok) {
-      navigator.share({ files: [file] }).then(() => { T.shared.via = 'share'; }, (e) => {
-        if (e && e.name === 'AbortError') { T.shared.via = 'cancel'; return; }
-        T.shared.via = 'sheet'; showSheet(blob, file.name);
-      });
-      return;
-    }
+  T.exportSize = [out.width, out.height, blob.size];
+  T.exportUrl = url;
+  return { out, url, blob, type, file: new File([blob], fileName(), { type }) };
+}
+const SHEET_TIP = {
+  wechat: '长按图片，选「保存图片」或「发送给朋友」',
+  ios: '长按图片，选「存储图像」',
+  other: '长按图片存进相册，或者点「存图」。',
+};
+function showSheet(img, kind) {
+  $('#sheet-img').src = img.url;              // data 地址：微信里长按 blob 地址可能存不了
+  $('#sheet-tip').textContent = SHEET_TIP[kind];
+  const a = $('#sheet-save');
+  a.hidden = kind !== 'other';
+  a.href = img.url; a.download = img.file.name;
+  $('#sheet').hidden = false;
+  T.sheet = kind;
+}
+function canShareFile(f) { try { return !!(navigator.canShare && navigator.share && navigator.canShare({ files: [f] })); } catch (e) { return false; } }
+function sysShare(img, why, fallback) {
+  T.shared = { name: img.file.name, size: img.blob.size, type: img.type, why };
+  navigator.share({ files: [img.file] }).then(() => { T.shared.via = 'share'; }, (e) => {
+    if (e && e.name === 'AbortError') { T.shared.via = 'cancel'; return; }
+    T.shared.via = 'fallback'; fallback();
+  });
+}
+function share() {
+  const img = makeImage();
+  if (!img) return;
+  if (WECHAT) return showSheet(img, 'wechat');
+  const fallback = () => (PHONE ? showSheet(img, IOS ? 'ios' : 'other') : copyImg(img));
+  if (canShareFile(img.file)) return sysShare(img, 'share', fallback);
+  fallback();
+}
+// 电脑上弹不出分享面板：图复制进剪贴板，去聊天窗口粘贴
+function copyImg(img) {
+  try {
+    const png = img.type === 'image/png' ? img.blob : dataUrlBlob(img.out.toDataURL('image/png'));
+    navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]).then(() => { T.copied = png.size; toast('图已复制，去聊天窗口粘贴'); }, () => showSheet(img, 'other'));
+  } catch (e) { showSheet(img, 'other'); }
+}
+// 保存相册：安卓、电脑直接下文件；iPhone 网页没法自己把图塞进相册，只能弹系统面板，点里面的「存储图像」
+function save() {
+  const img = makeImage();
+  if (!img) return;
+  if (WECHAT) return showSheet(img, 'wechat');
+  if (IOS) {
+    if (canShareFile(img.file)) return sysShare(img, 'save', () => showSheet(img, 'ios'));
+    return showSheet(img, 'ios');
   }
-  T.shared.via = 'sheet';
-  showSheet(blob, file.name);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(img.blob); a.download = img.file.name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+  T.saved = { name: img.file.name, size: img.blob.size, type: img.type };
+  toast(ANDROID ? '存好了，在「下载」里' : '存好了，在「下载」文件夹里');
 }
 $('#share').onclick = share;
+$('#save').onclick = save;
 $('#sheet-close').onclick = () => { $('#sheet').hidden = true; };
 $('#sheet').onclick = (e) => { if (e.target.id === 'sheet') $('#sheet').hidden = true; };
 
@@ -1970,12 +2337,17 @@ D线晚班 87件
 明天上午8点到12点停电检修，请各线提前把数据存好。`;
 ta.value = Q.get('t') || store.get('text', '');
 S.prev = ta.value;
-grow(); drawMirror();
 $('#clear').hidden = !ta.value;
-refresh();
-if (!ta.value && !/Mobi|Android|iPhone/i.test(navigator.userAgent)) ta.focus();   // 有字就先给看纸；没字才把光标放好
+render();
+if (!ta.value && !PHONE) ta.focus();   // 电脑上没字就把光标放好；手机上等点纸再弹键盘
 T.parse = parse; T.layout = layout; T.THEMES = THEMES; T.wordsToText = wordsToText; T.diffMarks = diffMarks; T.SAMPLE = SAMPLE;
 T.render = (text, theme, ratio = 'auto', scale = 3) => { const cv = document.createElement('canvas'); const R = paint(cv, parse(text), THEME[theme], ratio, scale); return { url: cv.toDataURL('image/png'), H: R.H, fs: R.fs, hits: R.hits, ops: R.ops }; };
+// 测试用：换字、换版式、换比例（跟人点的效果一样），黄字在屏幕上哪儿，第几个字在屏幕上哪儿
+T.set = (text, theme, ratio) => { if (theme) S.theme = theme; if (ratio) S.ratio = ratio; markThemes(); segs('#ratio', 'ratio'); ta.value = text; S.marks = []; S.title = null; onText(); };
+T.at = (i) => { const p = S.map.pos[i], r = cv.getBoundingClientRect(); return p && { x: r.left + p.x * S.k, y: r.top + (p.y - p.s * 0.35) * S.k }; };
+T.markAt = (n = 0) => { const m = S.marks[n]; if (!m) return null; const d = S.map.box[m[0]], r = cv.getBoundingClientRect(); return d && { x: r.left + (d.x0 + d.x1) / 2 * S.k, y: r.top + (d.y - d.s * 0.35) * S.k, s: ta.value.slice(m[0], m[1]) }; };
+T.sel = () => [ta.selectionStart, ta.selectionEnd];
+T.state = () => ({ theme: S.theme, ratio: S.ratio, hold: S.hold, H: S.R && S.R.H, k: S.k });
 T.ensureFonts = (theme, text) => ensureFonts(THEME[theme], text);
 T.ready = true;
 </script>

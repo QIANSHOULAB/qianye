@@ -1,4 +1,4 @@
-"""本机测试服务：照线上的路径摆，/tengchao/ = 誊抄僧，/pabiao/ = 渡表僧（只读，用它的模型），/luruseng/key.html 给个占位。
+"""本机测试服务：照线上的路径摆，/qianye/ = 千叶（012 时叫誊抄僧，/tengchao/ 也指这里），/pabiao/ = 渡表僧（只读，用它的模型），/luruseng/key.html 给个占位。
 另带一个假谷歌：/v1beta/models/<模型>:generateContent?key=<钥匙>，按钥匙开头决定怎么回（照渡表僧 run_e2e 的路子）。"""
 import json
 import re
@@ -65,8 +65,9 @@ class Handler(SimpleHTTPRequestHandler):
         p = urlparse(path).path
         if p.startswith("/pabiao/"):
             return str(PABIAO / p[len("/pabiao/"):])
-        if p.startswith("/tengchao/"):
-            return str(ROOT / p[len("/tengchao/"):])
+        for pre in ("/qianye/", "/tengchao/"):      # 线上是 /qianye/；/tengchao/ 是 012 时的旧路径，留着
+            if p.startswith(pre):
+                return str(ROOT / p[len(pre):])
         if p == "/luruseng/key.html":
             return str(ROOT / "tests" / "key_placeholder.html")
         return str(ROOT / "tests" / "nothing")
@@ -94,3 +95,11 @@ def serve():
     srv = ThreadingHTTPServer(("127.0.0.1", 0), partial(Handler, directory=str(ROOT)))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv, srv.server_address[1]
+
+
+def browser(p):
+    """本机有 Edge 就用 Edge（012 起一直用它），没有就用 Playwright 自带的 Chromium（playwright install chromium）。"""
+    try:
+        return p.chromium.launch(channel="msedge")
+    except Exception:
+        return p.chromium.launch()

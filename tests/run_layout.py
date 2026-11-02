@@ -56,7 +56,7 @@ def main():
     with sync_playwright() as p:
         b = p.chromium.launch(channel="msedge")
         pg = b.new_page(viewport={"width": 390, "height": 844}, device_scale_factor=3)
-        pg.goto(f"http://127.0.0.1:{port}/tengchao/index.html")
+        pg.goto(f"http://127.0.0.1:{port}/qianye/index.html")
         pg.wait_for_function("window.__teng && window.__teng.ready")
         themes = pg.evaluate("window.__teng.THEMES.map((t) => t.id)")
         for c in CASES:

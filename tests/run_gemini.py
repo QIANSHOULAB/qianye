@@ -40,7 +40,7 @@ def main():
             if model:
                 init += f"localStorage.setItem('tengchao.model', {json.dumps(model)});"
             pg.add_init_script(init)
-            pg.goto(f"http://127.0.0.1:{port}/tengchao/index.html?fast=1&api={api or f'http://127.0.0.1:{port}/v1beta'}")
+            pg.goto(f"http://127.0.0.1:{port}/qianye/index.html?fast=1&api={api or f'http://127.0.0.1:{port}/v1beta'}")
             pg.wait_for_function("window.__teng && window.__teng.ready")
             pg.set_input_files("#pick-album", str(IMG))
             pg.wait_for_function("window.__teng.reading === false", timeout=300_000)
