@@ -50,7 +50,7 @@ en: {
   noTitle: 'OK, no title.', asTitle: 'OK, that’s the title now.',
   clipDenied: (mac) => `This browser won’t hand over the clipboard. Tap the paper, then press ${mac ? '⌘V' : 'Ctrl+V'}.`,
   clipEmpty: 'Nothing to paste.',
-  ocrDl: (mb, pct) => `Downloading the eyes (${mb} MB, first time only) · ${pct}%`,
+  ocrDl: (mb, pct) => `Downloading the handwriting reader (${mb} MB, first time only) · ${pct}%`,
   ocrDead: (m) => `The on-device reader didn’t start: ${m || 'probably a bad connection, so it never downloaded.'}`,
   ocrFile: '{f} didn’t download: HTTP {s}',
   ocrDict: 'Dictionary doesn’t match the model: {c} classes, {n} characters',

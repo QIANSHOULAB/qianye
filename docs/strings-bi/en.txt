@@ -63,7 +63,7 @@ asTitle	OK, that’s the title now.
 clipDenied	This browser won’t hand over the clipboard. Tap the paper, then press Ctrl+V.
 clipDenied#2	This browser won’t hand over the clipboard. Tap the paper, then press ⌘V.
 clipEmpty	Nothing to paste.
-ocrDl	Downloading the eyes (25 MB, first time only) · 40%
+ocrDl	Downloading the handwriting reader (25 MB, first time only) · 40%
 ocrDead	The on-device reader didn’t start: probably a bad connection, so it never downloaded.
 ocrFile	{f} didn’t download: HTTP {s}
 ocrDict	Dictionary doesn’t match the model: {c} classes, {n} characters
