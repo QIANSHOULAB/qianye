@@ -1,0 +1,97 @@
+# 一叶笺 0.3.4 中文界面文字，从 strings.js 导出。一行一条：键<Tab>字。#2 = 同一句换个情况。⏎ = 换行。
+lang	zh-CN
+title	一叶笺 · 随手成画
+appShort	一叶笺
+desc	手写拍照或打字粘贴，自动装裱成一张体面好图，拿去分享倍儿有面子。
+brand	一叶笺
+brandSub	
+tagline	随手成画
+langAria	语言
+langEN	EN
+langZH	中文
+settingsAria	设置
+paperAria	纸：点哪改哪
+writeAria	写字
+hint1	写点什么，或者把一坨字粘进来。
+hint2	手写的纸，点「拍」。
+snap	拍
+album	相册
+paste	粘贴
+clear	清空
+tip	点哪改哪；长按一行，这行当标题。
+hub	千手院总舵
+themesAria	版式
+themes.note	便签
+themes.white	白纸
+themes.letter	信笺
+themes.kraft	牛皮纸
+themes.night	夜读
+themes.mag	杂志
+themes.journal	手账
+themes.big	大字
+themes.notice	公告
+tooLong	字多，3:4 装不下，按长图出
+save	保存相册
+share	分享
+copied	图已复制，去聊天窗口粘贴
+savedAndroid	存好了，在「下载」里
+savedDesktop	存好了，在「下载」文件夹里
+sheetAlt	生成的图
+sheetWechat	长按图片，选「保存图片」或「发送给朋友」
+sheetIos	长按图片，选「存储图像」
+sheetOther	长按图片存进相册，或者点「存图」。
+sheetSave	存图
+sheetClose	关掉
+setTitle	设置
+ratio	比例
+ratioAuto	跟着字
+fmt	格式
+key1	钥匙 1
+key2	钥匙 2
+key1Ph	只有认手写才用得上
+key2Ph	备胎，平时空着
+keyHelp	贴了钥匙，手写借谷歌的眼睛认两遍、对答案，更准；不贴就在本机认，不上传。1 号今天用完自动换 2 号。钥匙只存在这个浏览器里。
+getKey	免费领钥匙
+model	模型
+madeBy	制作人：千手院方丈释手
+ask	要什么新功能、有修改建议，或洽谈商业合作请直接找方丈飞鸽传书：oilsongchengmin@gmail.com
+hubBtn	千手院总舵
+mailBtn	方丈邮箱
+done	完成
+noTitle	好，不要标题。
+asTitle	好，这行当标题。
+clipDenied	浏览器不让读剪贴板。点一下纸，再按 Ctrl+V。
+clipDenied#2	浏览器不让读剪贴板。点一下纸，再按 ⌘V。
+clipEmpty	剪贴板里没有字。
+ocrDl	第一次认手写，先下 25 MB 的眼珠子，下回不用再下 · 40%
+ocrDead	本地认字没跑起来：多半是网不好，库没下载下来
+ocrFile	{f} 没下载下来：HTTP {s}
+ocrDict	字典对不上模型：模型 {c} 类，字典 {n} 个字
+badImage	这张图打不开，换一张试试。
+working	你可以去摸鱼了，剩下的交给老衲。
+http	HTTP 400：API key not valid.
+netErr	网络错误：等了 180 秒没回音
+netErr#2	网络错误：Failed to fetch
+notJson	返回的不是 JSON：
+emptyWhy	空的
+noReply	模型没回内容：SAFETY
+replyNotJson	模型回的不是 JSON：
+replyNoText	模型回的 JSON 里没有 text：
+allKeysOut	所有钥匙今天的额度都用完了，11-04 15:00 刷新
+minuteWait	每分钟次数到顶，等 12 秒
+keyN	钥匙 1 · HTTP 400 …
+keyDayOut	钥匙 1 今天的额度用完了 · HTTP 429 …
+keyMinute	钥匙 2 每分钟次数到顶 · HTTP 429 …
+retryIn	HTTP 503 … · 10 秒后重试
+gemini	借谷歌的眼睛看，认两遍对答案…
+bothFailed	谷歌那边出了岔子（HTTP 503 …），本地也没认出字。
+noText	没认出字。纸拍正一点、亮一点再来一张。
+doneMarks	认完了。标黄的 1 个字贫僧拿不准，点一下就能改。
+doneMarks#2	认完了。标黄的 3 个字贫僧拿不准，点一下就能改。
+done1	认完了。
+fellBack	谷歌那边出了岔子，先本地认了：HTTP 503 …
+failed	没认成：…
+mark	一叶笺
+markLetter	— 一叶笺 —
+filePrefix	一叶笺
+sample	11月1日 各线产量 ⏎ A线早班 1,280件 ⏎ B线早班 960件 ⏎ C线中班 1,105件 ⏎ D线晚班 87件 ⏎ 合计 3,432件 ⏎  ⏎ 明天上午8点到12点停电检修，请各线提前把数据存好。

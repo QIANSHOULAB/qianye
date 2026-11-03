@@ -12,7 +12,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, str(Path(__file__).parent))
-from serve import serve  # noqa: E402
+from serve import serve, browser  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 CASES = json.loads((ROOT / "tests" / "texts.json").read_text(encoding="utf-8"))
@@ -54,7 +54,7 @@ def main():
     srv, port = serve()
     rep, n_title, n_struct, n_align, n_align_all = {}, 0, 0, 0, 0
     with sync_playwright() as p:
-        b = p.chromium.launch(channel="msedge")
+        b = browser(p)
         pg = b.new_page(viewport={"width": 390, "height": 844}, device_scale_factor=3)
         pg.goto(f"http://127.0.0.1:{port}/qianye/index.html")
         pg.wait_for_function("window.__teng && window.__teng.ready")

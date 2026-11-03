@@ -1,0 +1,162 @@
+{
+ "default": {
+  "first": {
+   "lang": "en",
+   "title": "Yiye · Pretty Notes",
+   "desc": "Messy notes in, pretty picture out. Snap a handwritten page or paste a wall of text, and Yiye lays it out as an image worth sharing.",
+   "app": "Yiye",
+   "font": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"Segoe UI Variable Text\", \"Segoe UI\", system-ui",
+   "pressed": "en:true zh:false"
+  },
+  "afterZh": {
+   "lang": "zh-CN",
+   "title": "一叶笺 · 随手成画",
+   "desc": "手写拍照或打字粘贴，自动装裱成一张体面好图，拿去分享倍儿有面子。",
+   "app": "一叶笺",
+   "font": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"PingFang SC\", \"HarmonyOS Sans SC\", MiSans",
+   "pressed": "en:false zh:true"
+  },
+  "reloadZh": {
+   "lang": "zh-CN",
+   "title": "一叶笺 · 随手成画",
+   "desc": "手写拍照或打字粘贴，自动装裱成一张体面好图，拿去分享倍儿有面子。",
+   "app": "一叶笺",
+   "font": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"PingFang SC\", \"HarmonyOS Sans SC\", MiSans",
+   "pressed": "en:false zh:true"
+  },
+  "backEn": {
+   "lang": "en",
+   "title": "Yiye · Pretty Notes",
+   "desc": "Messy notes in, pretty picture out. Snap a handwritten page or paste a wall of text, and Yiye lays it out as an image worth sharing.",
+   "app": "Yiye",
+   "font": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"Segoe UI Variable Text\", \"Segoe UI\", system-ui",
+   "pressed": "en:true zh:false"
+  }
+ },
+ "en": {
+  "empty390": [],
+  "result390": [],
+  "share": {
+   "name": "Yiye_20261103_2342.png",
+   "type": "image/png",
+   "size": 451965
+  },
+  "marks": {
+   "note": [
+    "Yiye · Pretty Notes @ 500 11px -apple-system"
+   ],
+   "white": [
+    "Yiye · Pretty Notes @ 600 11px -apple-system"
+   ],
+   "letter": [
+    "— Yiye · Pretty Notes — @ 400 11px \"Noto Serif SC\""
+   ],
+   "kraft": [
+    "Yiye · Pretty Notes @ 700 11px -apple-system"
+   ],
+   "night": [
+    "Yiye · Pretty Notes @ 600 11px -apple-system"
+   ],
+   "mag": [
+    "Yiye · Pretty Notes @ 700 11px -apple-system"
+   ],
+   "journal": [
+    "Yiye · Pretty Notes @ 600 11px -apple-system"
+   ],
+   "big": [
+    "Yiye · Pretty Notes @ 600 11px -apple-system"
+   ],
+   "notice": [
+    "Yiye · Pretty Notes @ 500 11px -apple-system"
+   ],
+   "serifCheck": true,
+   "serifLoaded": 8
+  },
+  "ocr": {
+   "text": "采购清单\n1. 螺丝 200个\n2. 垫片 50个\n3. 胶带 12卷\n4. 手套 30双",
+   "status": "Done.",
+   "log": [
+    "Downloading the eyes (25 MB, first time only) · 99%",
+    "Downloading the eyes (25 MB, first time only) · 99%",
+    "Go grab a coffee. The monk’s on it.",
+    "Done."
+   ]
+  },
+  "settings390": [],
+  "empty1280": [],
+  "result1280": [],
+  "save": {
+   "name": "Yiye_20261103_2343.png",
+   "size": 135791,
+   "type": "image/png"
+  },
+  "toasts": [
+   "Saved to your Downloads folder.",
+   "Copied. Paste it into any chat."
+  ]
+ },
+ "zh": {
+  "empty390": [],
+  "result390": [],
+  "share": {
+   "name": "一叶笺_20261103_2343.png",
+   "type": "image/png",
+   "size": 410665
+  },
+  "marks": {
+   "note": [
+    "一叶笺 @ 500 11px -apple-system"
+   ],
+   "white": [
+    "一叶笺 @ 600 11px -apple-system"
+   ],
+   "letter": [
+    "— 一叶笺 — @ 400 11px \"Noto Serif SC\""
+   ],
+   "kraft": [
+    "一叶笺 @ 700 11px -apple-system"
+   ],
+   "night": [
+    "一叶笺 @ 600 11px -apple-system"
+   ],
+   "mag": [
+    "一叶笺 @ 700 11px -apple-system"
+   ],
+   "journal": [
+    "一叶笺 @ 600 11px -apple-system"
+   ],
+   "big": [
+    "一叶笺 @ 600 11px -apple-system"
+   ],
+   "notice": [
+    "一叶笺 @ 500 11px -apple-system"
+   ],
+   "serifCheck": true,
+   "serifLoaded": 20
+  },
+  "ocr": {
+   "text": "采购清单\n1. 螺丝 200个\n2. 垫片 50个\n3. 胶带 12卷\n4. 手套 30双",
+   "status": "认完了。",
+   "log": [
+    "第一次认手写，先下 25 MB 的眼珠子，下回不用再下 · 99%",
+    "第一次认手写，先下 25 MB 的眼珠子，下回不用再下 · 99%",
+    "你可以去摸鱼了，剩下的交给老衲。",
+    "认完了。"
+   ]
+  },
+  "settings390": [],
+  "empty1280": [],
+  "result1280": [],
+  "save": {
+   "name": "一叶笺_20261103_2343.png",
+   "size": 132361,
+   "type": "image/png"
+  },
+  "toasts": [
+   "存好了，在「下载」文件夹里",
+   "图已复制，去聊天窗口粘贴"
+  ]
+ },
+ "errors": [],
+ "fails": 0
+}

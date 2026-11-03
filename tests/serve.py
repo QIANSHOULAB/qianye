@@ -1,6 +1,7 @@
 """本机测试服务：照线上的路径摆，/qianye/ = 一叶笺（012 时叫誊抄僧，/tengchao/ 也指这里），/pabiao/ = 渡表僧（只读，用它的模型），/luruseng/key.html 给个占位。
 另带一个假谷歌：/v1beta/models/<模型>:generateContent?key=<钥匙>，按钥匙开头决定怎么回（照渡表僧 run_e2e 的路子）。"""
 import json
+import os
 import re
 import threading
 from functools import partial
@@ -9,9 +10,11 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
-PABIAO = ROOT.parent / "扒表僧"
+PABIAO = next((d for d in (ROOT.parent / "扒表僧", ROOT.parent / "pabiao") if (d / "models").is_dir()), ROOT.parent / "扒表僧")   # 本机叫 扒表僧，云端 clone 叫 pabiao
 FAKE = {"calls": {}, "text": "11月1日 各线产量\nA线早班 1,280件\nB线早班 960件", "text2": None}
 lock = threading.Lock()
+# 界面语言：默认英文以后，这套老测试照旧跑中文界面；QY_LANG=en 跑英文界面
+LANG_JS = f"localStorage.setItem('tengchao.lang', '{os.environ.get('QY_LANG', 'zh')}');"
 
 
 def gemini_ok(text):

@@ -1,15 +1,42 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>一叶笺 · 随手成画</title>
-<meta name="apple-mobile-web-app-title" content="一叶笺">
-<meta name="description" content="手写拍照或打字粘贴，自动装裱成一张体面好图，拿去分享倍儿有面子。">
+<title>Yiye · Pretty Notes</title>
+<meta name="apple-mobile-web-app-title" content="Yiye">
+<meta name="description" content="Messy notes in, pretty picture out. Snap a handwritten page or paste a wall of text, and Yiye lays it out as an image worth sharing.">
 <meta name="theme-color" content="#f5f5f7">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23F4EFE6'/%3E%3Cpath d='M18 20h28M18 30h20M18 40h24' stroke='%232C2A27' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='46' cy='40' r='4' fill='%23C2410C'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="strings.js?v=0.3.4"></script>
+<script>
+// 语言：默认英文，第二语言中文（Song 11-03 22:19）；右上角 EN / 中文 选过就记住（tengchao.lang），不跟浏览器走。
+// 在这儿就定下来：<html lang>、标题、简介一开始就对，英文的字体栈（html[lang=en]）第一帧就用上。
+// 页面上的字：data-s 填字，data-s-aria / data-s-ph / data-s-alt 填无障碍名、占位字、图片说明；字全在 strings.js
+(function () {
+  var l = 'en';
+  try { if (localStorage.getItem('tengchao.lang') === 'zh') l = 'zh'; } catch (e) { /* 隐私模式读不了就英文 */ }
+  window.QY_APPLY = function (lang) {
+    var t = window.QY_STR[lang], d = document, q = function (x) { return d.querySelector(x); };
+    var each = function (sel, fn) { Array.prototype.forEach.call(d.querySelectorAll(sel), fn); };
+    window.QY_LANG = lang;
+    d.documentElement.lang = t.lang;
+    d.title = t.title;
+    q('meta[name=description]').content = t.desc;
+    q('meta[name=apple-mobile-web-app-title]').content = t.appShort;
+    each('[data-s]', function (el) { el.textContent = t[el.dataset.s]; });
+    each('[data-s-aria]', function (el) { el.setAttribute('aria-label', t[el.dataset.sAria]); });
+    each('[data-s-ph]', function (el) { el.placeholder = t[el.dataset.sPh]; });
+    each('[data-s-alt]', function (el) { el.alt = t[el.dataset.sAlt]; });
+    each('[data-lang]', function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === lang)); });
+    var ta = q('#text');
+    if (ta) ta.setAttribute('autocapitalize', lang === 'en' ? 'sentences' : 'off');    // 英文句首自动大写，中文不要
+  };
+  window.QY_APPLY(l);
+})();
+</script>
 <style>
   :root {
     --bg: #f5f5f7; --card: #fff; --ink: #1d1d1f; --ink2: #424245; --grey: #6e6e73; --grey2: #86868b; --line: #d2d2d7; --line2: #e8e8ed;
@@ -17,6 +44,9 @@
     --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei", sans-serif;
     --r: 18px;
   }
+  /* 英文界面西文字体在前（不然 Windows 上会拿雅黑的西文字形）；中文界面不变 */
+  html[lang=en] { --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei", sans-serif; }
+  .num { font-variant-numeric: tabular-nums; }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.47 var(--sans); letter-spacing: -.01em;
@@ -25,11 +55,16 @@
   button { cursor: pointer; }
   a { color: var(--blue); text-decoration: none; }
 
-  .nav { position: sticky; top: 0; z-index: 20; height: 48px; background: rgba(245,245,247,.82);
+  .nav { position: sticky; top: 0; z-index: 20; height: 48px; background: rgba(245,245,247,.98);
          backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid rgba(0,0,0,.06); }
   .nav .in { max-width: 1080px; height: 100%; margin: 0 auto; padding: 0 16px; display: flex; align-items: center; }
   .brand { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; letter-spacing: 0; }
-  .brand svg { width: 22px; height: 22px; }
+  .brand svg { width: 22px; height: 22px; flex: none; }
+  .brand .sub { font-weight: 400; color: var(--grey); white-space: nowrap; }
+  .brand .sub:empty { display: none; }
+  .seg.lang { margin-right: 6px; flex: none; }
+  .seg.lang button { position: relative; height: 28px; padding: 0 10px; white-space: nowrap; }
+  .seg.lang button::after { content: ""; position: absolute; inset: -8px 0; }   /* 看着 28 高，点着 44 高 */
   .sp { flex: 1; }
   .icon-btn { width: 36px; height: 36px; border: 0; border-radius: 50%; background: transparent; color: var(--grey); display: grid; place-items: center; }
   .icon-btn:hover { background: rgba(0,0,0,.05); color: var(--ink); }
@@ -75,7 +110,7 @@
 
   /* 底下一条：版式（苹果相册编辑照片时滤镜那排的位置），再下面「保存相册」「分享」 */
   .dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 8px 0 calc(10px + env(safe-area-inset-bottom));
-          background: rgba(245,245,247,.88); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+          background: rgba(245,245,247,.98); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
           border-top: 1px solid rgba(0,0,0,.06); }
   .themes { display: flex; gap: 12px; overflow-x: auto; padding: 4px 16px 8px; scroll-snap-type: x proximity; scroll-padding: 0 16px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .themes::-webkit-scrollbar { display: none; }
@@ -109,6 +144,7 @@
 
   footer { max-width: 1080px; margin: 0 auto; padding: 28px 20px 8px; font-size: 12px; color: var(--grey2); }
   footer a { color: var(--grey); }
+  footer a, footer .num { white-space: nowrap; }        /* 折行也别把「QIANSHOU LAB」劈成两半 */
 
   dialog { border: 0; padding: 0; border-radius: 20px; width: min(440px, calc(100vw - 32px)); box-shadow: 0 24px 80px rgba(0,0,0,.25); color: var(--ink); }
   dialog::backdrop { background: rgba(0,0,0,.32); backdrop-filter: blur(2px); }
@@ -141,40 +177,41 @@
 </svg>
 
 <div class="nav"><div class="in">
-  <div class="brand"><svg><use href="#i-logo"/></svg>一叶笺</div>
+  <div class="brand"><svg><use href="#i-logo"/></svg><span data-s="brand">Yiye</span><span class="sub" data-s="brandSub">Pretty Notes</span></div>
   <div class="sp"></div>
-  <button type="button" class="icon-btn" id="gear" aria-label="设置"><svg><use href="#i-gear"/></svg></button>
+  <span class="seg lang" role="group" data-s-aria="langAria" aria-label="Language"><button type="button" data-lang="en" lang="en" data-s="langEN" aria-pressed="true">EN</button><button type="button" data-lang="zh" lang="zh-CN" data-s="langZH" aria-pressed="false">中文</button></span>
+  <button type="button" class="icon-btn" id="gear" data-s-aria="settingsAria" aria-label="Settings"><svg><use href="#i-gear"/></svg></button>
 </div></div>
 
 <main>
-  <section class="paper" id="paper" aria-label="纸：点哪改哪">
+  <section class="paper" id="paper" data-s-aria="paperAria" aria-label="Paper. Tap anywhere to edit.">
     <canvas id="paper-cv"></canvas>
     <canvas id="over" aria-hidden="true"></canvas>
     <div class="caret" id="caret" hidden></div>
     <div class="comp" id="comp" hidden></div>
-    <textarea id="text" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="写字"></textarea>
+    <textarea id="text" spellcheck="false" autocomplete="off" autocapitalize="off" data-s-aria="writeAria" aria-label="Write"></textarea>
   </section>
   <div class="below">
     <div class="tools">
-      <button type="button" class="pill" id="snap"><svg><use href="#i-cam"/></svg>拍</button>
-      <button type="button" class="pill" id="album">相册</button>
-      <button type="button" class="pill" id="paste">粘贴</button>
-      <button type="button" class="pill text" id="clear" hidden>清空</button>
+      <button type="button" class="pill" id="snap"><svg><use href="#i-cam"/></svg><span data-s="snap">Camera</span></button>
+      <button type="button" class="pill" id="album" data-s="album">Photos</button>
+      <button type="button" class="pill" id="paste" data-s="paste">Paste</button>
+      <button type="button" class="pill text" id="clear" data-s="clear" hidden>Clear</button>
       <div class="status" id="status"></div>
     </div>
-    <p class="tip" id="tip" hidden>点哪改哪；长按一行，这行当标题。</p>
+    <p class="tip" id="tip" data-s="tip" hidden>Tap to edit. Long-press a line to make it the title.</p>
   </div>
 </main>
 
-<footer>千手院 · QIANSHOU LAB　·　<a href="/" target="_blank" rel="noopener">千手院总舵</a></footer>
+<footer><span data-s="appShort">Yiye</span> <span class="num" id="ver-foot">v0.3.4</span> · <span data-s="tagline">Messy notes in. Pretty picture out.</span> · <a href="/" target="_blank" rel="noopener" data-s="hub">QIANSHOU LAB</a></footer>
 
 <div class="dock" id="dock">
   <div class="toast" id="toast" hidden></div>
-  <div class="themes" id="themes" role="group" aria-label="版式"></div>
+  <div class="themes" id="themes" role="group" data-s-aria="themesAria" aria-label="Styles"></div>
   <div class="note" id="dock-note"></div>
   <div class="acts2">
-    <button type="button" class="btn tint" id="save" disabled>保存相册</button>
-    <button type="button" class="btn" id="share" disabled><svg><use href="#i-share"/></svg>分享</button>
+    <button type="button" class="btn tint" id="save" data-s="save" disabled>Save image</button>
+    <button type="button" class="btn" id="share" disabled><svg><use href="#i-share"/></svg><span data-s="share">Share</span></button>
   </div>
 </div>
 
@@ -182,32 +219,34 @@
 <input type="file" id="pick-album" accept="image/*" hidden>
 
 <div class="sheet" id="sheet" hidden><div class="box">
-  <img id="sheet-img" alt="生成的图">
-  <p id="sheet-tip">长按图片存进相册，或者点「存图」。</p>
-  <div class="acts"><a class="btn small" id="sheet-save" download>存图</a><button type="button" class="btn small grey" id="sheet-close">关掉</button></div>
+  <img id="sheet-img" data-s-alt="sheetAlt" alt="Your image">
+  <p id="sheet-tip"></p>
+  <div class="acts"><a class="btn small" id="sheet-save" data-s="sheetSave" download>Download</a><button type="button" class="btn small grey" id="sheet-close" data-s="sheetClose">Close</button></div>
 </div></div>
 
 <dialog id="dlg-set"><div class="dcard">
-  <h2>设置</h2>
-  <div class="row"><label>比例</label><span class="seg" id="ratio"><button type="button" data-v="auto">跟着字</button><button type="button" data-v="3:4">3:4</button><button type="button" data-v="1:1">1:1</button></span></div>
-  <div class="row"><label>格式</label><span class="seg" id="fmt"><button type="button" data-v="png">PNG</button><button type="button" data-v="jpg">JPG</button></span></div>
-  <div class="row"><label for="k1">钥匙 1</label><input class="field" id="k1" type="password" autocomplete="off" spellcheck="false" placeholder="只有认手写才用得上"></div>
-  <div class="row"><label for="k2">钥匙 2</label><input class="field" id="k2" type="password" autocomplete="off" spellcheck="false" placeholder="备胎，平时空着"><div class="h">贴了钥匙，手写借谷歌的眼睛认，认两遍对答案，更准；不贴就在你手机里认，不上传。1 号今天用完了自动换 2 号。钥匙只存在这个浏览器里。<a href="/luruseng/key.html" target="_blank" rel="noopener">免费领钥匙</a></div></div>
-  <div class="row"><label for="model">模型</label><select class="field" id="model"></select></div>
-  <div class="by">制作人：千手院方丈释手<span id="ver" style="float:right;color:var(--grey2)"></span></div>
-  <div class="by2">要什么新功能、有修改建议，或洽谈商业合作请直接找方丈飞鸽传书：oilsongchengmin@gmail.com</div>
+  <h2 data-s="setTitle">Settings</h2>
+  <div class="row"><label data-s="ratio">Shape</label><span class="seg" id="ratio"><button type="button" data-v="auto" data-s="ratioAuto">Fit text</button><button type="button" data-v="3:4">3:4</button><button type="button" data-v="1:1">1:1</button></span></div>
+  <div class="row"><label data-s="fmt">Format</label><span class="seg" id="fmt"><button type="button" data-v="png">PNG</button><button type="button" data-v="jpg">JPG</button></span></div>
+  <div class="row"><label for="k1" data-s="key1">API key 1</label><input class="field" id="k1" type="password" autocomplete="off" spellcheck="false" data-s-ph="key1Ph"></div>
+  <div class="row"><label for="k2" data-s="key2">API key 2</label><input class="field" id="k2" type="password" autocomplete="off" spellcheck="false" data-s-ph="key2Ph"><div class="h"><span data-s="keyHelp"></span> <a href="/luruseng/key.html" target="_blank" rel="noopener" data-s="getKey">Get a free key</a></div></div>
+  <div class="row"><label for="model" data-s="model">Model</label><select class="field" id="model"></select></div>
+  <div class="by"><span data-s="madeBy"></span><span id="ver" class="num" style="float:right;color:var(--grey2)"></span></div>
+  <div class="by2" data-s="ask"></div>
   <div class="dacts">
-    <a class="btn small grey" href="/" target="_blank" rel="noopener">千手院总舵</a>
-    <a class="btn small grey" href="mailto:oilsongchengmin@gmail.com">方丈邮箱</a>
+    <a class="btn small grey" href="/" target="_blank" rel="noopener" data-s="hubBtn">QIANSHOU LAB</a>
+    <a class="btn small grey" href="mailto:oilsongchengmin@gmail.com" data-s="mailBtn">Email</a>
     <span class="sp"></span>
-    <button type="button" class="btn small" id="set-ok">完成</button>
+    <button type="button" class="btn small" id="set-ok" data-s="done">Done</button>
   </div>
 </div></dialog>
+<script>window.QY_APPLY(window.QY_LANG);</script>
 
 <script type="text/plain" id="ocr-src">
-// 本地认字（照抄渡表僧 v0.2.5 的 worker，一个字没改）。在 Worker 里跑，不卡页面。模型是 PP-OCRv5 mobile（Apache-2.0）：det 找字在哪，rec 一段段认。
+// 本地认字（照抄渡表僧 v0.2.5 的 worker；0.3.4 只动了两处：两句报错的字从 strings.js 送进来，会话只报错不报警告）。在 Worker 里跑，不卡页面。模型是 PP-OCRv5 mobile（Apache-2.0）：det 找字在哪，rec 一段段认。
 // 先把图收拾干净：压平阴影 → 扶正 → 找出表格线（交给拼表）并擦掉（免得被认成 1 或 |）。
 let ort = null, det = null, rec = null, dict = null;
+let MSG = { file: '{f}: HTTP {s}', dict: '{c} / {n}' };   // 两句报错的字跟着每条消息从页面送进来（strings.js 的 ocrFile、ocrDict），这里只是兜底
 
 async function grab(url, cacheName) {      // 下载一次，存进浏览器的 Cache Storage，下回直接拿
   let cache = null;
@@ -217,7 +256,7 @@ async function grab(url, cacheName) {      // 下载一次，存进浏览器的 
     if (hit) { const b = await hit.arrayBuffer(); postMessage({ type: 'dl', url, got: b.byteLength, cached: true }); return b; }
   }
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`${url.split('/').pop()} 没下载下来：HTTP ${res.status}`);
+  if (!res.ok) throw new Error(MSG.file.replace('{f}', url.split('/').pop()).replace('{s}', res.status));
   const reader = res.body.getReader(), parts = [];
   let got = 0, last = 0;
   for (;;) {
@@ -241,7 +280,7 @@ async function init(m) {
   ort.env.logLevel = 'error';
   ort.env.wasm.wasmPaths = m.ort;
   ort.env.wasm.wasmBinary = await grab(m.ort + 'ort-wasm-simd-threaded.wasm', m.cache);
-  const opt = { executionProviders: ['wasm'], graphOptimizationLevel: 'all' };
+  const opt = { executionProviders: ['wasm'], graphOptimizationLevel: 'all', logSeverityLevel: 3 };   // 3 = 只报错：模型里没用上的常量那几十条 [W:onnxruntime] 警告不往控制台打
   dict = new TextDecoder().decode(await grab(m.dict, m.cache)).split(/\r?\n/);
   if (dict[dict.length - 1] === '') dict.pop();
   det = await ort.InferenceSession.create(new Uint8Array(await grab(m.det, m.cache)), opt);
@@ -604,7 +643,7 @@ async function recognize(g, W, H, boxes) {
     });
     const out = await rec.run({ [rec.inputNames[0]]: new ort.Tensor('float32', x, [batch.length, 3, RH, mw]) });
     const o = out[rec.outputNames[0]], [, T, C] = o.dims;
-    if (C !== dict.length + 2) throw new Error(`字典对不上模型：模型 ${C} 类，字典 ${dict.length} 个字`);
+    if (C !== dict.length + 2) throw new Error(MSG.dict.replace('{c}', C).replace('{n}', dict.length));
     batch.forEach((j, bi) => words.push(...decode(o.data, bi * T * C, T, C, j, mw, g, W, H)));
   }
   return words;
@@ -694,6 +733,7 @@ function decode(d, off, T, C, j, mw, g, W, H) {
 self.onmessage = async (e) => {
   const m = e.data;
   try {
+    if (m.msg) MSG = m.msg;
     if (m.type === 'init') { await init(m); postMessage({ type: 'ok', id: m.id }); return; }
     const t0 = performance.now();
     const raw = gray(new Uint8ClampedArray(m.rgba), m.W, m.H), photo = looksPhoto(raw, m.W, m.H);
@@ -721,7 +761,9 @@ self.onmessage = async (e) => {
 <script type="module">
 // 一叶笺（012 时叫誊抄僧）：写字框里的字 → 认出标题、名字＋数字、清单、「时间：」这类行 → 按版式排好，画成图分享。
 // 排版和出图是同一套 canvas 代码：预览看到什么，分享出去就是什么。
-const VERSION = '0.3.3';
+const VERSION = '0.3.4';
+// 界面文字全在 strings.js（英文、中文各一套）。LANG 在 <head> 里就定了：默认英文，选过中文就记住
+let LANG = window.QY_LANG || 'en', TX = window.QY_STR[LANG];
 const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
 const Q = new URLSearchParams(location.search);
 const $ = (s) => document.querySelector(s);
@@ -749,7 +791,7 @@ const LIST = [
   [/^([-*•·●○▪■□☐✓√])\s*(\S.*)$/, (m) => (/[-*·▪■]/.test(m[1]) ? '•' : m[1])],
 ];
 const CN_NUM = /^([一二三四五六七八九十]{1,3})[、.．]\s*(\S.*)$/;
-const TOTAL = /^(合计|总计|共计|小计|总数|合共|累计|总共|总产量|总量)/;
+const TOTAL = /^(合计|总计|共计|小计|总数|合共|累计|总共|总产量|总量|total\b|subtotal\b|grand total\b)/i;
 const DATE_ONLY = /^\s*(\d{4}\s*[年./-]\s*)?\d{1,2}\s*[月./-]\s*\d{1,2}\s*[日号]?\s*([（(]?(星期|周)[一二三四五六日天][）)]?)?\s*$/;
 const END_PUNCT = /[。.！!？?；;，,、…]$/;
 const KNOWN_UNIT = '(?:件|个|只|台|套|箱|包|袋|瓶|桶|张|本|支|条|根|块|片|卷|米|公斤|斤|吨|kg|KG|g|元|人|名|次|天|小时|分钟|h|H|pcs|PCS|%|％)';
@@ -977,6 +1019,7 @@ function kindsOf(blocks) {
 // ================================================================ 版式
 const SANS = '-apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei", sans-serif';
 const SERIF = '"Noto Serif SC", "Songti SC", "STSong", "Source Han Serif SC", "Noto Serif CJK SC", "SimSun", serif';
+const LATIN = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, ';     // 英文落款：西文字体在前
 // 一张图的宽固定 390（逻辑像素），分享时按 3 倍画
 const W = 390;
 
@@ -997,25 +1040,25 @@ function noise(ctx, w, h, alpha, seed = 7, size = 1) {
 }
 
 const THEMES = [
-  { id: 'note', name: '便签',
+  { id: 'note',
     bg: (c, w, h) => { c.fillStyle = '#F6F2EA'; c.fillRect(0, 0, w, h); noise(c, w, h, 0.05, 11); },
     pad: [34, 30, 26, 30], font: SANS, ink: '#2B2926', body: '#3D3A35', muted: '#9A938A', accent: '#C2410C', rule: '#E3DCD0',
     title: { size: 23, weight: 700, lh: 1.32, gap: 10 }, meta: { size: 12.5, pos: 'top' }, size: 16, lh: 1.72, rowLh: 1.95,
     sub: { size: 13, weight: 600, color: '#C2410C', rule: true }, marker: { color: '#C2410C' },
     footer: { kind: 'note' } },
-  { id: 'white', name: '白纸',
+  { id: 'white',
     bg: (c, w, h) => { c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, w, h); },
     pad: [36, 28, 26, 28], font: SANS, ink: '#1D1D1F', body: '#424245', muted: '#8E8E93', accent: '#E0A100', rule: '#E5E5EA',
     title: { size: 28, weight: 800, lh: 1.22, gap: 8 }, meta: { size: 13, pos: 'top' }, size: 16.5, lh: 1.62, rowLh: 1.9,
     sub: { size: 15, weight: 700, color: '#1D1D1F', rule: false }, marker: { color: '#E0A100', dot: true },
     footer: { kind: 'plain' } },
-  { id: 'letter', name: '信笺', serif: true,
+  { id: 'letter', serif: true,
     bg: (c, w, h) => { c.fillStyle = '#FBF8F1'; c.fillRect(0, 0, w, h); noise(c, w, h, 0.035, 5); },
     pad: [40, 32, 30, 32], font: SERIF, ink: '#2E2618', body: '#3A3125', muted: '#A39A8A', accent: '#9F2A2A', rule: '#E8DDCB',
     title: { size: 24, weight: 700, lh: 1.4, gap: 14, align: 'center' }, meta: { size: 12.5, pos: 'below', align: 'center' }, size: 16, lh: 1.95, rowLh: 1.95,
     sub: { size: 14.5, weight: 700, color: '#2E2618', rule: false }, marker: { color: '#9F2A2A' }, ruled: true,
     footer: { kind: 'letter' } },
-  { id: 'kraft', name: '牛皮纸',
+  { id: 'kraft',
     bg: (c, w, h) => {
       c.fillStyle = '#CDB18C'; c.fillRect(0, 0, w, h); noise(c, w, h, 0.08, 3, 1.3);
       c.save(); c.strokeStyle = 'rgba(92,62,30,.10)'; c.lineWidth = 0.6;
@@ -1029,19 +1072,19 @@ const THEMES = [
     title: { size: 22, weight: 700, lh: 1.35, gap: 16, label: true }, meta: { size: 12.5, pos: 'below' }, size: 16, lh: 1.72, rowLh: 1.95,
     sub: { size: 13.5, weight: 700, color: '#2F2114', rule: true }, marker: { color: '#7A3B12' },
     footer: { kind: 'kraft' } },
-  { id: 'night', name: '夜读',
+  { id: 'night',
     bg: (c, w, h) => { c.fillStyle = '#141416'; c.fillRect(0, 0, w, h); const g = c.createRadialGradient(w * 0.2, 0, 0, w * 0.2, 0, Math.max(w, Math.min(h, 520))); g.addColorStop(0, 'rgba(255,190,90,.07)'); g.addColorStop(1, 'rgba(255,190,90,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); },
     pad: [36, 28, 26, 28], font: SANS, ink: '#F5F3EF', body: '#D8D5CE', muted: '#8B877F', accent: '#F2B354', rule: 'rgba(255,255,255,.12)',
     title: { size: 25, weight: 700, lh: 1.3, gap: 10 }, meta: { size: 12.5, pos: 'top' }, size: 16, lh: 1.72, rowLh: 1.95,
     sub: { size: 13, weight: 600, color: '#F2B354', rule: true }, marker: { color: '#F2B354' }, numColor: '#F2B354',
     footer: { kind: 'plain' } },
-  { id: 'mag', name: '杂志', serif: true,
+  { id: 'mag', serif: true,
     bg: (c, w, h) => { c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, w, h); },
     pad: [30, 28, 26, 28], font: SANS, titleFont: SERIF, ink: '#111111', body: '#333333', muted: '#8A8A8A', accent: '#C8102E', rule: '#111111',
     title: { size: 31, weight: 700, lh: 1.2, gap: 14, kicker: true, rules: true }, meta: { size: 12, pos: 'kicker' }, size: 15.5, lh: 1.7, rowLh: 1.9,
     sub: { size: 12, weight: 700, color: '#C8102E', rule: false, caps: true }, marker: { color: '#C8102E' }, numFont: SERIF,
     footer: { kind: 'mag' } },
-  { id: 'journal', name: '手账',
+  { id: 'journal',
     bg: (c, w, h) => {
       c.fillStyle = '#FBFAF6'; c.fillRect(0, 0, w, h);
       c.fillStyle = '#D9D6CC'; for (let y = 18; y < h; y += 18) for (let x = 18; x < w; x += 18) { c.beginPath(); c.arc(x, y, 0.9, 0, Math.PI * 2); c.fill(); }
@@ -1058,13 +1101,13 @@ const THEMES = [
     title: { size: 23, weight: 700, lh: 1.35, gap: 12, hl: 'rgba(250,214,107,.55)' }, meta: { size: 12.5, pos: 'below' }, size: 16, lh: 1.72, rowLh: 1.95,
     sub: { size: 13.5, weight: 700, color: '#3E8C74', rule: false, tag: true }, marker: { color: '#3E8C74', box: true },
     footer: { kind: 'plain' } },
-  { id: 'big', name: '大字',
+  { id: 'big',
     bg: (c, w, h) => { c.fillStyle = '#F2F2F0'; c.fillRect(0, 0, w, h); },
     pad: [40, 30, 28, 30], font: SANS, ink: '#0B0B0C', body: '#1C1C1E', muted: '#8E8E93', accent: '#0B0B0C', rule: '#C7C7CC',
     title: { size: 38, weight: 800, lh: 1.12, gap: 18 }, meta: { size: 13, pos: 'top' }, size: 20, lh: 1.55, rowLh: 1.75,
     sub: { size: 14, weight: 700, color: '#8E8E93', rule: false }, marker: { color: '#8E8E93' }, numWeight: 700, vcenter: true,
     footer: { kind: 'plain' } },
-  { id: 'notice', name: '公告',
+  { id: 'notice',
     bg: (c, w, h) => { c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, w, h); },
     pad: [34, 30, 28, 30], font: SANS, ink: '#1A1A1A', body: '#2B2B2B', muted: '#8C8C8C', accent: '#B42318', rule: '#B42318',
     title: { size: 24, weight: 700, lh: 1.35, gap: 16, align: 'center', color: '#B42318', spaced: true, redline: true }, meta: { size: 12.5, pos: 'below', align: 'center' },
@@ -1292,30 +1335,31 @@ function layout(model, t, opt = {}) {
       continue;
     }
   }
-  // 页脚
+  // 页脚落款：中文界面「一叶笺」，英文界面英文名（字在 strings.js）。英文落款在黑体版式里用西文在前的字体
   cid = null;
   const fk = t.footer.kind, fs = S(11);
+  const mark = TX.mark, mf = (size, wt) => fontOf(t, size, wt, LANG === 'en' && t.font === SANS ? LATIN + SANS : t.font);
   y += S(18);
   if (fk === 'note') {
     line(x0, y, x1, y, t.rule, 0.8); y += S(14);
-    text('一叶笺', x1, y + fs, fontOf(t, fs, 500), t.muted, 'right', { ls: 1 });
+    text(mark, x1, y + fs, mf(fs, 500), t.muted, 'right', { ls: 1 });
     y += fs;
   } else if (fk === 'letter') {
-    text('— 一叶笺 —', W / 2, y + fs + S(4), fontOf(t, fs, 400), t.muted, 'center', { ls: 2 });
+    text(TX.markLetter, W / 2, y + fs + S(4), mf(fs, 400), t.muted, 'center', { ls: 2 });
     y += fs + S(4);
   } else if (fk === 'kraft') {
     line(x0, y, x1, y, t.rule, 0.8, [3, 3]); y += S(14);
-    text('一叶笺', x0, y + fs, fontOf(t, fs, 700), t.muted, 'left', { ls: 1.5 });
+    text(mark, x0, y + fs, mf(fs, 700), t.muted, 'left', { ls: 1.5 });
     y += fs;
   } else if (fk === 'mag') {
     line(x0, y, x1, y, '#111', 2.2); y += S(12);
-    text('一叶笺', x0, y + fs, fontOf(t, fs, 700), '#111', 'left', { ls: 1.2 });
+    text(mark, x0, y + fs, mf(fs, 700), '#111', 'left', { ls: 1.2 });
     y += fs;
   } else if (fk === 'notice') {
-    text('一叶笺', W / 2, y + fs, fontOf(t, fs, 500), t.muted, 'center', { ls: 2 });
+    text(mark, W / 2, y + fs, mf(fs, 500), t.muted, 'center', { ls: 2 });
     y += fs;
   } else {
-    text('一叶笺', x1, y + fs, fontOf(t, fs, 600), t.muted, 'right', { ls: 1 });
+    text(mark, x1, y + fs, mf(fs, 600), t.muted, 'right', { ls: 1 });
     y += fs;
   }
   return { ops, hits, h: y + pb };
@@ -1442,7 +1486,7 @@ function loadSerifCss() {
 }
 async function ensureFonts(t, text) {
   if (!t.serif || !document.fonts || !document.fonts.load) return;
-  const sample = text.slice(0, 2000) + '一叶笺0123456789.,%';
+  const sample = text.slice(0, 2000) + TX.mark + TX.markLetter + '0123456789.,%';      // 落款不在写的字里：带上它，落款的字那几块才会下
   try {
     await loadSerifCss();
     await Promise.race([
@@ -1469,9 +1513,10 @@ const WECHAT = /MicroMessenger/i.test(UA);
 const IOS = /iPhone|iPad|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
 const ANDROID = /Android/i.test(UA);
 const PHONE = IOS || ANDROID || /Mobi/i.test(UA);
+const MAC = !IOS && /Mac/i.test(navigator.platform || UA);
 const focused = () => document.activeElement === ta;
 
-function setStatus(html, warn = false) { const el = $('#status'); el.innerHTML = html; el.classList.toggle('warn', warn); T.log.push(el.textContent); }
+function setStatus(html, warn = false) { const el = $('#status'); el.innerHTML = html; el.classList.toggle('warn', warn); S.unsure = false; T.log.push(el.textContent); }
 const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
 let toastT = null;
 function toast(s) { const el = $('#toast'); el.textContent = s; el.hidden = false; T.log.push(s); clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 2600); }
@@ -1517,12 +1562,12 @@ function render() {
   S.map = caretMap(R, has ? v : '');
   T.renderMs = Math.round(performance.now() - t0);
   T.renders = (T.renders || 0) + 1;
-  $('#dock-note').textContent = R.over && !holding ? `字多，${S.ratio} 装不下，按长图出` : '';
+  $('#dock-note').textContent = R.over && !holding ? TX.tooLong(S.ratio) : '';
   overlay();
   drawThumbs();
   // 衬线版式：字体按用到的字一块一块下，下好了再画一遍
-  if (t.serif && fontReady[t.id] !== v) {
-    fontReady[t.id] = v;
+  if (t.serif && fontReady[t.id] !== LANG + v) {
+    fontReady[t.id] = LANG + v;
     ensureFonts(t, v).then(() => { if (THEME[S.theme] === t && !S.comp) render(); });
   }
 }
@@ -1647,7 +1692,7 @@ function overlay() {
     if (p) {
       c.font = p.f; c.fillStyle = t.muted; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
       const lh = t.size * t.lh;
-      ['写点什么，或者把一坨字粘进来。', '手写的纸，点「拍」。'].forEach((s, i) => c.fillText(s, p.x, p.y + lh * i));
+      [TX.hint1, TX.hint2].forEach((s, i) => c.fillText(s, p.x, p.y + lh * i));
     }
   }
   // 光标：在选中一段的时候不画
@@ -1705,7 +1750,7 @@ function noteText() {
   S.prev = ta.value;
   store.set('text', ta.value);
   $('#clear').hidden = !ta.value;
-  if (!S.marks.length && /拿不准/.test($('#status').textContent)) setStatus('');
+  if (!S.marks.length && S.unsure) setStatus('');
 }
 // 程序改的字（认完手写、清空、粘贴）：整张落定重排
 function onText() {
@@ -1793,7 +1838,7 @@ paper.addEventListener('pointerdown', (e) => {
       if (!h) return;
       press.long = true;
       S.title = h.title ? '' : h.id;            // 长按标题：不要标题；长按别的行：这行当标题
-      setStatus(h.title ? '好，不要标题。' : '好，这行当标题。');
+      setStatus(h.title ? TX.noTitle : TX.asTitle);
       if (navigator.vibrate) navigator.vibrate(12);
       if (focused()) beginHold(); else S.hold = null;
       render();
@@ -1825,8 +1870,8 @@ $('#clear').onclick = () => { ta.value = ''; S.marks = []; S.title = null; onTex
 $('#paste').onclick = async () => {
   let s = '';
   try { s = await navigator.clipboard.readText(); } catch (e) { s = null; }
-  if (s == null) { setStatus('浏览器不让读剪贴板。电脑上点纸再按 Ctrl+V。', true); return; }
-  if (!s.trim()) { setStatus('剪贴板里没有字。'); return; }
+  if (s == null) { setStatus(TX.clipDenied(MAC), true); return; }
+  if (!s.trim()) { setStatus(TX.clipEmpty); return; }
   const a = ta.selectionStart, b = ta.selectionEnd;
   ta.setRangeText(s.replace(/\r\n?/g, '\n'), a, b, 'end');
   onText();
@@ -1857,7 +1902,7 @@ function drawThumbs() {
       for (const t of THEMES) {
         const b = document.createElement('button');
         b.type = 'button'; b.className = 'th'; b.dataset.id = t.id;
-        b.innerHTML = `<canvas width="168" height="224"></canvas><span>${t.name}</span>`;
+        b.innerHTML = `<canvas width="168" height="224"></canvas><span>${TX.themes[t.id]}</span>`;
         b.addEventListener('mousedown', (e) => e.preventDefault());      // 电脑上点版式，光标留在纸上
         b.onclick = () => {
           S.theme = t.id; markThemes();
@@ -1868,8 +1913,8 @@ function drawThumbs() {
       }
       markThemes();
     }
-    const model = ta.value.trim() ? parse(ta.value, S.title) : parse(SAMPLE);
-    const key = JSON.stringify(model.blocks);
+    const model = ta.value.trim() ? parse(ta.value, S.title) : parse(TX.sample);
+    const key = LANG + JSON.stringify(model.blocks);        // 换了语言，落款跟着换，缩略图也得重画
     if (key === thumbKey) return;
     thumbKey = key;
     for (const b of box.children) {
@@ -1893,7 +1938,7 @@ segs('#ratio', 'ratio'); segs('#fmt', 'fmt');
 
 // ---------------------------------------------------------------- 出图：保存相册、分享
 // 平时不画图、不出文件。点按钮这一下才画：全程同步，iPhone 认这一下是人点的，系统面板才肯弹
-function fileName() { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return `一叶笺_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.${S.fmt === 'jpg' ? 'jpg' : 'png'}`; }
+function fileName() { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return `${TX.filePrefix}_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.${S.fmt === 'jpg' ? 'jpg' : 'png'}`; }
 function dataUrlBlob(u) {
   const i = u.indexOf(','), mime = u.slice(5, u.indexOf(';')), bin = atob(u.slice(i + 1));
   const a = new Uint8Array(bin.length);
@@ -1916,14 +1961,9 @@ function makeImage() {
   T.exportUrl = url;
   return { out, url, blob, type, file: new File([blob], fileName(), { type }) };
 }
-const SHEET_TIP = {
-  wechat: '长按图片，选「保存图片」或「发送给朋友」',
-  ios: '长按图片，选「存储图像」',
-  other: '长按图片存进相册，或者点「存图」。',
-};
 function showSheet(img, kind) {
   $('#sheet-img').src = img.url;              // data 地址：微信里长按 blob 地址可能存不了
-  $('#sheet-tip').textContent = SHEET_TIP[kind];
+  $('#sheet-tip').textContent = TX[{ wechat: 'sheetWechat', ios: 'sheetIos', other: 'sheetOther' }[kind]];
   const a = $('#sheet-save');
   a.hidden = kind !== 'other';
   a.href = img.url; a.download = img.file.name;
@@ -1950,7 +1990,7 @@ function share() {
 function copyImg(img) {
   try {
     const png = img.type === 'image/png' ? img.blob : dataUrlBlob(img.out.toDataURL('image/png'));
-    navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]).then(() => { T.copied = png.size; toast('图已复制，去聊天窗口粘贴'); }, () => showSheet(img, 'other'));
+    navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]).then(() => { T.copied = png.size; toast(TX.copied); }, () => showSheet(img, 'other'));
   } catch (e) { showSheet(img, 'other'); }
 }
 // 保存相册：安卓、电脑直接下文件；iPhone 网页没法自己把图塞进相册，只能弹系统面板，点里面的「存储图像」
@@ -1967,7 +2007,7 @@ function save() {
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 60000);
   T.saved = { name: img.file.name, size: img.blob.size, type: img.type };
-  toast(ANDROID ? '存好了，在「下载」里' : '存好了，在「下载」文件夹里');
+  toast(ANDROID ? TX.savedAndroid : TX.savedDesktop);
 }
 $('#share').onclick = share;
 $('#save').onclick = save;
@@ -2002,7 +2042,7 @@ function ocrWorker() {
       OCR.got[m.url] = m.got;
       if (!m.cached) {
         const pct = Math.min(99, Math.round(Object.values(OCR.got).reduce((p, q) => p + q, 0) / OCR_BYTES * 100));
-        progress(`第一次认手写，先下 ${OCR_MB} MB 的眼珠子，存进浏览器，下回不用再下 · ${pct}%`, pct / 100 * 0.6);
+        progress(TX.ocrDl(OCR_MB, pct), pct / 100 * 0.6);
       }
       return;
     }
@@ -2013,14 +2053,14 @@ function ocrWorker() {
   };
   w.onerror = (e) => {
     e.preventDefault();
-    for (const p of OCR.wait.values()) p.bad(new Error(`本地认字的程序没跑起来：${e.message || '多半是网不好，库没下载下来'}`));
+    for (const p of OCR.wait.values()) p.bad(new Error(TX.ocrDead(e.message)));
     OCR.wait.clear(); OCR.w = null; OCR.ready = null;
   };
   return w;
 }
 function ocrCall(msg, transfer = []) {
   const w = ocrWorker(), id = ++OCR.seq;
-  return new Promise((ok, bad) => { OCR.wait.set(id, { ok, bad }); w.postMessage({ ...msg, id }, transfer); });
+  return new Promise((ok, bad) => { OCR.wait.set(id, { ok, bad }); w.postMessage({ ...msg, id, msg: { file: TX.ocrFile, dict: TX.ocrDict } }, transfer); });
 }
 function ocrReady() {
   const abs = (p) => new URL(MODEL_BASE + p, location.href).href;
@@ -2043,7 +2083,7 @@ async function loadImage(file) {
   try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
   catch (e) {
     const url = URL.createObjectURL(file);
-    bmp = await new Promise((ok, bad) => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => bad(new Error('这张图打不开')); im.src = url; });
+    bmp = await new Promise((ok, bad) => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => bad(new Error(TX.badImage)); im.src = url; });
   }
   const k = Math.min(1, OCR_SIDE / Math.max(bmp.width, bmp.height));
   const cv = document.createElement('canvas');
@@ -2101,7 +2141,7 @@ function wordsToText(words) {
 
 async function readLocal(cv) {
   await ocrReady();
-  progress('你可以去摸鱼了，剩下的交给老衲。', 0.65);
+  progress(TX.working, 0.65);
   const c = cv.getContext('2d', { willReadFrequently: true });
   const im = c.getImageData(0, 0, cv.width, cv.height);
   const s = Math.max(cv.width, cv.height) / 842;          // 当成一张 A4：worker 里找线的门槛按这个算
@@ -2113,7 +2153,7 @@ async function readLocal(cv) {
 // ---------------------------------------------------------------- 借谷歌认手写（钥匙、报错、额度的做法照录入僧网页版）
 class ApiError extends Error {
   constructor(status, message, detail = '') { super(message); this.status = status; this.detail = detail; }
-  raw() { return this.status ? `HTTP ${this.status}：${this.message}` : this.message; }
+  raw() { return this.status ? TX.http(this.status, this.message) : this.message; }
 }
 class Fatal extends Error {}
 function nthSunday(year, month, n) { const d = new Date(Date.UTC(year, month - 1, 1)); return Date.UTC(year, month - 1, 1 + (7 - d.getUTCDay()) % 7 + (n - 1) * 7); }
@@ -2159,26 +2199,26 @@ async function callApi(model, key, body) {
     res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctl.signal });
     raw = await res.text();
   } catch (e) {
-    throw new ApiError(0, `网络错误：${ctl.signal.aborted ? `等了 ${TIMEOUT} 秒没回音` : (e && e.message) || String(e)}`);
+    throw new ApiError(0, TX.netErr(ctl.signal.aborted ? TIMEOUT : 0, (e && e.message) || String(e)));
   } finally { clearTimeout(timer); }
   if (!res.ok) {
     let msg = raw.slice(0, 500) || res.statusText || '', detail = '';
     try { const err = JSON.parse(raw).error || {}; msg = err.message || msg; detail = JSON.stringify(err.details || ''); } catch (e) { /* 原样 */ }
     throw new ApiError(res.status, msg, detail);
   }
-  try { return JSON.parse(raw); } catch (e) { throw new ApiError(0, '返回的不是 JSON：' + raw.slice(0, 300)); }
+  try { return JSON.parse(raw); } catch (e) { throw new ApiError(0, TX.notJson + raw.slice(0, 300)); }
 }
 function parseText(data) {
   const parts = (((data.candidates || [])[0] || {}).content || {}).parts || [];
   const txt = parts.map((p) => p.text || '').join('').trim().replace(/^```(?:json)?\s*|\s*```$/g, '');
   if (!txt) {
-    const why = ((data.candidates || [])[0] || {}).finishReason || (data.promptFeedback || {}).blockReason || '空的';
-    throw new ApiError(0, `模型没回内容：${why}`);
+    const why = ((data.candidates || [])[0] || {}).finishReason || (data.promptFeedback || {}).blockReason || TX.emptyWhy;
+    throw new ApiError(0, TX.noReply(why));
   }
   let obj;
-  try { obj = JSON.parse(txt); } catch (e) { throw new ApiError(0, '模型回的不是 JSON：' + txt.slice(0, 300)); }
+  try { obj = JSON.parse(txt); } catch (e) { throw new ApiError(0, TX.replyNotJson + txt.slice(0, 300)); }
   if (typeof obj === 'string') return obj;
-  if (!obj || typeof obj.text !== 'string') throw new ApiError(0, '模型回的 JSON 里没有 text：' + txt.slice(0, 300));
+  if (!obj || typeof obj.text !== 'string') throw new ApiError(0, TX.replyNoText + txt.slice(0, 300));
   return obj.text;
 }
 const retryDelay = (d) => { const m = String(d || '').match(/"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/); return m ? parseFloat(m[1]) : null; };
@@ -2195,8 +2235,8 @@ class Engine {
       const [i, key] = this.keys.pick();
       if (i === null) {
         const secs = Math.max(0, (key - Date.now()) / 1000);
-        if (secs > 120) throw new Fatal(`所有钥匙今天的额度都用完了，${when(key)} 刷新`);
-        progress(`每分钟次数到顶，等 ${Math.ceil(secs)} 秒`, 0.5);
+        if (secs > 120) throw new Fatal(TX.allKeysOut(when(key)));
+        progress(TX.minuteWait(Math.ceil(secs)), 0.5);
         await new Promise((ok) => setTimeout(ok, Math.max(0, key - Date.now())));
         continue;
       }
@@ -2206,22 +2246,22 @@ class Engine {
         if (!(e instanceof ApiError)) throw e;
         if (e.status === 429) {
           const kind = classify429(e);
-          if (kind === 'prepay') throw new Fatal(`钥匙${i + 1} · ${e.raw()}`);
-          if (kind === 'day') { const now = Date.now(); this.keys.park(i, now + (nextPacificMidnight(now) - now) * SPEED); progress(`钥匙${i + 1} 今天的额度用完了 · ${e.raw()}`, 0.5); }
+          if (kind === 'prepay') throw new Fatal(TX.keyN(i + 1, e.raw()));
+          if (kind === 'day') { const now = Date.now(); this.keys.park(i, now + (nextPacificMidnight(now) - now) * SPEED); progress(TX.keyDayOut(i + 1, e.raw()), 0.5); }
           else {
             if (++minuteHits > MAX_MINUTE_WAITS) throw e;
             const d = retryDelay(e.detail);
             const w = d === null ? MINUTE_WAIT : Math.min(MINUTE_WAIT, Math.max(3, d + 1));
             this.keys.park(i, Date.now() + w * 1000 * SPEED);
-            progress(`钥匙${i + 1} 每分钟次数到顶 · ${e.raw()}`, 0.5);
+            progress(TX.keyMinute(i + 1, e.raw()), 0.5);
           }
           continue;
         }
         if (e.status === 400 && /schema/i.test(e.message) && this.useSchema) { this.useSchema = false; continue; }
-        if ([400, 401, 403].includes(e.status) && /API key|API_KEY|permission|PERMISSION/.test(`${e.message} ${e.detail}`)) throw new Fatal(`钥匙${i + 1} · ${e.raw()}`);
+        if ([400, 401, 403].includes(e.status) && /API key|API_KEY|permission|PERMISSION/.test(`${e.message} ${e.detail}`)) throw new Fatal(TX.keyN(i + 1, e.raw()));
         if (e.status === 404) throw new Fatal(`${this.model} · ${e.raw()}`);
         if (e.status === 0 || e.status >= 500) {
-          if (netTries < RETRY_WAITS.length) { const w = RETRY_WAITS[netTries++]; progress(`${e.raw()} · ${w} 秒后重试`, 0.5); await sleep(w * 1000); continue; }
+          if (netTries < RETRY_WAITS.length) { const w = RETRY_WAITS[netTries++]; progress(TX.retryIn(e.raw(), w), 0.5); await sleep(w * 1000); continue; }
         }
         throw e;
       }
@@ -2248,7 +2288,7 @@ async function readGemini(cv) {
   let src = cv;
   if (k < 1) { src = document.createElement('canvas'); src.width = Math.round(cv.width * k); src.height = Math.round(cv.height * k); src.getContext('2d').drawImage(cv, 0, 0, src.width, src.height); }
   const b64 = src.toDataURL('image/jpeg', 0.9).split(',')[1];
-  progress('借谷歌的眼睛看，认两遍对答案…', 0.3);
+  progress(TX.gemini, 0.3);
   const [a, b] = await Promise.all([eng.read(b64), eng.read(b64)]);
   const text = a.replace(/\r/g, '');
   const marks = diffMarks(text, b.replace(/\r/g, ''));
@@ -2259,7 +2299,7 @@ async function readGemini(cv) {
 async function readPhoto(file) {
   if (!file) return;
   T.reading = true;
-  progress('你可以去摸鱼了，剩下的交给老衲。', 0.05);
+  progress(TX.working, 0.05);
   const t0 = performance.now();
   try {
     const cv = await loadImage(file);
@@ -2271,7 +2311,7 @@ async function readPhoto(file) {
     if (!got) got = await readLocal(cv);
     T.readMs = Math.round(performance.now() - t0);
     T.via = via;
-    if (!got.text.trim()) { setStatus(why ? `谷歌那边出了岔子（${esc(why)}），本地也没认出字。` : '没认出字。纸拍正一点、亮一点再来一张。', true); return; }
+    if (!got.text.trim()) { setStatus(why ? TX.bothFailed(esc(why)) : TX.noText, true); return; }
     const base = ta.value.replace(/\s+$/, '');
     const off = base ? base.length + 2 : 0;
     ta.value = base ? `${base}\n\n${got.text}` : got.text;
@@ -2279,11 +2319,12 @@ async function readPhoto(file) {
     S.prev = ta.value;
     onText();
     const n = got.marks.reduce((p, [a, b]) => p + [...ta.value.slice(a + off, b + off)].length, 0);
-    let msg = n ? `认完了。<b>标黄</b>的 ${n} 个字贫僧拿不准，点一下就能改。` : '认完了。';
-    if (why) msg = `谷歌那边出了岔子，先本地认了：${esc(why)}<br>` + msg;
+    let msg = n ? TX.doneMarks(n) : TX.done1;
+    if (why) msg = TX.fellBack(esc(why)) + msg;
     setStatus(msg, !!why);
+    S.unsure = n > 0;           // 黄字都改完了，这句就收掉
   } catch (e) {
-    setStatus(`没认成：${esc(e.message || String(e))}`, true);
+    setStatus(TX.failed(esc(e.message || String(e))), true);
   } finally {
     T.reading = false;
   }
@@ -2295,28 +2336,40 @@ for (const id of ['#pick-cam', '#pick-album']) $(id).onchange = (e) => { const f
 // ---------------------------------------------------------------- 设置
 const dlg = $('#dlg-set');
 $('#model').innerHTML = MODELS.map((m) => `<option>${m}</option>`).join('');
-$('#ver').textContent = 'v' + VERSION;
+$('#ver').textContent = $('#ver-foot').textContent = 'v' + VERSION;
 $('#gear').onclick = () => { $('#k1').value = store.get('k1', ''); $('#k2').value = store.get('k2', ''); $('#model').value = store.get('model', DEFAULT_MODEL); dlg.showModal(); };
 function saveSet() { store.set('k1', $('#k1').value.trim()); store.set('k2', $('#k2').value.trim()); store.set('model', $('#model').value); }
 $('#set-ok').onclick = () => { saveSet(); dlg.close(); };
 dlg.addEventListener('close', saveSet);
 dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
 
-// ---------------------------------------------------------------- 开门
-const SAMPLE = `11月1日 各线产量
-A线早班 1,280件
-B线早班 960件
-C线中班 1,105件
-D线晚班 87件
-合计 3,432件
+// ---------------------------------------------------------------- 语言：右上角 EN / 中文，选过就记住
+// 换语言：页面上的字、标题、简介、版式名、纸上的提示字、落款、存图文件名一起换；写的字、版式、黄字都不动
+function setLang(l) {
+  if (!window.QY_STR[l] || l === LANG) return;
+  LANG = l; TX = window.QY_STR[l];
+  store.set('lang', l);
+  window.QY_APPLY(l);
+  for (const b of $('#themes').children) b.querySelector('span').textContent = TX.themes[b.dataset.id];
+  if (!T.reading) setStatus('');
+  $('#toast').hidden = true;
+  if (!$('#sheet').hidden) $('#sheet').hidden = true;
+  render();
+}
+for (const b of document.querySelectorAll('[data-lang]')) {
+  b.addEventListener('mousedown', (e) => e.preventDefault());      // 电脑上点语言，光标留在纸上
+  b.onclick = () => setLang(b.dataset.lang);
+}
 
-明天上午8点到12点停电检修，请各线提前把数据存好。`;
+// ---------------------------------------------------------------- 开门
 ta.value = Q.get('t') || store.get('text', '');
 S.prev = ta.value;
 $('#clear').hidden = !ta.value;
 render();
 if (!ta.value && !PHONE) ta.focus();   // 电脑上没字就把光标放好；手机上等点纸再弹键盘
-T.parse = parse; T.layout = layout; T.THEMES = THEMES; T.wordsToText = wordsToText; T.diffMarks = diffMarks; T.SAMPLE = SAMPLE;
+T.parse = parse; T.layout = layout; T.THEMES = THEMES; T.wordsToText = wordsToText; T.diffMarks = diffMarks;
+Object.defineProperty(T, 'SAMPLE', { get: () => TX.sample });
+T.lang = () => LANG; T.setLang = setLang;
 T.render = (text, theme, ratio = 'auto', scale = 3) => { const cv = document.createElement('canvas'); const R = paint(cv, parse(text), THEME[theme], ratio, scale); return { url: cv.toDataURL('image/png'), H: R.H, fs: R.fs, hits: R.hits, ops: R.ops }; };
 // 测试用：换字、换版式、换比例（跟人点的效果一样），黄字在屏幕上哪儿，第几个字在屏幕上哪儿
 T.set = (text, theme, ratio) => { if (theme) S.theme = theme; if (ratio) S.ratio = ratio; markThemes(); segs('#ratio', 'ratio'); ta.value = text; S.marks = []; S.title = null; onText(); };

@@ -1,4 +1,6 @@
-# 一叶笺
+# 一叶笺 · Yiye · Pretty Notes
+
+**Messy notes in. Pretty picture out.** Snap a handwritten page or paste a wall of text, and Yiye lays it out as an image worth sharing: titles, number columns, lists, nine paper styles. Opens in English; switch to 中文 top right (it remembers). https://qianshoulab.github.io/qianye/
 
 原名千叶，2026-11-03 改名（Song 圈定）；再往前 012 施工时叫誊抄僧。网址不变 https://qianshoulab.github.io/qianye/ ，本机文件夹还叫 誊抄僧。
 
@@ -9,13 +11,17 @@
 整页只有一张纸（0.3.0 起，施工单 013）：写在这张纸上，看也在这张纸上。纸上的字直接就是排好版的样子（标题放大、数字对成一列、纸的底色和纹理都是），点哪改哪，长按一行这行当标题。底下一排版式，点哪个这张纸就换成哪个，字和光标都不动。分享出去的图就是这张纸，一个像素都不差。平时不画图，点「保存相册」「分享」那一下才画、才出文件。
 
 - 网址：https://qianshoulab.github.io/qianye/
-- 单文件 `index.html`，手机优先。打字到分享点 1 下，拍照、改一个黄字、分享点 3 下（手机上键盘弹着时底下那条收起来不挡字，所以先点键盘上的 ✓ 收键盘，各多 1 下）。
+- 中英两套（0.3.4 起）：默认英文，第二语言中文，右上角 EN / 中文 选过就记住，不跟浏览器语言走。界面文字全在 `strings.js`；英文界面出图落款「Yiye · Pretty Notes」，存图文件名 `Yiye_日期_时间.png`，中文界面照旧「一叶笺」。
+- 一个 `index.html` 加一个 `strings.js`，手机优先。打字到分享点 1 下，拍照、改一个黄字、分享点 3 下（手机上键盘弹着时底下那条收起来不挡字，所以先点键盘上的 ✓ 收键盘，各多 1 下）。
 - 9 个版式：便签（默认）、白纸、信笺、牛皮纸、夜读、杂志、手账、大字、公告。比例跟着字 / 3:4 / 1:1，PNG / JPG（这两样在右上角齿轮里），按 3 倍屏画。
 - 认手写：不贴钥匙就在浏览器里本地认（PP-OCRv5，模型从同一个网站的 `/pabiao/models/` 引，跟渡表僧共用一份缓存，不上传）；贴了谷歌钥匙借 Gemini 认两遍对答案。拿不准的字标黄，点一下就选中，直接改。
 
 | 文件 | 干嘛的 |
 |---|---|
 | `index.html` | 整个网页 |
+| `strings.js` | 界面上所有的字，英文一套、中文一套（改字只改这里） |
+| `docs/strings-bi/en.txt`、`zh.txt` | 中英文字清单，一行一条（`node tests/strings_export.js` 导出） |
+| `docs/shots-bi/` | 中英截图：手机 390、电脑 1280 × 空纸、结果，外加设置、9 个版式的落款 |
 | `docs/痛点.md` | 谁在什么时候用，每个设计省了哪一步 |
 | `docs/设计记录.md` | 为什么这么做 |
 | `docs/版式候选.png` | 9 个版式同一段字的对比图 |
@@ -31,6 +37,8 @@
 | `tests/run_phone.py` | iPhone 尺寸真点一遍：点几下、换版式光标丢没丢、打字跳不跳、拼音组字、微信、电脑、假键盘弹着时底下那条收没收 |
 | `tests/compare_ui.py` | 界面跟苹果参照并排的对比图 |
 | `tests/make_hand.py` | 造手写拍照样本（手写体字体 + 拍照效果） |
+| `tests/bi.js` | 中英两套真流程（node + Playwright）：默认英文、切换记住、手机 / 电脑打字出图认字、按钮撑没撑破、0 报错，顺手截图 |
+| `tests/strings_export.js` | 导出中英文字清单 |
 
 跑测试：
 
@@ -42,8 +50,12 @@ python -m venv .venv
 .venv\Scripts\python tests\run_gemini.py
 .venv\Scripts\python tests\run_paper.py
 .venv\Scripts\python tests\run_phone.py
+node tests\bi.js
+node tests\strings_export.js
 ```
 
-本机测试要 `F:\songchengmin\扒表僧\models\` 在（服务把 `/pabiao/` 指到那里），浏览器用本机 Edge，没有就用 Playwright 自带的 Chromium（`.venv\Scripts\playwright install chromium`）。
+Python 这几个测试照旧跑中文界面；`set QY_LANG=en` 再跑就是英文界面。
+
+本机测试要 `F:\songchengmin\扒表僧\models\` 在（服务把 `/pabiao/` 指到那里；云端 clone 叫 `pabiao` 的也认），浏览器用本机 Edge，没有就用 Playwright 自带的 Chromium（`.venv\Scripts\playwright install chromium`）。
 
 制作人：千手院方丈释手 · [千手院总舵](https://qianshoulab.github.io/) · oilsongchengmin@gmail.com

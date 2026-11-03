@@ -1,0 +1,97 @@
+# Yiye 0.3.4 English UI copy, exported from strings.js. One per line: key<Tab>text. #2 = same string, other case. ⏎ = line break.
+lang	en
+title	Yiye · Pretty Notes
+appShort	Yiye
+desc	Messy notes in, pretty picture out. Snap a handwritten page or paste a wall of text, and Yiye lays it out as an image worth sharing.
+brand	Yiye
+brandSub	Pretty Notes
+tagline	Messy notes in. Pretty picture out.
+langAria	Language
+langEN	EN
+langZH	中文
+settingsAria	Settings
+paperAria	Paper. Tap anywhere to edit.
+writeAria	Write
+hint1	Type here, or paste a wall of text.
+hint2	On paper? Tap Camera.
+snap	Camera
+album	Photos
+paste	Paste
+clear	Clear
+tip	Tap to edit. Long-press a line to make it the title.
+hub	QIANSHOU LAB
+themesAria	Styles
+themes.note	Note
+themes.white	Plain
+themes.letter	Letter
+themes.kraft	Kraft
+themes.night	Night
+themes.mag	Magazine
+themes.journal	Journal
+themes.big	Large Print
+themes.notice	Notice
+tooLong	Too long for 3:4. It’ll save as a tall image.
+save	Save image
+share	Share
+copied	Copied. Paste it into any chat.
+savedAndroid	Saved to Downloads.
+savedDesktop	Saved to your Downloads folder.
+sheetAlt	Your image
+sheetWechat	Press and hold the image, then tap Save Image or Send to Chat.
+sheetIos	Press and hold the image, then tap Save to Photos.
+sheetOther	Press and hold the image to save it, or tap Download.
+sheetSave	Download
+sheetClose	Close
+setTitle	Settings
+ratio	Shape
+ratioAuto	Fit text
+fmt	Format
+key1	API key 1
+key2	API key 2
+key1Ph	Only needed for handwriting
+key2Ph	Spare. Leave blank.
+keyHelp	Add a key and Google Gemini reads your handwriting twice and cross-checks. More accurate. No key: it’s read on this device, nothing uploaded. Key 2 kicks in when key 1 runs dry for the day. Keys stay in this browser.
+getKey	Get a free key
+model	Model
+madeBy	Made by the abbot of QIANSHOU LAB
+ask	Want a feature, spotted something off, or want to talk business? Email the abbot: oilsongchengmin@gmail.com
+hubBtn	More tools
+mailBtn	Email
+done	Done
+noTitle	OK, no title.
+asTitle	OK, that’s the title now.
+clipDenied	This browser won’t hand over the clipboard. Tap the paper, then press Ctrl+V.
+clipDenied#2	This browser won’t hand over the clipboard. Tap the paper, then press ⌘V.
+clipEmpty	Nothing to paste.
+ocrDl	Downloading the eyes (25 MB, first time only) · 40%
+ocrDead	The on-device reader didn’t start: probably a bad connection, so it never downloaded.
+ocrFile	{f} didn’t download: HTTP {s}
+ocrDict	Dictionary doesn’t match the model: {c} classes, {n} characters
+badImage	Can’t open this image. Try another one.
+working	Go grab a coffee. The monk’s on it.
+http	HTTP 400: API key not valid.
+netErr	Network error: no reply after 180s
+netErr#2	Network error: Failed to fetch
+notJson	Got something that isn’t JSON:
+emptyWhy	empty
+noReply	The model sent nothing back: SAFETY
+replyNotJson	The model’s reply isn’t JSON:
+replyNoText	The model’s JSON has no text:
+allKeysOut	Every key is out of quota for today. Resets 11-04 15:00.
+minuteWait	Hit the per-minute limit. Waiting 12s.
+keyN	Key 1 · HTTP 400 …
+keyDayOut	Key 1 is done for today · HTTP 429 …
+keyMinute	Key 2 hit the per-minute limit · HTTP 429 …
+retryIn	HTTP 503 … · retrying in 10s
+gemini	Borrowing Google’s eyes. Reading it twice to be sure…
+bothFailed	Google tripped up (HTTP 503 …), and the on-device reader found no text either.
+noText	Couldn’t find any text. Try a straighter, brighter photo.
+doneMarks	Done. The monk isn’t sure about 1 highlighted character. Tap to fix.
+doneMarks#2	Done. The monk isn’t sure about 3 highlighted characters. Tap to fix.
+done1	Done.
+fellBack	Google tripped up, so it was read on this device instead: HTTP 503 …
+failed	Couldn’t read it: …
+mark	Yiye · Pretty Notes
+markLetter	— Yiye · Pretty Notes —
+filePrefix	Yiye
+sample	Weekly sales ⏎ North 1,280 units ⏎ South 960 units ⏎ East 1,105 units ⏎ West 87 units ⏎ Total 3,432 units ⏎  ⏎ Systems go down Friday from 8 to noon for maintenance. Save your work first. Yes, again.

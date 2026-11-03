@@ -9,7 +9,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, str(Path(__file__).parent))
-from serve import serve  # noqa: E402
+from serve import serve, browser  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 HAND = ROOT / "tests" / "hand"
@@ -47,7 +47,7 @@ def main():
     srv, port = serve()
     rep = {}
     with sync_playwright() as p:
-        b = p.chromium.launch(channel="msedge")
+        b = browser(p)
         ctx = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=3, is_mobile=True, has_touch=True)
         for jpg in sorted(HAND.glob("h*.jpg")):
             if want and jpg.stem not in want:

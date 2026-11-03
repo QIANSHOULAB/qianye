@@ -30,11 +30,11 @@ def main():
     srv, port = SV.serve()
     rep = {}
     with sync_playwright() as p:
-        b = p.chromium.launch(channel="msedge")
+        b = SV.browser(p)
         ctx = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
         for name, keys, model, api in CASES:
             pg = ctx.new_page()
-            init = f"localStorage.clear(); localStorage.setItem('tengchao.k1', {json.dumps(keys[0])});"
+            init = f"localStorage.clear(); {SV.LANG_JS} localStorage.setItem('tengchao.k1', {json.dumps(keys[0])});"
             if len(keys) > 1:
                 init += f"localStorage.setItem('tengchao.k2', {json.dumps(keys[1])});"
             if model:

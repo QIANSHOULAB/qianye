@@ -20,7 +20,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, str(Path(__file__).parent))
-from serve import serve, browser  # noqa: E402
+from serve import serve, browser, LANG_JS  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 COUNT = """
@@ -51,7 +51,7 @@ document.addEventListener('focusout', (e) => { if (e.target.id === 'text') kb(0)
 
 def phone(b, ua=IPHONE_UA, init=SHARE_MOCK):
     ctx = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=3, is_mobile=True, has_touch=True, user_agent=ua)
-    ctx.add_init_script("localStorage.clear()")
+    ctx.add_init_script("localStorage.clear();" + LANG_JS)
     ctx.add_init_script(init)
     pg = ctx.new_page()
     pg.goto(URL)
@@ -226,7 +226,7 @@ def main():
         # I. 电脑宽屏
         ctx = b.new_context(viewport={"width": 1280, "height": 800}, accept_downloads=True)
         ctx.grant_permissions(["clipboard-read", "clipboard-write"], origin=f"http://127.0.0.1:{port}")
-        ctx.add_init_script("localStorage.clear(); delete Navigator.prototype.share; delete Navigator.prototype.canShare;")
+        ctx.add_init_script("localStorage.clear(); delete Navigator.prototype.share; delete Navigator.prototype.canShare;" + LANG_JS)
         pg = ctx.new_page()
         pg.goto(URL)
         pg.wait_for_function("window.__teng && window.__teng.ready")
