@@ -1,5 +1,5 @@
 """看一眼：look.py [宽 高] [--text 文字] [--theme id] [--out 文件] [--export 目录]
-本机起服务，iPhone 尺寸（默认 390x844、3 倍屏）打开千叶，打印页面报错，整页截图。
+本机起服务，iPhone 尺寸（默认 390x844、3 倍屏）打开一叶笺，打印页面报错，整页截图。
 --export 目录：把 9 个版式各出一张 3 倍图存进去（用 __teng.render）。"""
 import base64
 import sys

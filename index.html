@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>千叶</title>
-<meta name="description" content="手写拍照、打字粘贴，一键排成好看的图分享。千手院出品。">
+<title>一叶笺 · 随手成画</title>
+<meta name="apple-mobile-web-app-title" content="一叶笺">
+<meta name="description" content="手写拍照或打字粘贴，自动装裱成一张体面好图，拿去分享倍儿有面子。">
 <meta name="theme-color" content="#f5f5f7">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23F4EFE6'/%3E%3Cpath d='M18 20h28M18 30h20M18 40h24' stroke='%232C2A27' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='46' cy='40' r='4' fill='%23C2410C'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -140,7 +141,7 @@
 </svg>
 
 <div class="nav"><div class="in">
-  <div class="brand"><svg><use href="#i-logo"/></svg>千叶</div>
+  <div class="brand"><svg><use href="#i-logo"/></svg>一叶笺</div>
   <div class="sp"></div>
   <button type="button" class="icon-btn" id="gear" aria-label="设置"><svg><use href="#i-gear"/></svg></button>
 </div></div>
@@ -718,9 +719,9 @@ self.onmessage = async (e) => {
 </script>
 
 <script type="module">
-// 千叶（012 时叫誊抄僧）：写字框里的字 → 认出标题、名字＋数字、清单、「时间：」这类行 → 按版式排好，画成图分享。
+// 一叶笺（012 时叫誊抄僧）：写字框里的字 → 认出标题、名字＋数字、清单、「时间：」这类行 → 按版式排好，画成图分享。
 // 排版和出图是同一套 canvas 代码：预览看到什么，分享出去就是什么。
-const VERSION = '0.3.2';
+const VERSION = '0.3.3';
 const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
 const Q = new URLSearchParams(location.search);
 const $ = (s) => document.querySelector(s);
@@ -1297,24 +1298,24 @@ function layout(model, t, opt = {}) {
   y += S(18);
   if (fk === 'note') {
     line(x0, y, x1, y, t.rule, 0.8); y += S(14);
-    text('千叶', x1, y + fs, fontOf(t, fs, 500), t.muted, 'right', { ls: 1 });
+    text('一叶笺', x1, y + fs, fontOf(t, fs, 500), t.muted, 'right', { ls: 1 });
     y += fs;
   } else if (fk === 'letter') {
-    text('— 千叶 —', W / 2, y + fs + S(4), fontOf(t, fs, 400), t.muted, 'center', { ls: 2 });
+    text('— 一叶笺 —', W / 2, y + fs + S(4), fontOf(t, fs, 400), t.muted, 'center', { ls: 2 });
     y += fs + S(4);
   } else if (fk === 'kraft') {
     line(x0, y, x1, y, t.rule, 0.8, [3, 3]); y += S(14);
-    text('千叶', x0, y + fs, fontOf(t, fs, 700), t.muted, 'left', { ls: 1.5 });
+    text('一叶笺', x0, y + fs, fontOf(t, fs, 700), t.muted, 'left', { ls: 1.5 });
     y += fs;
   } else if (fk === 'mag') {
     line(x0, y, x1, y, '#111', 2.2); y += S(12);
-    text('千叶', x0, y + fs, fontOf(t, fs, 700), '#111', 'left', { ls: 1.2 });
+    text('一叶笺', x0, y + fs, fontOf(t, fs, 700), '#111', 'left', { ls: 1.2 });
     y += fs;
   } else if (fk === 'notice') {
-    text('千叶', W / 2, y + fs, fontOf(t, fs, 500), t.muted, 'center', { ls: 2 });
+    text('一叶笺', W / 2, y + fs, fontOf(t, fs, 500), t.muted, 'center', { ls: 2 });
     y += fs;
   } else {
-    text('千叶', x1, y + fs, fontOf(t, fs, 600), t.muted, 'right', { ls: 1 });
+    text('一叶笺', x1, y + fs, fontOf(t, fs, 600), t.muted, 'right', { ls: 1 });
     y += fs;
   }
   return { ops, hits, h: y + pb };
@@ -1441,7 +1442,7 @@ function loadSerifCss() {
 }
 async function ensureFonts(t, text) {
   if (!t.serif || !document.fonts || !document.fonts.load) return;
-  const sample = text.slice(0, 2000) + '千叶0123456789.,%';
+  const sample = text.slice(0, 2000) + '一叶笺0123456789.,%';
   try {
     await loadSerifCss();
     await Promise.race([
@@ -1892,7 +1893,7 @@ segs('#ratio', 'ratio'); segs('#fmt', 'fmt');
 
 // ---------------------------------------------------------------- 出图：保存相册、分享
 // 平时不画图、不出文件。点按钮这一下才画：全程同步，iPhone 认这一下是人点的，系统面板才肯弹
-function fileName() { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return `千叶_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.${S.fmt === 'jpg' ? 'jpg' : 'png'}`; }
+function fileName() { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return `一叶笺_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.${S.fmt === 'jpg' ? 'jpg' : 'png'}`; }
 function dataUrlBlob(u) {
   const i = u.indexOf(','), mime = u.slice(5, u.indexOf(';')), bin = atob(u.slice(i + 1));
   const a = new Uint8Array(bin.length);

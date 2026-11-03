@@ -1,4 +1,4 @@
-"""本机测试服务：照线上的路径摆，/qianye/ = 千叶（012 时叫誊抄僧，/tengchao/ 也指这里），/pabiao/ = 渡表僧（只读，用它的模型），/luruseng/key.html 给个占位。
+"""本机测试服务：照线上的路径摆，/qianye/ = 一叶笺（012 时叫誊抄僧，/tengchao/ 也指这里），/pabiao/ = 渡表僧（只读，用它的模型），/luruseng/key.html 给个占位。
 另带一个假谷歌：/v1beta/models/<模型>:generateContent?key=<钥匙>，按钥匙开头决定怎么回（照渡表僧 run_e2e 的路子）。"""
 import json
 import re
