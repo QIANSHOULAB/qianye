@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23F4EFE6'/%3E%3Cpath d='M18 20h28M18 30h20M18 40h24' stroke='%232C2A27' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='46' cy='40' r='4' fill='%23C2410C'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<script src="strings.js?v=0.3.4"></script>
+<script src="strings.js?v=0.3.5"></script>
 <script>
 // 语言：默认英文，第二语言中文（Song 11-03 22:19）；右上角 EN / 中文 选过就记住（tengchao.lang），不跟浏览器走。
 // 在这儿就定下来：<html lang>、标题、简介一开始就对，英文的字体栈（html[lang=en]）第一帧就用上。
@@ -145,6 +145,8 @@
   footer { max-width: 1080px; margin: 0 auto; padding: 28px 20px 8px; font-size: 12px; color: var(--grey2); }
   footer a { color: var(--grey); }
   footer a, footer .num { white-space: nowrap; }        /* 折行也别把「QIANSHOU LAB」劈成两半 */
+  footer a.fb { position: relative; color: var(--blue); font-weight: 600; }
+  footer a.fb::after { content: ""; position: absolute; inset: -12px -8px; }   /* 字小，点的地方撑到 44 高 */
 
   dialog { border: 0; padding: 0; border-radius: 20px; width: min(440px, calc(100vw - 32px)); box-shadow: 0 24px 80px rgba(0,0,0,.25); color: var(--ink); }
   dialog::backdrop { background: rgba(0,0,0,.32); backdrop-filter: blur(2px); }
@@ -203,7 +205,7 @@
   </div>
 </main>
 
-<footer><span data-s="appShort">Yiye</span> <span class="num" id="ver-foot">v0.3.4</span> · <span data-s="tagline">Messy notes in. Pretty picture out.</span> · <a href="/" target="_blank" rel="noopener" data-s="hub">QIANSHOU LAB</a></footer>
+<footer><span data-s="appShort">Yiye</span> <span class="num" id="ver-foot">v0.3.5</span> · <span data-s="tagline">Messy notes in. Pretty picture out.</span> · <a href="/" target="_blank" rel="noopener" data-s="hub">QIANSHOU LAB</a> · <a class="fb" href="mailto:oilsongchengmin@gmail.com" data-s="fb">Feedback</a></footer>
 
 <div class="dock" id="dock">
   <div class="toast" id="toast" hidden></div>
@@ -235,7 +237,7 @@
   <div class="by2" data-s="ask"></div>
   <div class="dacts">
     <a class="btn small grey" href="/" target="_blank" rel="noopener" data-s="hubBtn">QIANSHOU LAB</a>
-    <a class="btn small grey" href="mailto:oilsongchengmin@gmail.com" data-s="mailBtn">Email</a>
+    <a class="btn small grey fb" href="mailto:oilsongchengmin@gmail.com" data-s="fb">Feedback</a>
     <span class="sp"></span>
     <button type="button" class="btn small" id="set-ok" data-s="done">Done</button>
   </div>
@@ -761,7 +763,7 @@ self.onmessage = async (e) => {
 <script type="module">
 // 一叶笺（012 时叫誊抄僧）：写字框里的字 → 认出标题、名字＋数字、清单、「时间：」这类行 → 按版式排好，画成图分享。
 // 排版和出图是同一套 canvas 代码：预览看到什么，分享出去就是什么。
-const VERSION = '0.3.4';
+const VERSION = '0.3.5';   // 换版本改这里、<head> 里的 strings.js?v=、页脚 #ver-foot 的初值
 // 界面文字全在 strings.js（英文、中文各一套）。LANG 在 <head> 里就定了：默认英文，选过中文就记住
 let LANG = window.QY_LANG || 'en', TX = window.QY_STR[LANG];
 const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
@@ -2337,6 +2339,33 @@ for (const id of ['#pick-cam', '#pick-album']) $(id).onchange = (e) => { const f
 const dlg = $('#dlg-set');
 $('#model').innerHTML = MODELS.map((m) => `<option>${m}</option>`).join('');
 $('#ver').textContent = $('#ver-foot').textContent = 'v' + VERSION;
+
+// ---------------------------------------------------------------- 提意见：页脚一个、设置里一个，都是 mailto
+// 收件人、标题、正文都填好；正文最后一行带上版本和设备，人不用自己打。不接第三方表单，不收任何数据
+const FB_TO = 'oilsongchengmin@gmail.com';
+let fbHi = null;   // Chromium 的 UA-CH 能分出 Windows 10 / 11、macOS 和安卓的真版本号；拿不到就只看 UA
+function fbDevice() {
+  const u = navigator.userAgent, pv = fbHi && fbHi.platformVersion ? parseInt(fbHi.platformVersion, 10) : NaN;
+  let os = 'Other', m;
+  if (/Windows/.test(u)) os = /Windows NT 10/.test(u) ? (pv >= 13 ? 'Windows 11' : pv > 0 ? 'Windows 10' : 'Windows') : (m = /Windows NT (\d+\.\d+)/.exec(u)) ? 'Windows ' + ({ '6.1': '7', '6.2': '8', '6.3': '8.1' }[m[1]] || m[1]) : 'Windows';
+  else if ((m = /(iPhone|iPad|iPod).*? OS (\d+)(?:_(\d+))?/.exec(u))) os = (m[1] === 'iPad' ? 'iPadOS ' : 'iOS ') + m[2] + (m[3] && m[3] !== '0' ? '.' + m[3] : '');
+  else if (/Macintosh/.test(u) && navigator.maxTouchPoints > 1) os = 'iPadOS';
+  else if ((m = /Android (\d+(?:\.\d+)?)/.exec(u))) os = 'Android ' + (pv > 0 ? pv : m[1]);
+  else if (/CrOS/.test(u)) os = 'ChromeOS';
+  else if (/Mac OS X/.test(u)) os = 'macOS' + (pv > 0 ? ' ' + pv : '');
+  else if (/Linux/.test(u)) os = 'Linux';
+  const B = [[/MicroMessenger\/(\d+(?:\.\d+)?)/, 'WeChat'], [/Edg(?:A|iOS)?\/(\d+)/, 'Edge'], [/OPR\/(\d+)/, 'Opera'], [/SamsungBrowser\/(\d+)/, 'Samsung Internet'], [/(?:Firefox|FxiOS)\/(\d+)/, 'Firefox'], [/(?:CriOS|Chrome)\/(\d+)/, 'Chrome'], [/Version\/(\d+(?:\.\d+)?).*Safari\//, 'Safari']];
+  let br = 'Other';
+  for (const [re, name] of B) { const x = re.exec(u); if (x) { br = name + ' ' + x[1]; break; } }
+  return os + ' · ' + br;
+}
+function fbHref() {
+  const body = [...TX.fbBody, `${VERSION} · ${fbDevice()}`].join('\r\n');
+  return `mailto:${FB_TO}?subject=${encodeURIComponent(TX.fbSubject(VERSION))}&body=${encodeURIComponent(body)}`;
+}
+const fbFill = () => { for (const a of document.querySelectorAll('a.fb')) a.href = fbHref(); };
+fbFill();
+try { navigator.userAgentData.getHighEntropyValues(['platformVersion']).then((v) => { fbHi = v; fbFill(); }, () => {}); } catch (e) { /* 没有 UA-CH 就只看 UA */ }
 $('#gear').onclick = () => { $('#k1').value = store.get('k1', ''); $('#k2').value = store.get('k2', ''); $('#model').value = store.get('model', DEFAULT_MODEL); dlg.showModal(); };
 function saveSet() { store.set('k1', $('#k1').value.trim()); store.set('k2', $('#k2').value.trim()); store.set('model', $('#model').value); }
 $('#set-ok').onclick = () => { saveSet(); dlg.close(); };
@@ -2350,6 +2379,7 @@ function setLang(l) {
   LANG = l; TX = window.QY_STR[l];
   store.set('lang', l);
   window.QY_APPLY(l);
+  fbFill();
   for (const b of $('#themes').children) b.querySelector('span').textContent = TX.themes[b.dataset.id];
   if (!T.reading) setStatus('');
   $('#toast').hidden = true;
@@ -2370,6 +2400,7 @@ if (!ta.value && !PHONE) ta.focus();   // 电脑上没字就把光标放好；�
 T.parse = parse; T.layout = layout; T.THEMES = THEMES; T.wordsToText = wordsToText; T.diffMarks = diffMarks;
 Object.defineProperty(T, 'SAMPLE', { get: () => TX.sample });
 T.lang = () => LANG; T.setLang = setLang;
+T.fbDevice = (hi) => { fbHi = hi; return fbDevice(); };   // 测试用：喂一组 UA-CH，看系统、浏览器的简写
 T.render = (text, theme, ratio = 'auto', scale = 3) => { const cv = document.createElement('canvas'); const R = paint(cv, parse(text), THEME[theme], ratio, scale); return { url: cv.toDataURL('image/png'), H: R.H, fs: R.fs, hits: R.hits, ops: R.ops }; };
 // 测试用：换字、换版式、换比例（跟人点的效果一样），黄字在屏幕上哪儿，第几个字在屏幕上哪儿
 T.set = (text, theme, ratio) => { if (theme) S.theme = theme; if (ratio) S.ratio = ratio; markThemes(); segs('#ratio', 'ratio'); ta.value = text; S.marks = []; S.title = null; onText(); };

@@ -24,6 +24,7 @@ const ARGS = {
   doneMarks: [[1], [3]],
   fellBack: [['HTTP 503 …']],
   failed: [['…']],
+  fbSubject: [['0.3.5']],
 };
 const VER = (fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8').match(/const VERSION = '([\d.]+)'/) || [])[1];
 const clean = (s) => String(s).replace(/<br>/g, ' ').replace(/<[^>]+>/g, '').replace(/\n/g, ' ⏎ ').trim();
@@ -35,7 +36,8 @@ for (const lang of ['en', 'zh']) {
       const cases = ARGS[k];
       if (!cases) throw new Error(`${k} 没给示例参数`);
       cases.forEach((a, i) => rows.push(`${k}${i ? '#' + (i + 1) : ''}\t${clean(v(...a))}`));
-    } else if (v && typeof v === 'object') {
+    } else if (Array.isArray(v)) rows.push(`${k}\t${v.map(clean).join(' | ')}`);
+    else if (v && typeof v === 'object') {
       for (const [k2, v2] of Object.entries(v)) rows.push(`${k}.${k2}\t${clean(v2)}`);
     } else rows.push(`${k}\t${clean(v)}`);
   }

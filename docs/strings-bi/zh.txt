@@ -1,4 +1,4 @@
-# 一叶笺 0.3.4 中文界面文字，从 strings.js 导出。一行一条：键<Tab>字。#2 = 同一句换个情况。⏎ = 换行。
+# 一叶笺 0.3.5 中文界面文字，从 strings.js 导出。一行一条：键<Tab>字。#2 = 同一句换个情况。⏎ = 换行。
 lang	zh-CN
 title	一叶笺 · 随手成画
 appShort	一叶笺
@@ -56,8 +56,10 @@ model	模型
 madeBy	制作人：千手院方丈释手
 ask	要什么新功能、有修改建议，或洽谈商业合作请直接找方丈飞鸽传书：oilsongchengmin@gmail.com
 hubBtn	千手院总舵
-mailBtn	方丈邮箱
+fb	提意见
 done	完成
+fbSubject	[千手院反馈] 一叶笺 0.3.5
+fbBody	哪里不好用： |  | 想要什么： |  | 别的： |  |  | ——
 noTitle	好，不要标题。
 asTitle	好，这行当标题。
 clipDenied	浏览器不让读剪贴板。点一下纸，再按 Ctrl+V。

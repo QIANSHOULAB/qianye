@@ -1,4 +1,4 @@
-# Yiye 0.3.4 English UI copy, exported from strings.js. One per line: key<Tab>text. #2 = same string, other case. ⏎ = line break.
+# Yiye 0.3.5 English UI copy, exported from strings.js. One per line: key<Tab>text. #2 = same string, other case. ⏎ = line break.
 lang	en
 title	Yiye · Pretty Notes
 appShort	Yiye
@@ -56,8 +56,10 @@ model	Model
 madeBy	Made by the abbot of QIANSHOU LAB
 ask	Want a feature, spotted something off, or want to talk business? Email the abbot: oilsongchengmin@gmail.com
 hubBtn	More tools
-mailBtn	Email
+fb	Feedback
 done	Done
+fbSubject	[QIANSHOU feedback] Yiye · Pretty Notes 0.3.5
+fbBody	What’s not working: |  | What you want: |  | Anything else: |  |  | —
 noTitle	OK, no title.
 asTitle	OK, that’s the title now.
 clipDenied	This browser won’t hand over the clipboard. Tap the paper, then press Ctrl+V.
