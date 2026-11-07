@@ -1,4 +1,4 @@
-# Yiye 0.3.5 English UI copy, exported from strings.js. One per line: key<Tab>text. #2 = same string, other case. ⏎ = line break.
+# Yiye 0.3.6 English UI copy, exported from strings.js. One per line: key<Tab>text. #2 = same string, other case. ⏎ = line break.
 lang	en
 title	Yiye · Pretty Notes
 appShort	Yiye
@@ -18,7 +18,12 @@ snap	Camera
 album	Photos
 paste	Paste
 clear	Clear
-tip	Tap to edit. Long-press a line to make it the title.
+copySel	Copy
+selAll	Select All
+copiedSel	Copied
+copyFail	Couldn’t copy
+ebarAria	Copy and paste
+tip	Tap to edit. Double-tap to select. Long-press a line to make it the title.
 hub	QIANSHOU LAB
 themesAria	Styles
 themes.note	Note

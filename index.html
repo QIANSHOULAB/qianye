@@ -10,7 +10,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23F4EFE6'/%3E%3Cpath d='M18 20h28M18 30h20M18 40h24' stroke='%232C2A27' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='46' cy='40' r='4' fill='%23C2410C'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<script src="strings.js?v=0.3.5"></script>
+<script src="strings.js?v=0.3.6"></script>
 <script>
 // 语言：默认英文，第二语言中文（Song 11-03 22:19）；右上角 EN / 中文 选过就记住（tengchao.lang），不跟浏览器走。
 // 在这儿就定下来：<html lang>、标题、简介一开始就对，英文的字体栈（html[lang=en]）第一帧就用上。
@@ -85,6 +85,29 @@
   .caret.blink { animation: blink 1.06s steps(1) .5s infinite; }
   @keyframes blink { 50% { opacity: 0; } }
   .comp { position: absolute; left: 0; top: 0; padding: 0 1px; white-space: pre; pointer-events: none; text-decoration: underline; text-underline-offset: 3px; border-radius: 2px; }
+  /* 选字（0.3.6）：手机上双击选一个词、三击选一行，两头的把手拖着改范围，上面一条「复制 / 全选」；点一下光标弹「全选 / 粘贴」。
+     电脑上照旧拖着选、双击选词、三击选行；右键把看不见的写字框挪到鼠标底下，弹的就是浏览器自己的「剪切 / 复制 / 粘贴」 */
+  .paper textarea.ctx { width: 30px; pointer-events: auto; z-index: 5; }
+  .knob { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 2; touch-action: none; }
+  .knob[hidden] { display: none; }
+  .knob::before { content: ""; position: absolute; left: -1px; top: 0; width: 2px; height: var(--h, 20px); border-radius: 1px; background: var(--c, #0071e3); pointer-events: none; }
+  /* 手指摸得着的地方 44×44，几乎全在字外面（开头那个在行上面，结尾那个在行下面），不抢点字、连点三下 */
+  .knob i { position: absolute; left: -22px; width: 44px; height: 44px; display: block; touch-action: none; }
+  .knob i::after { content: ""; position: absolute; left: 17px; width: 10px; height: 10px; border-radius: 50%; background: var(--c, #0071e3); }
+  .knob.a i { top: -40px; }
+  .knob.a i::after { top: 28px; }
+  .knob.b i { top: calc(var(--h, 20px) - 4px); }
+  .knob.b i::after { top: 6px; }
+  .ebar { position: absolute; left: 0; top: 0; z-index: 4; display: flex; height: 38px; border-radius: 10px; overflow: hidden;
+          background: rgba(30,30,32,.94); box-shadow: 0 6px 20px rgba(0,0,0,.22), 0 0 0 .5px rgba(255,255,255,.12); }
+  .ebar[hidden] { display: none; }
+  .ebar button { margin: 0; padding: 0 15px; border: 0; background: transparent; color: #fff; font: 500 15px/38px var(--sans); letter-spacing: 0; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
+  .ebar button[hidden] { display: none; }
+  .ebar button:not([hidden]) ~ button:not([hidden]) { box-shadow: inset 1px 0 rgba(255,255,255,.2); }
+  .ebar button:active { background: rgba(255,255,255,.14); }
+  .ebar .msg { display: none; padding: 0 16px; color: #fff; font: 500 15px/38px var(--sans); white-space: nowrap; }
+  .ebar.done button { display: none; }
+  .ebar.done .msg { display: block; }
   @media (max-width: 640px) {        /* 手机：纸铺满屏宽，跟图一样宽 */
     main { padding: 0; }
     .paper { border-radius: 0; box-shadow: none; }
@@ -192,6 +215,11 @@
     <div class="caret" id="caret" hidden></div>
     <div class="comp" id="comp" hidden></div>
     <textarea id="text" spellcheck="false" autocomplete="off" autocapitalize="off" data-s-aria="writeAria" aria-label="Write"></textarea>
+    <div class="knob a" id="kn-a" hidden><i></i></div>
+    <div class="knob b" id="kn-b" hidden><i></i></div>
+    <div class="ebar" id="ebar" role="toolbar" data-s-aria="ebarAria" aria-label="Copy and paste" hidden>
+      <button type="button" id="eb-copy" data-s="copySel">Copy</button><button type="button" id="eb-all" data-s="selAll">Select All</button><button type="button" id="eb-paste" data-s="paste">Paste</button><span class="msg" id="eb-msg" aria-live="polite"></span>
+    </div>
   </section>
   <div class="below">
     <div class="tools">
@@ -205,7 +233,7 @@
   </div>
 </main>
 
-<footer><span data-s="appShort">Yiye</span> <span class="num" id="ver-foot">v0.3.5</span> · <span data-s="tagline">Messy notes in. Pretty picture out.</span> · <a href="/" target="_blank" rel="noopener" data-s="hub">QIANSHOU LAB</a> · <a class="fb" href="mailto:oilsongchengmin@gmail.com" data-s="fb">Feedback</a></footer>
+<footer><span data-s="appShort">Yiye</span> <span class="num" id="ver-foot">v0.3.6</span> · <span data-s="tagline">Messy notes in. Pretty picture out.</span> · <a href="/" target="_blank" rel="noopener" data-s="hub">QIANSHOU LAB</a> · <a class="fb" href="mailto:oilsongchengmin@gmail.com" data-s="fb">Feedback</a></footer>
 
 <div class="dock" id="dock">
   <div class="toast" id="toast" hidden></div>
@@ -763,7 +791,7 @@ self.onmessage = async (e) => {
 <script type="module">
 // 一叶笺（012 时叫誊抄僧）：写字框里的字 → 认出标题、名字＋数字、清单、「时间：」这类行 → 按版式排好，画成图分享。
 // 排版和出图是同一套 canvas 代码：预览看到什么，分享出去就是什么。
-const VERSION = '0.3.5';   // 换版本改这里、<head> 里的 strings.js?v=、页脚 #ver-foot 的初值
+const VERSION = '0.3.6';   // 换版本改这里、<head> 里的 strings.js?v=、页脚 #ver-foot 的初值
 // 界面文字全在 strings.js（英文、中文各一套）。LANG 在 <head> 里就定了：默认英文，选过中文就记住
 let LANG = window.QY_LANG || 'en', TX = window.QY_STR[LANG];
 const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
@@ -1707,10 +1735,109 @@ function overlay() {
     caretEl.style.height = `${hh.toFixed(1)}px`;
     caretEl.style.background = t.accent;
     caretEl.classList.remove('blink'); void caretEl.offsetWidth; caretEl.classList.add('blink');
-    // 看不见的写字框跟着光标走：输入法候选框冒在光标旁边，iPhone 弹键盘时也知道往哪儿滚
-    ta.style.transform = `translate(${(p.x * k).toFixed(1)}px, ${top.toFixed(1)}px)`;
-    ta.style.height = `${Math.max(20, hh).toFixed(0)}px`;
+    // 看不见的写字框跟着光标走：输入法候选框冒在光标旁边，iPhone 弹键盘时也知道往哪儿滚（右键菜单开着时它在鼠标底下，先不挪）
+    if (!ta.classList.contains('ctx')) {
+      ta.style.transform = `translate(${(p.x * k).toFixed(1)}px, ${top.toFixed(1)}px)`;
+      ta.style.height = `${Math.max(20, hh).toFixed(0)}px`;
+    }
   }
+  placeBar();
+}
+
+// ---------------------------------------------------------------- 选字：把手、「复制 / 全选 / 粘贴」那一条
+// S.ebar：'sel' 选中一段，把手和那一条都在；'knobs' 刚复制完，只留把手；'drag' 拖把手中，那一条先收起；'caret' 点了光标，弹「全选 / 粘贴」
+const ebar = $('#ebar'), knA = $('#kn-a'), knB = $('#kn-b');
+function placeBar() {
+  const a = ta.selectionStart, b = ta.selectionEnd;
+  let mode = focused() && !S.comp && S.map ? S.ebar : null;
+  if (mode && mode !== 'caret' && a === b) mode = null;
+  const k = S.k, accent = THEME[S.theme].accent;
+  const kn = mode === 'sel' || mode === 'knobs' || mode === 'drag';
+  for (const [el, i] of [[knA, a], [knB, b]]) {
+    const p = kn && S.map.pos[i];
+    el.hidden = !p;
+    if (!p) continue;
+    el.style.transform = `translate(${(p.x * k).toFixed(1)}px, ${((p.y - p.s * 0.95) * k).toFixed(1)}px)`;
+    el.style.setProperty('--h', `${(p.s * 1.22 * k).toFixed(1)}px`);
+    el.style.setProperty('--c', accent);
+  }
+  const bar = mode === 'sel' || mode === 'caret';
+  T.ebar = bar ? mode : kn ? 'knobs' : null;
+  ebar.hidden = !bar;
+  if (!bar) return;
+  $('#eb-copy').hidden = mode !== 'sel';
+  $('#eb-all').hidden = !ta.value || (a === 0 && b === ta.value.length);
+  $('#eb-paste').hidden = mode !== 'caret';
+  const pa = S.map.pos[a] || S.map.pos[0], pb = S.map.pos[b] || pa;
+  if (!pa) { ebar.hidden = true; return; }
+  const w = ebar.offsetWidth, h = ebar.offsetHeight, W0 = paper.clientWidth;
+  const cx = Math.abs(pa.y - pb.y) < 1 ? (pa.x + pb.x) / 2 * k : W0 / 2;
+  const up = (pa.y - pa.s * 0.95) * k - h - 16, down = (pb.y + pb.s * 0.27) * k + 18;
+  // 选的字上面放得下就放上面（躲开顶上那条和把手的圆点），放不下就放到下面
+  const navB = $('.nav').getBoundingClientRect().bottom, pt = paper.getBoundingClientRect().top;
+  const top = up >= 6 && pt + up >= navB + 6 ? up : down;
+  const left = Math.min(Math.max(6, cx - w / 2), W0 - w - 6);
+  ebar.style.transform = `translate(${left.toFixed(0)}px, ${top.toFixed(0)}px)`;
+}
+function select(a, b, mode) {
+  put(a, b);
+  S.ebar = a === b ? null : mode;
+  placeBar();
+}
+let ebarT = null;
+function copySel() {
+  const a = ta.selectionStart, b = ta.selectionEnd, s = ta.value.slice(a, b);
+  if (!s) return;
+  const said = (ok) => {
+    T.copied = ok ? s : null;
+    $('#eb-msg').textContent = ok ? TX.copiedSel : TX.copyFail;
+    ebar.classList.add('done');
+    placeBar();
+    clearTimeout(ebarT);
+    ebarT = setTimeout(() => { ebar.classList.remove('done'); if (S.ebar === 'sel') S.ebar = 'knobs'; placeBar(); }, 900);
+  };
+  const old = () => { let ok = false; try { ok = document.execCommand('copy'); } catch (e) { ok = false; } said(ok); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(s).then(() => said(true), old);
+  else old();
+}
+// 点这一条、把手：写字框不丢焦点，底下的纸也不当成点了纸
+for (const el of [ebar, knA, knB]) {
+  el.addEventListener('mousedown', (e) => e.preventDefault());
+  for (const ev of ['pointerdown', 'click', 'dblclick', 'contextmenu']) el.addEventListener(ev, (e) => { e.stopPropagation(); if (ev === 'contextmenu') e.preventDefault(); });
+}
+$('#eb-copy').addEventListener('click', copySel);
+$('#eb-all').addEventListener('click', () => select(0, ta.value.length, 'sel'));
+$('#eb-paste').addEventListener('click', () => { S.ebar = null; placeBar(); pasteClip(); });
+// 拖把手：按下时记住手指离选区那一头差多少，拖到哪儿都按这个差去找是第几个字
+let drag = null;
+for (const [el, end] of [[knA, false], [knB, true]]) {
+  el.addEventListener('pointerdown', (e) => {
+    if (!S.map) return;
+    e.preventDefault();
+    const p = S.map.pos[end ? ta.selectionEnd : ta.selectionStart] || S.map.pos[0], pt = toPaper(e);
+    drag = { fixed: end ? ta.selectionStart : ta.selectionEnd, end, id: e.pointerId, x: e.clientX, y: e.clientY, moved: false,
+      dx: p ? pt.x - p.x : 0, dy: p ? pt.y - (p.y - p.s * 0.35) : 0 };      // 手指离那个字多远，拖的时候一直差这么多
+    try { el.setPointerCapture(e.pointerId); } catch (err) { /* 捕不到也照样拖 */ }
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
+    drag.moved = true;
+    const pt = toPaper(e), j = indexAt(pt.x - drag.dx, pt.y - drag.dy);
+    if (j === drag.fixed) return;                       // 至少留一个字
+    ta.setSelectionRange(Math.min(j, drag.fixed), Math.max(j, drag.fixed));
+    drag.end = j > drag.fixed;
+    onSel();
+    S.ebar = 'drag'; placeBar();
+  });
+  const done = (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const d = drag; drag = null;
+    if (!d.moved && e.type === 'pointerup') { const pt = toPaper(e); tapAt(e, indexAt(pt.x, pt.y), e.pointerType !== 'mouse'); return; }
+    S.ebar = 'sel'; placeBar();
+  };
+  el.addEventListener('pointerup', done);
+  el.addEventListener('pointercancel', done);
 }
 
 // 拼音组字中：纸一点都不动，组的字浮在光标那儿
@@ -1748,6 +1875,7 @@ function shiftMarks(oldV, newV) {
   S.marks = S.marks.flatMap(([x, y]) => (y <= p ? [[x, y]] : x >= a ? [[x + d, y + d]] : []));
 }
 function noteText() {
+  S.ebar = null;
   shiftMarks(S.prev, ta.value);
   S.prev = ta.value;
   store.set('text', ta.value);
@@ -1778,12 +1906,13 @@ function onSel() {
   const key = `${ta.selectionStart},${ta.selectionEnd},${ta.selectionDirection},${ta.value.length}`;
   if (key === selKey) return;
   selKey = key;
+  S.ebar = null;
   if (S.hold && lineOf(ta.value, ta.selectionStart) !== S.hold.line) { beginHold(); render(); return; }
   overlay();
 }
 function poll() { if (!focused()) return; onSel(); requestAnimationFrame(poll); }
 ta.addEventListener('focus', () => { beginHold(); selKey = ''; render(); setTyping(true); requestAnimationFrame(poll); });
-ta.addEventListener('blur', () => { S.hold = null; S.comp = null; compEl.hidden = true; setTyping(false); render(); });
+ta.addEventListener('blur', () => { S.hold = null; S.comp = null; S.ebar = null; compEl.hidden = true; setTyping(false); render(); });
 // 上下键、Home/End：按纸上的行走，不按看不见的那个框
 ta.addEventListener('keydown', (e) => {
   if (e.isComposing || S.comp || !S.map || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -1828,9 +1957,31 @@ function wordAt(i) {
   while (b < v.length && kind(v[b]) === k0) b++;
   return [a, b];
 }
-let press = null;
+function lineAt(i) {
+  const v = ta.value;
+  let a = i, b = i;
+  while (a > 0 && v[a - 1] !== '\n') a--;
+  while (b < v.length && v[b] !== '\n') b++;
+  return [a, b];
+}
+let press = null, lastType = 'mouse';
+const taps = { n: 0, t: 0, x: 0, y: 0 };
+// 电脑右键：看不见的写字框挪到鼠标底下，弹出来的就是浏览器自己的「剪切 / 复制 / 粘贴」；点在选中的字外面，光标先挪过去
+let ctxT = null;
+function ctxUnder(e) {
+  const pt = toPaper(e), i = indexAt(pt.x, pt.y), a = ta.selectionStart, b = ta.selectionEnd;
+  if (!focused() || a === b || i < a || i > b) put(i);
+  const r = paper.getBoundingClientRect();
+  ta.classList.add('ctx');
+  ta.style.transform = `translate(${Math.round(e.clientX - r.left - 15)}px, ${Math.round(e.clientY - r.top - 15)}px)`;
+  ta.style.height = '30px';
+  clearTimeout(ctxT); ctxT = setTimeout(ctxDone, 1500);
+}
+function ctxDone() { clearTimeout(ctxT); if (!ta.classList.contains('ctx')) return; ta.classList.remove('ctx'); overlay(); }
 paper.addEventListener('mousedown', (e) => e.preventDefault());       // 点纸不让写字框丢焦点，也不让浏览器自己选字
 paper.addEventListener('pointerdown', (e) => {
+  lastType = e.pointerType;
+  if (e.button === 2 && e.pointerType === 'mouse' && S.map) { ctxUnder(e); return; }
   if (e.button || !S.map) return;
   const pt = toPaper(e), i = indexAt(pt.x, pt.y);
   press = { x: e.clientX, y: e.clientY, i, type: e.pointerType, long: false, moved: false,
@@ -1856,20 +2007,36 @@ paper.addEventListener('pointermove', (e) => {
   }
 });
 paper.addEventListener('pointercancel', () => { if (press) clearTimeout(press.t); press = null; });
-paper.addEventListener('contextmenu', (e) => e.preventDefault());
+paper.addEventListener('contextmenu', (e) => {
+  if (!S.map || (press && press.type !== 'mouse')) { e.preventDefault(); return; }   // 手机长按：留给「这行当标题」
+  if (!ta.classList.contains('ctx')) ctxUnder(e);                               // 键盘上的菜单键：没先收到右键按下
+  clearTimeout(ctxT); ctxT = setTimeout(ctxDone, 60);
+});
 paper.addEventListener('click', (e) => {
   const p = press; press = null;
   if (p) clearTimeout(p.t);
   if (!S.map || (p && (p.long || (p.moved && p.type === 'mouse')))) return;
   if (p && p.moved) return;                      // 手指划过去是在滚页面
-  const pt = toPaper(e), i = p ? p.i : indexAt(pt.x, pt.y);
+  const pt = toPaper(e);
+  tapAt(e, p ? p.i : indexAt(pt.x, pt.y), !!p && p.type !== 'mouse');
+});
+function tapAt(e, i, touch) {
+  if (!touch && e.detail >= 3) { const [a, b] = lineAt(i); put(a, b); return; }          // 电脑三击：选一行
+  if (touch) {                                   // 手机：两下内隔不到 0.4 秒、离得不远，算连着点
+    taps.n = e.timeStamp - taps.t < 400 && Math.hypot(e.clientX - taps.x, e.clientY - taps.y) < 24 ? taps.n + 1 : 1;
+    taps.t = e.timeStamp; taps.x = e.clientX; taps.y = e.clientY;
+    if (taps.n >= 2) { const [a, b] = taps.n === 2 ? wordAt(i) : lineAt(i); select(a, b, 'sel'); return; }   // 双击选一个词，三击选一行
+  }
+  const again = touch && focused() && ta.selectionStart === ta.selectionEnd && ta.selectionStart === i;
   const m = S.marks.find(([a, b]) => i >= a && i <= b);
   if (m) put(m[0], m[1]);
   else put(i);
-});
-paper.addEventListener('dblclick', (e) => { if (!S.map) return; const pt = toPaper(e), [a, b] = wordAt(indexAt(pt.x, pt.y)); put(a, b); });
+  if (again && !m) { S.ebar = 'caret'; placeBar(); }   // 点一下光标在的地方：弹「全选 / 粘贴」
+}
+paper.addEventListener('dblclick', (e) => { if (!S.map || lastType !== 'mouse') return; const pt = toPaper(e), [a, b] = wordAt(indexAt(pt.x, pt.y)); put(a, b); });
 $('#clear').onclick = () => { ta.value = ''; S.marks = []; S.title = null; onText(); ta.focus(); };
-$('#paste').onclick = async () => {
+$('#paste').onclick = () => pasteClip();
+async function pasteClip() {
   let s = '';
   try { s = await navigator.clipboard.readText(); } catch (e) { s = null; }
   if (s == null) { setStatus(TX.clipDenied(MAC), true); return; }
@@ -1877,7 +2044,7 @@ $('#paste').onclick = async () => {
   const a = ta.selectionStart, b = ta.selectionEnd;
   ta.setRangeText(s.replace(/\r\n?/g, '\n'), a, b, 'end');
   onText();
-};
+}
 
 // ---------------------------------------------------------------- 底下一条：版式、保存相册、分享
 // 手机上键盘弹着的时候整条收起来，不挡写的字（Song 2026-11-02：「输入法弹出这个去掉」）；收起键盘再出来
@@ -2407,6 +2574,7 @@ T.set = (text, theme, ratio) => { if (theme) S.theme = theme; if (ratio) S.ratio
 T.at = (i) => { const p = S.map.pos[i], r = cv.getBoundingClientRect(); return p && { x: r.left + p.x * S.k, y: r.top + (p.y - p.s * 0.35) * S.k }; };
 T.markAt = (n = 0) => { const m = S.marks[n]; if (!m) return null; const d = S.map.box[m[0]], r = cv.getBoundingClientRect(); return d && { x: r.left + (d.x0 + d.x1) / 2 * S.k, y: r.top + (d.y - d.s * 0.35) * S.k, s: ta.value.slice(m[0], m[1]) }; };
 T.sel = () => [ta.selectionStart, ta.selectionEnd];
+T.knob = (w) => { const el = (w === 'a' ? knA : knB).querySelector('i'), r = el.getBoundingClientRect(); return !(w === 'a' ? knA : knB).hidden && { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
 T.state = () => ({ theme: S.theme, ratio: S.ratio, hold: S.hold, H: S.R && S.R.H, k: S.k });
 T.ensureFonts = (theme, text) => ensureFonts(THEME[theme], text);
 T.ready = true;

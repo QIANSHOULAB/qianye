@@ -1,4 +1,4 @@
-# 一叶笺 0.3.5 中文界面文字，从 strings.js 导出。一行一条：键<Tab>字。#2 = 同一句换个情况。⏎ = 换行。
+# 一叶笺 0.3.6 中文界面文字，从 strings.js 导出。一行一条：键<Tab>字。#2 = 同一句换个情况。⏎ = 换行。
 lang	zh-CN
 title	一叶笺 · 随手成画
 appShort	一叶笺
@@ -18,7 +18,12 @@ snap	拍
 album	相册
 paste	粘贴
 clear	清空
-tip	点哪改哪；长按一行，这行当标题。
+copySel	复制
+selAll	全选
+copiedSel	已复制
+copyFail	复制不了
+ebarAria	复制粘贴
+tip	点哪改哪；双击选字；长按一行，这行当标题。
 hub	千手院总舵
 themesAria	版式
 themes.note	便签
