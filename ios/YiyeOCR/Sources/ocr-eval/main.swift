@@ -112,7 +112,7 @@ for f in files {
         var dump = ""
         for blk in r.page.blocks {
             for l in blk.lines {
-                dump += "\(l.text)\t信心 \(String(format: "%.2f", l.confidence))\t候选 \(l.alternatives.joined(separator: " | "))\n"
+                dump += "\(l.text)\t信心 \(String(format: "%.2f", l.confidence))\t候选 \(l.alternatives.joined(separator: " | "))\t词 \(l.note)\n"
             }
         }
         try? dump.write(to: outDir.appendingPathComponent("\(name).lines.txt"), atomically: true, encoding: .utf8)

@@ -142,20 +142,25 @@ public enum VisionOCR {
             let cands = o.topCandidates(3)
             let text = cands.first?.string ?? o.transcript
             let b = o.boundingBox.cgRect
-            // 这一行里信心低的词（Vision 给了逐词结果才有）
+            // 这一行里的词（Vision 给了逐词结果才有）：信心低的记下来，标黄时只标它们
             var weak: [String] = []
-            for w in words ?? [] where w.confidence < 0.5 {
+            var notes: [String] = []
+            for w in words ?? [] {
                 let wb = w.boundingBox.cgRect
                 let midY = wb.midY
-                if midY >= b.minY && midY <= b.maxY, let s = w.topCandidates(1).first?.string, !s.isEmpty, text.contains(s) { weak.append(s) }
+                guard midY >= b.minY && midY <= b.maxY, let s = w.topCandidates(1).first?.string, !s.isEmpty, text.contains(s) else { continue }
+                notes.append("\(s):\(String(format: "%.2f", w.confidence))")
+                if w.confidence < DraftBuilder.defaultThreshold { weak.append(s) }
             }
-            return OCRLine(text: text,
-                           confidence: min(o.confidence, cands.first?.confidence ?? o.confidence),
-                           alternatives: cands.dropFirst().map(\.string),
-                           wraps: o.shouldWrapToNextLine,
-                           isTitle: o.isTitle,
-                           top: 1 - Double(b.maxY), left: Double(b.minX), height: Double(b.height), width: Double(b.width),
-                           weakWords: weak)
+            var line = OCRLine(text: text,
+                               confidence: min(o.confidence, cands.first?.confidence ?? o.confidence),
+                               alternatives: cands.dropFirst().map(\.string),
+                               wraps: o.shouldWrapToNextLine,
+                               isTitle: o.isTitle,
+                               top: 1 - Double(b.maxY), left: Double(b.minX), height: Double(b.height), width: Double(b.width),
+                               weakWords: weak)
+            line.note = notes.joined(separator: " ")
+            return line
         }
     }
 }

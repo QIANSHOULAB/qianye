@@ -20,6 +20,8 @@ public struct OCRLine: Equatable, Sendable {
     public var weakWords: [String]
     /// 能不能拿第二遍认字来对（表格里拼起来的行不能）
     public var crossCheck: Bool
+    /// 诊断用：逐词的信心（「词:信心」），样张报告里看
+    public var note: String = ""
 
     public init(text: String, confidence: Float, alternatives: [String] = [], wraps: Bool? = nil, isTitle: Bool = false,
                 top: Double = 0, left: Double = 0, height: Double = 0, width: Double = 0, weakWords: [String] = [], crossCheck: Bool = true) {
@@ -54,7 +56,11 @@ public struct OCRDraft: Equatable, Sendable {
 public enum DraftBuilder {
     static let bulletMarkers = Set(["•", "-", "·", "*", "●", "○", "▪", "■", "◦", "–", "—"])
 
-    public static func build(_ page: OCRPage, threshold: Float = 0.5) -> OCRDraft {
+    /// threshold：一行的信心低于它就算拿不准。11-20 第 2 轮 10 张样张量出来：对的行 0.78–0.99，错的行 0.37–0.87；
+    /// 取 0.82，标黄的行 9/11 真有错，错的行 9/12 被标出来
+    public static let defaultThreshold: Float = 0.82
+
+    public static func build(_ page: OCRPage, threshold: Float = DraftBuilder.defaultThreshold) -> OCRDraft {
         // 清单里的行，段落里再出现一遍的，去掉
         var listKeys = Set<String>()
         for b in page.blocks { if case .listItem = b.kind { for l in b.lines { listKeys.insert(key(l)) } } }
@@ -132,21 +138,8 @@ public enum DraftBuilder {
                 }
                 titleDone = true
                 if lines.isEmpty { continue }
-                // 连着两行以上开头是「口 / □ / ☐」：那是勾选框，变成列表
-                let boxes = Set(["口", "□", "☐", "▢"])
-                let boxed = lines.count >= 2 && lines.filter { l in
-                    let t = clean(l.text)
-                    return t.count > 1 && boxes.contains(String(t.prefix(1)))
-                }.count >= 2
-                if keepLines(lines) || boxed {
-                    for l in lines {
-                        let t = clean(l.text)
-                        if boxed && t.count > 1 && boxes.contains(String(t.prefix(1))) {
-                            emit("- ", [l], drop: String(t.prefix(1)).u16)
-                        } else {
-                            emit("", [l])
-                        }
-                    }
+                if keepLines(lines) {
+                    for l in lines { emit("", [l]) }
                 } else {
                     // 一句话折了行的接起来；别的照原样分行
                     var group: [OCRLine] = []
@@ -166,7 +159,8 @@ public enum DraftBuilder {
                 }
             }
         }
-        return OCRDraft(markdown: out, unsure: merge(unsure))
+        let boxed = boxesToList(out, merge(unsure))
+        return OCRDraft(markdown: boxed.0, unsure: boxed.1)
     }
 
     static func key(_ l: OCRLine) -> String { "\(Int(l.top * 500))|\(Int(l.left * 500))|\(l.text.trimmed)" }
@@ -202,7 +196,6 @@ public enum DraftBuilder {
     /// 一行里拿不准的位置：整行分低 → 整行；候选不一样 → 不一样的那几个字（英文数字扩到整个词）；Vision 标出的弱词
     static func weak(_ text: String, _ l: OCRLine, _ threshold: Float) -> [NSRange] {
         if text.isEmpty { return [] }
-        if l.confidence < threshold { return [NSRange(location: 0, length: text.u16)] }
         var out: [NSRange] = []
         if let alt = l.alternatives.first.map(clean), !alt.isEmpty, alt != text {
             out += changedRanges(text, alt)
@@ -210,7 +203,42 @@ public enum DraftBuilder {
         for w in l.weakWords where !w.isEmpty {
             if let r = text.range(of: w) { out.append(text.range16(r)) }
         }
+        if out.isEmpty && l.confidence < threshold { return [NSRange(location: 0, length: text.u16)] }
         return merge(out).map { expandToWord(text, $0) }
+    }
+
+    /// 连着两行以上开头是「口 / □ / ☐」：那是勾选框（□ 常被认成汉字「口」），换成 Markdown 列表「- 」。拿不准的位置跟着挪
+    static func boxesToList(_ md: String, _ unsure: [NSRange]) -> (String, [NSRange]) {
+        let boxes: Set<Character> = ["口", "□", "☐", "▢"]
+        let spans = lineSpans(md)
+        func isBox(_ t: String) -> Bool { t.count > 1 && boxes.contains(t.first!) }
+        var out = ""
+        var shifts: [(at: Int, cut: Int, delta: Int)] = []   // 原位置 at 起删掉 cut 个、整体挪 delta
+        for (i, sp) in spans.enumerated() {
+            let t = sp.text
+            let near = (i > 0 && isBox(spans[i - 1].text)) || (i + 1 < spans.count && isBox(spans[i + 1].text))
+            if isBox(t) && near {
+                var cut = String(t.first!).u16
+                let rest = t.sub16(NSRange(location: cut, length: t.u16 - cut))
+                let lead = rest.prefix { $0 == " " || $0 == "\u{3000}" }
+                cut += String(lead).u16
+                shifts.append((sp.range.location, cut, 2 - cut))
+                out += "- " + t.sub16(NSRange(location: cut, length: t.u16 - cut))
+            } else {
+                out += t
+            }
+            if i < spans.count - 1 { out += "\n" }
+        }
+        let moved: [NSRange] = unsure.compactMap { r in
+            var a = r.location, b = r.end
+            // 从后往前挪：每一处只动它后面的位置，前面的不受影响
+            for s in shifts.reversed() {
+                func mv(_ p: Int) -> Int { p < s.at ? p : (p < s.at + s.cut ? s.at + 2 : p + s.delta) }
+                a = mv(a); b = mv(b)
+            }
+            return b > a ? NSRange(location: a, length: b - a) : nil
+        }
+        return (out, moved)
     }
 
     /// text 里跟 alt 不一样的字的位置
