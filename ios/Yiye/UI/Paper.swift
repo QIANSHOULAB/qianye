@@ -44,10 +44,6 @@ enum Ink {
     static let clipShine = UIColor.dyn(0xE4E7EA, 0xB9BDC2)
 }
 
-extension Color {
-    init(_ u: UIColor) { self.init(uiColor: u) }
-}
-
 /// 每条笔记能换的纸色
 enum PaperTint: String, CaseIterable, Identifiable {
     case white, yellow, green, blue, pink

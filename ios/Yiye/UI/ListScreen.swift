@@ -323,6 +323,7 @@ struct EmptyList: View {
 }
 
 /// 时间：今天只写几点，今年写月日，再早写年月日
+@MainActor
 enum When {
     static func short(_ d: Date, _ lang: Lang) -> String {
         let cal = Calendar.current
