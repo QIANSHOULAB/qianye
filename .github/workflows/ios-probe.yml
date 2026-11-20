@@ -1,0 +1,37 @@
+name: iOS probe
+# 探路用：看 macos-26 机器上有哪些 Xcode、模拟器，Vision 新接口长什么样。只在手动或改它自己时跑。
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/ios-probe.yml']
+
+jobs:
+  probe:
+    runs-on: macos-26
+    steps:
+      - name: Xcode and tools
+        run: |
+          sw_vers
+          ls -d /Applications/Xcode* || true
+          xcode-select -p
+          xcodebuild -version
+          which xcodegen xcbeautify swiftlint gh || true
+          xcrun simctl list runtimes
+          xcrun simctl list devicetypes | grep -i iphone | tail -12
+      - name: Vision interface
+        run: |
+          set +e
+          X=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
+          echo "pick $X"
+          SDK="$X/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk"
+          ls "$SDK/System/Library/Frameworks/Vision.framework/Modules/Vision.swiftmodule/"
+          F=$(ls "$SDK"/System/Library/Frameworks/Vision.framework/Modules/Vision.swiftmodule/arm64*simulator.swiftinterface | head -1)
+          echo "file $F $(wc -l < "$F")"
+          for k in 'struct RecognizeDocumentsRequest' 'struct DocumentObservation' 'struct RecognizeTextRequest' 'struct RecognizedTextObservation' 'struct RecognizedText ' 'struct NormalizedRegion' 'struct NormalizedRect ' 'struct DetectDocumentSegmentationRequest' 'struct DetectedDocumentObservation' 'protocol ImageProcessingRequest' 'extension Vision.ImageProcessingRequest' 'struct ImageRequestHandler'; do
+            echo "=================== $k"
+            awk -v key="$k" 'index($0,key){p=1;d=0} p{print; o=gsub(/\{/,"{"); c=gsub(/\}/,"}"); d+=o-c; if(d<=0 && (o>0||c>0)){p=0; n++; if(n>=6) exit}}' "$F" | grep -v '^ *@available(\(watchOS\|tvOS\|visionOS\)' | head -400
+          done
+          echo "=================== DocumentObservation nested (Container/Text/List/Table)"
+          grep -n 'extension Vision.DocumentObservation' "$F" | head -40
+          awk '/extension Vision\.DocumentObservation/{p=1;d=0} p{print; o=gsub(/\{/,"{"); c=gsub(/\}/,"}"); d+=o-c; if(d<=0 && (o>0||c>0)){p=0}}' "$F" | grep -v '^ *@available(\(watchOS\|tvOS\|visionOS\)' | head -900
