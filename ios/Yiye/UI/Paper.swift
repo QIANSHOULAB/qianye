@@ -21,9 +21,9 @@ extension UIColor {
 }
 
 enum Ink {
-    static let desk = UIColor.dyn(0xE2CFAE, 0x1C1814)
-    static let deskGrainA = UIColor.dyn(0xCDB48C, 0x2A231C)
-    static let deskGrainB = UIColor.dyn(0xEEDFC4, 0x15120F)
+    static let desk = UIColor.dyn(0xEAD6B4, 0x1C1814)
+    static let deskGrainA = UIColor.dyn(0xD9C19A, 0x272019)
+    static let deskGrainB = UIColor.dyn(0xF3E4C8, 0x17130F)
     static let paper = UIColor.dyn(0xFBF8F1, 0x2A2622)
     static let paperEdge = UIColor.dyn(0xD8CBB5, 0x3D352D)
     static let text = UIColor.dyn(0x4A3F36, 0xE9E1D4)
@@ -92,13 +92,13 @@ enum Texture {
         let img = UIGraphicsImageRenderer(size: size, format: fmt).image { ctx in
             let cg = ctx.cgContext
             base.setFill(); cg.fill(CGRect(origin: .zero, size: size))
-            // 木纹：一条条细竖线，左右轻轻摆，首尾接得上（能平铺）
-            for i in 0..<70 {
+            // 木纹：一条条细竖线，左右轻轻摆，首尾接得上（能平铺）。第 3 轮跟参照并排看，纹太硬，收淡、收少
+            for i in 0..<44 {
                 let x0 = rnd() * size.width
                 let amp = 2 + rnd() * 6
                 let phase = rnd() * .pi * 2
-                let w = 0.6 + rnd() * 1.8
-                let c = (i % 3 == 0 ? gb : ga).withAlphaComponent(0.18 + rnd() * 0.28)
+                let w = 0.5 + rnd() * 1.2
+                let c = (i % 3 == 0 ? gb : ga).withAlphaComponent(0.10 + rnd() * 0.18)
                 cg.setStrokeColor(c.cgColor)
                 cg.setLineWidth(w)
                 cg.beginPath()

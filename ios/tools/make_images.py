@@ -163,7 +163,7 @@ def icon():
     for _ in range(46):                                      # 木纹
         x0 = rnd.uniform(0, S); amp = rnd.uniform(4, 14); ph = rnd.uniform(0, 6.28)
         pts = [(x0 + amp * math.sin(ph + y / S * 6.28), y) for y in range(0, S + 8, 8)]
-        d.line(pts, fill=(200, 176, 136), width=rnd.choice([2, 3, 4]))
+        d.line(pts, fill=(214, 193, 158), width=rnd.choice([1, 2, 2]))
     # 纸：带一点影子，微微转个角度
     paper = Image.new("RGBA", (640, 720), (0, 0, 0, 0))
     pd = ImageDraw.Draw(paper)
