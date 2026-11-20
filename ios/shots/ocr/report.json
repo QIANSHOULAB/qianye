@@ -1,0 +1,122 @@
+[
+  {
+    "accuracy" : 0.9117647058823529,
+    "editDistance" : 3,
+    "kind" : "手写",
+    "name" : "h1",
+    "seconds" : 2.5864940881729126,
+    "truthChars" : 34,
+    "wrongChars" : 7,
+    "wrongCharsYellow" : 0,
+    "yellow" : 0,
+    "yellowWrong" : 0
+  },
+  {
+    "accuracy" : 0.7575757575757576,
+    "editDistance" : 8,
+    "kind" : "手写",
+    "name" : "h2",
+    "seconds" : 1.1977379322052002,
+    "truthChars" : 33,
+    "wrongChars" : 14,
+    "wrongCharsYellow" : 0,
+    "yellow" : 0,
+    "yellowWrong" : 0
+  },
+  {
+    "accuracy" : 0.8260869565217391,
+    "editDistance" : 4,
+    "kind" : "手写",
+    "name" : "h3",
+    "seconds" : 1.0871260166168213,
+    "truthChars" : 23,
+    "wrongChars" : 4,
+    "wrongCharsYellow" : 0,
+    "yellow" : 0,
+    "yellowWrong" : 0
+  },
+  {
+    "accuracy" : 0.6,
+    "editDistance" : 8,
+    "kind" : "手写",
+    "name" : "h4",
+    "seconds" : 1.1797890663146973,
+    "truthChars" : 20,
+    "wrongChars" : 8,
+    "wrongCharsYellow" : 0,
+    "yellow" : 0,
+    "yellowWrong" : 0
+  },
+  {
+    "accuracy" : 1,
+    "editDistance" : 0,
+    "kind" : "手写",
+    "name" : "h5",
+    "seconds" : 1.6055560111999512,
+    "truthChars" : 25,
+    "wrongChars" : 4,
+    "wrongCharsYellow" : 0,
+    "yellow" : 0,
+    "yellowWrong" : 0
+  },
+  {
+    "accuracy" : 1,
+    "editDistance" : 0,
+    "kind" : "印刷",
+    "name" : "p1",
+    "seconds" : 0.9477109909057617,
+    "truthChars" : 59,
+    "wrongChars" : 0,
+    "wrongCharsYellow" : 0,
+    "yellow" : 0,
+    "yellowWrong" : 0
+  },
+  {
+    "accuracy" : 0.8387096774193549,
+    "editDistance" : 5,
+    "kind" : "印刷",
+    "name" : "p2",
+    "seconds" : 0.9027940034866333,
+    "truthChars" : 31,
+    "wrongChars" : 9,
+    "wrongCharsYellow" : 0,
+    "yellow" : 0,
+    "yellowWrong" : 0
+  },
+  {
+    "accuracy" : 0.9230769230769231,
+    "editDistance" : 4,
+    "kind" : "印刷",
+    "name" : "p3",
+    "seconds" : 0.8933160305023193,
+    "truthChars" : 52,
+    "wrongChars" : 13,
+    "wrongCharsYellow" : 0,
+    "yellow" : 0,
+    "yellowWrong" : 0
+  },
+  {
+    "accuracy" : 0.9868421052631579,
+    "editDistance" : 1,
+    "kind" : "印刷",
+    "name" : "p4",
+    "seconds" : 0.8040950298309326,
+    "truthChars" : 76,
+    "wrongChars" : 2,
+    "wrongCharsYellow" : 0,
+    "yellow" : 0,
+    "yellowWrong" : 0
+  },
+  {
+    "accuracy" : 0.9411764705882353,
+    "editDistance" : 2,
+    "kind" : "印刷",
+    "name" : "p5",
+    "seconds" : 0.929360032081604,
+    "truthChars" : 34,
+    "wrongChars" : 2,
+    "wrongCharsYellow" : 2,
+    "yellow" : 1,
+    "yellowWrong" : 1
+  }
+]
