@@ -1,5 +1,7 @@
 name: iOS probe
-# 探路用：打 tag 之前把「出 .ipa」那几步空跑一遍（编真机 Release、打包、核 SideStore 源），不发 Releases、不提交。只在手动或改它自己时跑。
+# 探路用，只在手动或改它自己时跑。
+# dry-release：打 tag 之前把「出 .ipa」那几步空跑一遍（编真机 Release、打包、核 SideStore 源），不发 Releases、不提交。
+# speech：看 iOS 26 的 Speech（SpeechAnalyzer / SpeechTranscriber）长什么样、认哪些语言，macOS 上用 say 造一句中文试认一遍。
 on:
   workflow_dispatch:
   push:
@@ -27,7 +29,8 @@ jobs:
       - name: 编未签名的 .ipa（空跑）
         run: |
           set -o pipefail
-          V=0.1.0
+          V=$(grep -E '^\s*MARKETING_VERSION' ios/project.yml | head -1 | sed -E 's/.*: *"?([0-9.]+)"?.*/\1/')
+          echo "V=$V" >> "$GITHUB_ENV"
           xcodebuild -project ios/Yiye.xcodeproj -scheme Yiye -configuration Release \
             -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 | tee build.log | xcbeautify --renderer github-actions
@@ -49,7 +52,85 @@ jobs:
 
       - name: 核 SideStore 源（空跑，不提交）
         run: |
-          V=0.1.0
           SIZE=$(stat -f%z "Yiye-$V.ipa")
           python3 ios/tools/update_source.py "$V" "$SIZE" "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v$V/Yiye-$V.ipa"
           python3 ios/tools/check_source.py info.json
+
+  speech:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - name: Speech 的接口（iOS 模拟器 SDK）
+        run: |
+          set +e
+          sudo xcode-select -s "$XCODE"
+          SDK="$XCODE/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk"
+          ls "$SDK/System/Library/Frameworks/Speech.framework/Modules/Speech.swiftmodule/"
+          F=$(ls "$SDK"/System/Library/Frameworks/Speech.framework/Modules/Speech.swiftmodule/arm64*simulator.swiftinterface | head -1)
+          echo "file $F $(wc -l < "$F")"
+          for k in 'class SpeechAnalyzer' 'class SpeechTranscriber' 'class DictationTranscriber' 'struct AnalyzerInput' 'class AssetInventory' 'class AssetInstallationRequest' 'protocol SpeechModule' 'protocol LocaleDependentSpeechModule' 'extension Speech.SpeechTranscriber' 'extension Speech.DictationTranscriber' 'extension Speech.SpeechAnalyzer' 'enum ReportingOption' 'enum TranscriptionOption' 'enum AttributeOption' 'struct Preset'; do
+            echo "=================== $k"
+            awk -v key="$k" 'index($0,key){p=1;d=0} p{print; o=gsub(/\{/,"{"); c=gsub(/\}/,"}"); d+=o-c; if(d<=0 && (o>0||c>0)){p=0; n++; if(n>=4) exit}}' "$F" | grep -v '^ *@available(\(watchOS\|tvOS\|visionOS\)' | head -260
+          done
+          echo "=================== grep 关键成员"
+          grep -n 'supportedLocales\|installedLocales\|bestAvailableAudioFormat\|assetInstallationRequest\|downloadAndInstall\|reserve\|finalizeAndFinish\|analyzeSequence\|start(inputSequence\|public var results\|isFinal\|volatileResults\|progressiveTranscription\|offlineTranscription\|timeIndexedProgressiveTranscription\|audioTimeRange\|transcriptionConfidence\|addsPunctuation\|SFSpeechRecognizerAuthorizationStatus' "$F" | head -120
+
+      - name: macOS 上的中文、英文声音
+        run: |
+          say -v '?' | grep -i -E 'zh_|en_US|en_GB' | head -40 || true
+
+      - name: macOS 26 上真跑一遍：支持的语言 + 用 say 造一句试认
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/sp && cd /tmp/sp
+          say -v Tingting -o zh.aiff "明天上午九点在二楼会议室开会，记得带上周的报表。冷却液快没了，晚班记得加。" || say -o zh.aiff "明天上午九点在二楼会议室开会"
+          say -v Samantha -o en.aiff "Meeting at nine tomorrow in room two. Bring last week's report." || say -o en.aiff "Meeting at nine tomorrow"
+          ls -la
+          cat > probe.swift <<'EOF'
+          import Foundation
+          import Speech
+          import AVFoundation
+
+          func ids(_ ls: [Locale]) -> String { ls.map { $0.identifier(.bcp47) }.sorted().joined(separator: ", ") }
+
+          print("SpeechTranscriber.isAvailable:", SpeechTranscriber.isAvailable)
+          print("SpeechTranscriber.supportedLocales:", ids(await SpeechTranscriber.supportedLocales))
+          print("SpeechTranscriber.installedLocales:", ids(await SpeechTranscriber.installedLocales))
+          print("DictationTranscriber.supportedLocales:", ids(await DictationTranscriber.supportedLocales))
+          print("SFSpeechRecognizer.supportedLocales:", SFSpeechRecognizer.supportedLocales().map(\.identifier).sorted().joined(separator: ", "))
+          for id in ["zh-CN", "en-US"] {
+              let loc = Locale(identifier: id)
+              print(id, "SpeechTranscriber.supportedLocale(equivalentTo:) ->", (await SpeechTranscriber.supportedLocale(equivalentTo: loc))?.identifier(.bcp47) ?? "nil")
+          }
+
+          func transcribe(_ path: String, _ id: String) async {
+              do {
+                  guard let loc = await SpeechTranscriber.supportedLocale(equivalentTo: Locale(identifier: id)) else { print(id, "不支持"); return }
+                  let t = SpeechTranscriber(locale: loc, transcriptionOptions: [], reportingOptions: [], attributeOptions: [.audioTimeRange, .transcriptionConfidence])
+                  if let req = try await AssetInventory.assetInstallationRequest(supporting: [t]) {
+                      let t0 = Date(); try await req.downloadAndInstall(); print(id, "装模型用了", Date().timeIntervalSince(t0), "秒")
+                  }
+                  let analyzer = SpeechAnalyzer(modules: [t])
+                  let file = try AVAudioFile(forReading: URL(fileURLWithPath: path))
+                  let collect = Task { () -> String in
+                      var s = ""
+                      for try await r in t.results { s += String(r.text.characters); print(id, "片段 isFinal=\(r.isFinal):", String(r.text.characters)) }
+                      return s
+                  }
+                  let t0 = Date()
+                  if let last = try await analyzer.analyzeSequence(from: file) {
+                      try await analyzer.finalizeAndFinish(through: last)
+                  } else {
+                      await analyzer.cancelAndFinishNow()
+                  }
+                  let text = try await collect.value
+                  print(id, "认出来：", text, " 用时", Date().timeIntervalSince(t0), "秒")
+              } catch {
+                  print(id, "出错：", error)
+              }
+          }
+          await transcribe("zh.aiff", "zh-CN")
+          await transcribe("en.aiff", "en-US")
+          EOF
+          swiftc -o probe probe.swift 2>&1 | head -80
+          [ -x probe ] && ./probe
