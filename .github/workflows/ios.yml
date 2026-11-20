@@ -43,6 +43,8 @@ jobs:
           xcodegen --version
 
       - name: YiyeKit 单元测试
+        id: kit
+        continue-on-error: true
         run: |
           set -o pipefail
           cd ios/YiyeKit
@@ -71,6 +73,7 @@ jobs:
           grep -E "error:" build.log | sort -u | head -80 || true
 
       - name: 认字样张（macOS 26 的 Vision，跟 iPhone 同一套 RecognizeDocumentsRequest）
+        continue-on-error: true
         run: |
           cd ios/YiyeOCR
           swift run -c release ocr-eval ../tools/ocr-samples ../shots/ocr 2>&1 | tail -40
@@ -81,6 +84,8 @@ jobs:
       - name: 截图提交回仓库
         if: always()
         run: |
+          mkdir -p ios/shots
+          ls ios/shots/*/*.jpg >/dev/null 2>&1 || { echo "没有截图，不提交"; exit 0; }
           git config user.name "$(git log -1 --format=%an)"
           git config user.email "$(git log -1 --format=%ae)"
           {
@@ -97,6 +102,12 @@ jobs:
             git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0
             sleep 6
           done
+          exit 1
+
+      - name: 单元测试没过就算这次没过
+        if: ${{ steps.kit.outcome == 'failure' }}
+        run: |
+          echo "::error::YiyeKit 单元测试没过"
           exit 1
 
   release:

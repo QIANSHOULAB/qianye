@@ -5,7 +5,7 @@ import XCTest
 /// 假 iCloud：占位文件「.名字.icloud」，ensureDownloaded 时才把真文件放出来
 final class FakeICloud: FileAccess {
     let base = PlainFileAccess()
-    var stash: [String: Data] = [:]   // 真路径 → 内容
+    var stash: [String: Data] = [:]   // 真文件名 → 内容（macOS 的临时目录有 /var → /private/var 的软链，按全路径对不上）
     var downloads = 0
     func read(_ url: URL) throws -> Data { try base.read(url) }
     func write(_ data: Data, to url: URL) throws { try base.write(data, to: url) }
@@ -17,7 +17,7 @@ final class FakeICloud: FileAccess {
     func modified(_ url: URL) -> Date? { base.modified(url) }
     func ensureDownloaded(_ url: URL) -> Bool {
         if base.exists(url) { return true }
-        guard let d = stash[url.path] else { return false }
+        guard let d = stash[url.lastPathComponent] else { return false }
         downloads += 1
         try? base.write(d, to: url)
         try? base.remove(url.deletingLastPathComponent().appendingPathComponent(".\(url.lastPathComponent).icloud"))
@@ -25,7 +25,7 @@ final class FakeICloud: FileAccess {
     }
     /// 别的机器写进来、手机上还只是占位
     func plantPlaceholder(_ real: URL, _ data: Data) throws {
-        stash[real.path] = data
+        stash[real.lastPathComponent] = data
         try base.write(Data(), to: real.deletingLastPathComponent().appendingPathComponent(".\(real.lastPathComponent).icloud"))
     }
 }
