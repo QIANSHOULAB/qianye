@@ -226,10 +226,11 @@ def main():
 
     demo = ROOT / "Yiye/Demo"
     demo.mkdir(parents=True, exist_ok=True)
-    zh = "11月18日产量\nA线早班 1,280件\nB线早班 960件\nC线早班 1,105件\n合计 3,345件\n冷却液快没了，晚班记得加。"
-    photo(printed_page(zh.split("\n")), "demo-zh", (0.04, 0.03), shade=0.25).save(demo / "ocr-demo-zh.jpg", quality=80)
-    en = "Shift report, Nov 18\nLine A 1,280 pcs\nLine B 960 pcs\nLine C 1,105 pcs\nTotal 3,345 pcs\nCoolant is low. Top it up tonight."
-    photo(printed_page(en.split("\n")), "demo-en", (0.04, 0.03), shade=0.25).save(demo / "ocr-demo-en.jpg", quality=80)
+    # 截图里的「拍照认字结果」用手写的：能看到拿不准的字标黄
+    zh = "11月18日产量\nA线早班 1280件\nB线早班 960件\nC线早班 1105件\n冷却液快没了，晚班记得加"
+    photo(hand_page(zh.split("\n"), FONTS / "LongCang-Regular.ttf", (28, 47, 110), "demo-zh", size=52), "demo-zh", (0.05, 0.03)).save(demo / "ocr-demo-zh.jpg", quality=80)
+    en = "Shift report Nov 18\nLine A 1280 pcs\nLine B 960 pcs\nLine C 1105 pcs\nCoolant is low, top it up"
+    photo(hand_page(en.split("\n"), FONTS / "PatrickHand-Regular.ttf", (28, 47, 110), "demo-en", size=56), "demo-en", (0.05, 0.03)).save(demo / "ocr-demo-en.jpg", quality=80)
     hand = "11月3日交接\nA线早班 1280件\nB线早班 960件\n早班交接完毕，3号机换了刀\n冷却液快没了，晚班记得加"
     photo(hand_page(hand.split("\n"), FONTS / "MaShanZheng-Regular.ttf", (28, 47, 110), "demo-hand", size=48), "demo-hand", (0.05, 0.03)).save(demo / "handover.jpg", quality=78)
 

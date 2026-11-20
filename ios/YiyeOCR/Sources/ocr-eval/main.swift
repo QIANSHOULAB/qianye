@@ -60,8 +60,8 @@ func correctness(draft: String, truth: String) -> [Int: [Bool]] {
         for op in TextDiff.ops(String(c), best) {
             switch op {
             case .same(let ch): ok.append(contentsOf: Array(repeating: true, count: String(ch).u16))
-            case .del(let ch): ok.append(contentsOf: Array(repeating: false, count: String(ch).u16))
-            case .ins: if !ok.isEmpty { ok[ok.count - 1] = false }
+            case .del(let ch): ok.append(contentsOf: Array(repeating: ch.isWhitespace, count: String(ch).u16))
+            case .ins(let ch): if !ch.isWhitespace, !ok.isEmpty { ok[ok.count - 1] = false }
             }
         }
         out[i] = ok

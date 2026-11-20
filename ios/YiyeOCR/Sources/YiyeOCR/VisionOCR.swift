@@ -41,16 +41,9 @@ public enum VisionOCR {
         guard let doc = observations.first?.document else {
             return Result(page: OCRPage(blocks: []), transcript: "", languages: langs.use.map { $0.maximalIdentifier })
         }
-        var pg = page(from: doc)
-        // 第二遍：RecognizeTextRequest、不开语言校正，逐行对。两遍对不上的字就是拿不准的（网页版也是认两遍对答案）
-        var tr = RecognizeTextRequest()
-        tr.recognitionLevel = .accurate
-        tr.recognitionLanguages = langs.use
-        tr.usesLanguageCorrection = false
-        tr.automaticallyDetectsLanguage = false
-        if let second = try? await tr.perform(on: image, orientation: orientation) {
-            pg = crossCheck(pg, with: second)
-        }
+        // 第二遍（RecognizeTextRequest、不开语言校正）对答案试过：认出来跟第一遍一模一样（同一个引擎），白花一秒，不跑了。
+        // 拿不准的靠每行的信心（DraftBuilder.defaultThreshold）。crossCheck 留着，以后换个不同的认字引擎再用
+        let pg = page(from: doc)
         return Result(page: pg, transcript: doc.text.transcript, languages: langs.use.map { $0.maximalIdentifier })
     }
 
