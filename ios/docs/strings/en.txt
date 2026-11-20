@@ -1,7 +1,9 @@
 CFBundleDisplayName	Yiye
 CFBundleName	Yiye
 NSCameraUsageDescription	Snap a page and Yiye turns the writing into text, right on your phone.
+NSMicrophoneUsageDescription	Records what you say and keeps it with the note.
 NSPhotoLibraryAddUsageDescription	Saves the pictures you make from notes to your Photos.
+NSSpeechRecognitionUsageDescription	Turns your voice into text right on your phone.
 app.name	Yiye
 busy.import	Bringing your notes home…
 busy.ocr	Squinting at your handwriting…
@@ -48,7 +50,7 @@ import.done	Imported %lld, updated %lld.
 import.pending	 %lld still coming down from iCloud. Try again in a bit.
 lang.system	System
 list.all	All Notes
-list.empty	A blank desk. Write a note or scan a page.
+list.empty	A blank desk. Write a note, scan a page, or just talk.
 list.new	New note
 list.noHit	No matches
 list.search	Search
@@ -79,7 +81,7 @@ paper.pink	Blush
 paper.white	White
 paper.yellow	Cream
 settings.butler	Butler
-settings.butlerAuto	Auto-send scans
+settings.butlerAuto	Auto-send scans and voice notes
 settings.butlerNote	The butler on your PC checks scans against the photo and sends back a clean copy, all through the mirror folder. No AI keys on this phone.
 settings.fontSize	Text size
 settings.import	Import from folder
@@ -89,6 +91,8 @@ settings.mirrorChange	Change
 settings.mirrorNote	Every save writes a .md file here. Photos go in 附件, deleted notes in 废纸篓. Switch to another build later and everything moves back from here.
 settings.title	Settings
 settings.version	Version
+settings.voice	Voice notes
+settings.voiceNote	Your voice turns into text on this phone. Nothing is uploaded. To record with the Action Button: Settings > Action Button > Shortcut > Yiye “Record a voice note”.
 share.mark	Yiye
 share.noPermission	No access to Photos. Turn it on in Settings > Privacy & Security > Photos.
 share.save	Save
@@ -105,3 +109,21 @@ theme.white	Plain
 time.yesterday	Yesterday
 toast.deleted	Deleted “%@”
 toast.undo	Undo
+voice.cancel	Discard
+voice.denied	Yiye can’t use the mic. Turn it on in Settings.
+voice.done	Done
+voice.failed	Couldn’t record: %@
+voice.intent	Record a voice note
+voice.intentDesc	Opens Yiye and starts recording.
+voice.listening	Go ahead, I’m listening.
+voice.model	First time: fetching the speech model…
+voice.noLang	This phone can’t transcribe that language. Recording audio only.
+voice.noModel	Recording audio only this time: %@
+voice.noSpeech	Speech recognition is off, so audio only. You can turn it on in Settings.
+voice.noText	Audio saved. No words came through this time.
+voice.openSettings	Open Settings
+voice.pause	Pause
+voice.play	Play
+voice.preparing	Warming up the mic…
+voice.saving	Wrapping up…
+voice.title	Voice note

@@ -35,6 +35,7 @@ struct RootView: View {
         .tint(Color(uiColor: Ink.accent))
         .overlay(alignment: .bottom) { ToastView() }
         .overlay { if app.busy != nil { BusyOverlay() } }
+        .fullScreenCover(item: $app.voiceTarget) { target in RecorderScreen(target: target) }
         .onAppear { app.started() }
     }
 }

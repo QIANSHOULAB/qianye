@@ -1,7 +1,9 @@
 CFBundleDisplayName	一叶笺
 CFBundleName	一叶笺
 NSCameraUsageDescription	拍一页纸，一叶笺在手机上把字认出来。
+NSMicrophoneUsageDescription	录你说的话，跟笔记存在一起。
 NSPhotoLibraryAddUsageDescription	把笔记做成的图存进相册。
+NSSpeechRecognitionUsageDescription	在手机上把你说的话转成字，不上传。
 app.name	一叶笺
 busy.import	从文件夹往回搬…
 busy.ocr	认字中，你去摸会儿鱼…
@@ -48,7 +50,7 @@ import.done	搬回来 %lld 条，更新 %lld 条。
 import.pending	还有 %lld 条在 iCloud 里没下完，过会儿再导一次。
 lang.system	跟系统
 list.all	全部便签
-list.empty	一张纸都还没有。写一条，或者拍一页。
+list.empty	一张纸都还没有。写一条，拍一页，或者说一段。
 list.new	写一条
 list.noHit	没搜到
 list.search	搜索
@@ -79,7 +81,7 @@ paper.pink	藕粉
 paper.white	素白
 paper.yellow	米黄
 settings.butler	大管家
-settings.butlerAuto	拍照的自动交给大管家
+settings.butlerAuto	拍照、录音的自动交给大管家
 settings.butlerNote	手写认不准的字，掌机上的大管家对着原图理顺再送回来。走的就是镜像文件夹，手机上不存任何 AI 钥匙。
 settings.fontSize	字号
 settings.import	从文件夹导入
@@ -89,6 +91,8 @@ settings.mirrorChange	换一个
 settings.mirrorNote	每存一次往里写一个 .md，图片进「附件」，删掉的进「废纸篓」。以后换正式版，从这儿一条不落搬回来。
 settings.title	设置
 settings.version	版本
+settings.voice	录一段
+settings.voiceNote	说的话在手机上转成字，不上传。侧键一按就录：iPhone 的 Settings > Action Button > Shortcut，选一叶笺下面的「录一段」（手机是英文就叫 Record a voice note）。
 share.mark	一叶笺
 share.noPermission	没有存照片的权限：设置 > 隐私与安全性 > 照片 里给一叶笺开一下。
 share.save	保存相册
@@ -105,3 +109,21 @@ theme.white	白纸
 time.yesterday	昨天
 toast.deleted	删了「%@」
 toast.undo	撤销
+voice.cancel	不要了
+voice.denied	一叶笺用不了话筒。去设置里给它开一下。
+voice.done	说完了
+voice.failed	录不了：%@
+voice.intent	录一段
+voice.intentDesc	打开一叶笺，直接开录。
+voice.listening	说吧，我听着。
+voice.model	第一次用，在下语音模型，下完就好…
+voice.noLang	这台手机不认这个语言，这回只录音。
+voice.noModel	这回只录音，不转字：%@
+voice.noSpeech	没开语音识别权限，这回只录音。设置里能开。
+voice.noText	录音存好了，这回没转出字。
+voice.openSettings	去设置
+voice.pause	暂停
+voice.play	播放
+voice.preparing	话筒准备中…
+voice.saving	收个尾…
+voice.title	录一段

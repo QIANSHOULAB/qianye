@@ -9,6 +9,15 @@ enum Route: Hashable {
     case settings
 }
 
+/// 录一段往哪放：新的一条，或者接在某条的光标处
+enum VoiceTarget: Identifiable, Equatable {
+    case new
+    case into(UUID, Int)
+    var id: String {
+        switch self { case .new: return "new"; case .into(let n, let at): return "\(n)-\(at)" }
+    }
+}
+
 struct Toast: Identifiable {
     let id = UUID()
     var text: String
@@ -37,6 +46,8 @@ final class AppModel {
     var showMirrorPrompt = false
     /// 刚建的空笔记（离开时还是空的就删掉）
     var freshNoteID: UUID?
+    /// 正在录一段（侧键、列表、写字页都从这儿开）
+    var voiceTarget: VoiceTarget?
 
     @ObservationIgnored private var toastTask: Task<Void, Never>?
     @ObservationIgnored private var didStart = false
@@ -123,7 +134,7 @@ final class AppModel {
 
     /// 所有内容进来走同一条路：键盘、相机，以后麦克风 → 排版 → 存 → （拍照的）交给大管家
     @discardableResult
-    func intake(_ input: Intake, into existing: Note? = nil, at location: Int? = nil, open: Bool = true) -> Note {
+    func intake(_ input: Intake, into existing: Note? = nil, at location: Int? = nil, open: Bool = true, audio: [URL] = []) -> Note {
         let x = IntakeFormatter.tidy(input)
         let n: Note
         if let existing {
@@ -139,7 +150,7 @@ final class AppModel {
             unsure = unsure.map { $0.location >= at ? $0.shifted(insert.u16) : $0 } + x.unsure.map { $0.shifted(at + shift) }
             n.markdown = md
             n.unsure = RangeCodec.encode(unsure)
-            if x.kind == .photo { n.kind = IntakeKind.photo.rawValue }
+            if x.kind == .photo || (x.kind == .voice && n.kind == IntakeKind.text.rawValue) { n.kind = x.kind.rawValue }
         } else {
             n = Note()
             n.kind = x.kind.rawValue
@@ -155,10 +166,16 @@ final class AppModel {
             if let rel = try? attachments.save(data, name: name) { originals.append(rel) }
         }
         n.originalPaths = originals
+        // 录音也存成附件，写字页最上面放
+        var audios = n.audioPaths
+        for file in audio {
+            if let rel = try? attachments.move(file, name: VoiceText.fileName(note: n.id, index: audios.count + 1)) { audios.append(rel) }
+        }
+        n.audioPaths = audios
         n.modifiedAt = Date()
         try? context.save()
         mirror.saveSoon(n, attachments: attachments)
-        if x.kind == .photo && settings.butlerAutoPhoto {
+        if (x.kind == .photo || x.kind == .voice) && settings.butlerAutoPhoto && !n.markdown.trimmed.isEmpty {
             butler.submit(n)
         }
         if open && existing == nil { path.append(.editor(n.id)) }
@@ -196,7 +213,7 @@ final class AppModel {
 
     /// 离开写字页：空的就不留
     func leave(_ n: Note) {
-        if n.markdown.trimmed.isEmpty && n.originalPaths.isEmpty {
+        if n.markdown.trimmed.isEmpty && n.originalPaths.isEmpty && n.audioPaths.isEmpty {
             context.delete(n)
             try? context.save()
             if mirror.isOn { mirror.trash(n.id) }
@@ -204,6 +221,29 @@ final class AppModel {
             mirror.saveNow(n, attachments: attachments)
         }
         if freshNoteID == n.id { freshNoteID = nil }
+    }
+
+    // ---------------------------------------------------------------- 录一段
+    /// 开录（侧键、列表的话筒、写字页的话筒）。已经在录就不动
+    func startVoice(_ target: VoiceTarget = .new) {
+        if voiceTarget == nil { voiceTarget = target }
+    }
+
+    /// 录完：录音进附件，字进正文（新的一条，或者接在原来那条的光标处），自动交大管家
+    func addVoice(file: URL, text: String, target: VoiceTarget) {
+        let md = VoiceText.markdown(from: text)
+        let input = Intake(kind: .voice, markdown: md)
+        switch target {
+        case .new:
+            intake(input, audio: [file])
+        case .into(let id, let at):
+            if let n = note(id) {
+                intake(input, into: n, at: at, audio: [file])
+                NotificationCenter.default.post(name: .yiyeNoteReplaced, object: id)
+            }
+            else { intake(input, audio: [file]) }
+        }
+        if md.isEmpty { show(t.t("voice.noText")) }
     }
 
     // ---------------------------------------------------------------- 拍照认字

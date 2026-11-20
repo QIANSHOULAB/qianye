@@ -50,11 +50,15 @@ struct ListScreen: View {
                 }
                 .buttonStyle(.plain)
             } right: {
+                Button { app.startVoice() } label: { Image(systemName: "mic") }
+                    .buttonStyle(SmartButtonStyle())
+                    .accessibilityLabel(t.t("voice.title"))
                 Button { startCamera() } label: { Image(systemName: "camera") }
                     .buttonStyle(SmartButtonStyle())
                     .accessibilityLabel(t.t("capture.camera"))
                 Menu {
                     Button { app.newNote() } label: { Label(t.t("list.new"), systemImage: "square.and.pencil") }
+                    Button { app.startVoice() } label: { Label(t.t("voice.title"), systemImage: "mic") }
                     Button { startCamera() } label: { Label(t.t("capture.camera"), systemImage: "camera") }
                     Button { showLibrary = true } label: { Label(t.t("capture.library"), systemImage: "photo.on.rectangle") }
                 } label: {
@@ -190,6 +194,7 @@ struct NoteStrip: View {
                 }
                 HStack(spacing: 8) {
                     if note.kind == "photo" { Image(systemName: "camera").font(.system(size: 11)) }
+                    if !note.audioPaths.isEmpty { Image(systemName: "waveform").font(.system(size: 11)) }
                     if !note.originalPaths.isEmpty || !Markdown5.imagePaths(note.markdown).isEmpty { Image(systemName: "photo").font(.system(size: 11)) }
                     ButlerMark(note: note)
                     Spacer(minLength: 0)
@@ -312,6 +317,7 @@ struct EmptyList: View {
                 HStack(spacing: 12) {
                     Button(app.lang.t("list.new")) { newNote() }.buttonStyle(SmartButtonStyle(prominent: true))
                     Button(app.lang.t("capture.camera")) { camera() }.buttonStyle(SmartButtonStyle())
+                    Button(app.lang.t("voice.title")) { app.startVoice() }.buttonStyle(SmartButtonStyle())
                 }
             }
             Spacer()

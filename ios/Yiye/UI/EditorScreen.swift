@@ -53,12 +53,17 @@ struct EditorScreen: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
 
+            if let note, !note.audioPaths.isEmpty {
+                AudioStrip(paths: note.audioPaths)
+            }
+
             NoteTextEditor(controller: controller)
                 .background(PaperBackground(tint: note?.tint ?? .white))
 
             MarkdownBar(focused: focused, apply: { controller.apply($0) },
                         photo: { pickerMode = .insert; showPicker = true },
                         camera: { flush(); showCamera = true },
+                        voice: { flush(); if let note { app.startVoice(.into(note.id, controller.caretInMarkdown())) } },
                         done: { controller.endEditing() })
         }
         .background(PaperBackground(tint: note?.tint ?? .white).ignoresSafeArea())
@@ -151,7 +156,7 @@ struct EditorScreen: View {
     }
 
     private func tearDown() {
-        guard let note, !showShare, !showCamera, !showOriginals, !showPicker else { return }
+        guard let note, !showShare, !showCamera, !showOriginals, !showPicker, app.voiceTarget == nil else { return }
         flush()
         app.leave(note)
     }
@@ -248,6 +253,7 @@ struct MarkdownBar: View {
     let apply: (MDCommand) -> Void
     let photo: () -> Void
     let camera: () -> Void
+    let voice: () -> Void
     let done: () -> Void
     @Environment(AppModel.self) private var app
 
@@ -258,14 +264,15 @@ struct MarkdownBar: View {
             key("B", bold: true, label: app.lang.t("md.bold")) { apply(.bold) }
             key(symbol: "text.quote", label: app.lang.t("md.quote")) { apply(.quote) }
             key(symbol: "text.aligncenter", label: app.lang.t("md.center")) { apply(.center) }
-            Rectangle().fill(Color(Ink.barLine)).frame(width: 0.5, height: 22).padding(.horizontal, 4)
+            Rectangle().fill(Color(Ink.barLine)).frame(width: 0.5, height: 22).padding(.horizontal, 2)
             key(symbol: "photo", label: app.lang.t("md.image")) { photo() }
             key(symbol: "camera", label: app.lang.t("capture.camera")) { camera() }
+            key(symbol: "mic", label: app.lang.t("voice.title")) { voice() }
             if focused {
                 key(symbol: "keyboard.chevron.compact.down", label: app.lang.t("md.done")) { done() }
             }
         }
-        .padding(.horizontal, 6)
+        .padding(.horizontal, 4)
         .frame(height: 48)
         .frame(maxWidth: .infinity)
         .background {

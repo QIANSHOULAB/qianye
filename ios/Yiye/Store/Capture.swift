@@ -46,6 +46,7 @@ extension AppModel {
                     n.pinned = it.meta.pinned
                     n.paper = it.meta.color
                     n.folder = folderNamed(it.meta.folder)
+                    if n.audioPaths.isEmpty { n.audioPaths = VoiceText.paths(note: n.id) { attachments.exists($0) } }
                     updated += 1
                 }
                 continue
@@ -60,6 +61,7 @@ extension AppModel {
             n.kind = it.meta.kind
             n.folder = folderNamed(it.meta.folder)
             n.originalPaths = it.meta.kind == "photo" ? originalsFor(it.meta.id) : []
+            n.audioPaths = VoiceText.paths(note: it.meta.id) { attachments.exists($0) }
             context.insert(n)
             added += 1
         }

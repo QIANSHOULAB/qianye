@@ -58,6 +58,16 @@ struct SettingsScreen: View {
                         Segmented(items: [(0, t.t("font.small")), (1, t.t("font.medium")), (2, t.t("font.large"))], selection: $settings.fontSize)
                     }
 
+                    section(t.t("settings.voice")) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Segmented(items: [("zh-CN", "中文"), ("en-US", "English")], selection: $settings.voiceLang)
+                            Text(t.t("settings.voiceNote"))
+                                .font(.system(size: 13))
+                                .foregroundStyle(Color(Ink.text3))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
                     section(t.t("settings.butler")) {
                         VStack(alignment: .leading, spacing: 10) {
                             HStack(spacing: 10) {

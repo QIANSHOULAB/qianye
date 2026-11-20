@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import AVFoundation
 import YiyeKit
 
 /// 截图用：启动参数 -YiyeDemo YES -YiyeScreen list -YiyeLang zh-Hans -YiyeAppearance dark
@@ -28,6 +29,17 @@ struct DemoConfig {
 
 @MainActor
 enum Demo {
+    /// 截图用：一段没声音的录音（时长对就行）
+    static func silence(_ store: AttachmentStore, name: String, seconds: Double) -> String? {
+        let url = store.url("\(MirrorFolder.attachName)/\(name)")
+        guard let fmt = AVAudioFormat(standardFormatWithSampleRate: 16_000, channels: 1),
+              let file = try? AVAudioFile(forWriting: url, settings: [AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 16_000, AVNumberOfChannelsKey: 1]),
+              let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: AVAudioFrameCount(16_000 * seconds)) else { return nil }
+        buf.frameLength = buf.frameCapacity
+        do { try file.write(from: buf) } catch { return nil }
+        return "\(MirrorFolder.attachName)/\(name)"
+    }
+
     static func seed(_ app: AppModel, _ cfg: DemoConfig) {
         let zh = cfg.lang == "zh-Hans"
         let ctx = app.context
@@ -90,6 +102,13 @@ enum Demo {
                         ago: 60 * 60 * 26)
         _ = add(zh ? "读书\n《置身事内》第三章\n地方政府的钱从哪来" : "Reading list\nThe Design of Everyday Things\nChapter 3 tonight",
                 ago: 60 * 60 * 24 * 9, folder: home, paper: .green)
+        // 录的那条：上面录音，下面字（大管家理过了）
+        let voice = add(zh ? "周会安排\n明天上午九点在二楼会议室开周会，记得把上周的报表带上。\n冷却液快没了，晚班记得加。"
+                           : "Weekly sync\nTomorrow at nine in room two. Bring last week's report.\nCoolant is low, night shift top it up.",
+                        ago: 60 * 5, folder: work, kind: "voice")
+        if let rel = Demo.silence(app.attachments, name: VoiceText.fileName(note: voice.id, index: 1), seconds: 23) {
+            voice.audioPaths = [rel]
+        }
         try? ctx.save()
 
         switch cfg.screen {
@@ -97,6 +116,8 @@ enum Demo {
         case "markdown": app.path = [.editor(mdNote.id)]
         case "share-note", "share-white", "butler": app.path = [.editor(photo.id)]
         case "settings": app.path = [.settings]
+        case "voice": app.voiceTarget = .new
+        case "voice-note": app.path = [.editor(voice.id)]
         case "ocr":
             let name = zh ? "ocr-demo-zh" : "ocr-demo-en"
             if let url = Bundle.main.url(forResource: name, withExtension: "jpg"), let img = UIImage(contentsOfFile: url.path) {

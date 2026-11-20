@@ -29,6 +29,16 @@ final class AttachmentStore {
         return rel
     }
 
+    /// 录好的文件挪进附件，返回「附件/name」
+    @discardableResult
+    func move(_ file: URL, name: String) throws -> String {
+        let rel = "\(MirrorFolder.attachName)/\(name)"
+        let dst = url(rel)
+        try? FileManager.default.removeItem(at: dst)
+        try FileManager.default.moveItem(at: file, to: dst)
+        return rel
+    }
+
     func data(_ rel: String) -> Data? { try? Data(contentsOf: url(rel)) }
 
     func image(_ rel: String) -> UIImage? {

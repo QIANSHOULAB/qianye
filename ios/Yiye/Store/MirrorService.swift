@@ -163,7 +163,7 @@ final class MirrorService {
         NoteSnapshot(meta: MirrorMeta(id: n.id, created: n.createdAt, modified: n.modifiedAt, folder: n.folder?.name ?? "",
                                       pinned: n.pinned, color: n.paper, kind: n.kind),
                      markdown: n.markdown,
-                     attachments: Markdown5.imagePaths(n.markdown) + n.originalPaths)
+                     attachments: Markdown5.imagePaths(n.markdown) + n.originalPaths + n.audioPaths)
     }
 
     /// 攒一秒再写（打字时不是每个字都写一次）
@@ -222,7 +222,8 @@ final class MirrorService {
             for n in got.notes {
                 let short = MirrorFormat.shortID(n.meta.id)
                 let originals = (1...9).map { "\(MirrorFolder.attachName)/\(short)-原图-\($0).jpg" }.filter { folder.hasAttachment($0) }
-                for p in Markdown5.imagePaths(n.body) + originals where !FileManager.default.fileExists(atPath: store.url(p).path) {
+                let audios = VoiceText.paths(note: n.meta.id) { folder.hasAttachment($0) }
+                for p in Markdown5.imagePaths(n.body) + originals + audios where !FileManager.default.fileExists(atPath: store.url(p).path) {
                     let src = folder.url(p)
                     if folder.fs.ensureDownloaded(src), let d = try? folder.fs.read(src) {
                         try? d.write(to: store.url(p), options: .atomic)

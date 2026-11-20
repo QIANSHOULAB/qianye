@@ -12,7 +12,7 @@ S = {
  "list.all": ("全部便签", "All Notes"),
  "list.new": ("写一条", "New note"),
  "list.search": ("搜索", "Search"),
- "list.empty": ("一张纸都还没有。写一条，或者拍一页。", "A blank desk. Write a note or scan a page."),
+ "list.empty": ("一张纸都还没有。写一条，拍一页，或者说一段。", "A blank desk. Write a note, scan a page, or just talk."),
  "list.noHit": ("没搜到", "No matches"),
  "time.yesterday": ("昨天", "Yesterday"),
  "note.untitled": ("无题", "Untitled"),
@@ -78,7 +78,7 @@ S = {
  "font.medium": ("中", "Medium"),
  "font.large": ("大", "Large"),
  "settings.butler": ("大管家", "Butler"),
- "settings.butlerAuto": ("拍照的自动交给大管家", "Auto-send scans"),
+ "settings.butlerAuto": ("拍照、录音的自动交给大管家", "Auto-send scans and voice notes"),
  "settings.butlerNote": ("手写认不准的字，掌机上的大管家对着原图理顺再送回来。走的就是镜像文件夹，手机上不存任何 AI 钥匙。", "The butler on your PC checks scans against the photo and sends back a clean copy, all through the mirror folder. No AI keys on this phone."),
  "settings.language": ("语言", "Language"),
  "lang.system": ("跟系统", "System"),
@@ -109,6 +109,26 @@ S = {
  "butler.ok": ("知道了", "Got it"),
  "butler.unchanged": ("大管家看过了，一个字没改", "The butler read it. Nothing to fix."),
  "butler.more": ("还有 %lld 处", "%lld more"),
+ "voice.title": ("录一段", "Voice note"),
+ "voice.cancel": ("不要了", "Discard"),
+ "voice.done": ("说完了", "Done"),
+ "voice.saving": ("收个尾…", "Wrapping up…"),
+ "voice.preparing": ("话筒准备中…", "Warming up the mic…"),
+ "voice.listening": ("说吧，我听着。", "Go ahead, I’m listening."),
+ "voice.model": ("第一次用，在下语音模型，下完就好…", "First time: fetching the speech model…"),
+ "voice.noModel": ("这回只录音，不转字：%@", "Recording audio only this time: %@"),
+ "voice.noLang": ("这台手机不认这个语言，这回只录音。", "This phone can’t transcribe that language. Recording audio only."),
+ "voice.noSpeech": ("没开语音识别权限，这回只录音。设置里能开。", "Speech recognition is off, so audio only. You can turn it on in Settings."),
+ "voice.noText": ("录音存好了，这回没转出字。", "Audio saved. No words came through this time."),
+ "voice.denied": ("一叶笺用不了话筒。去设置里给它开一下。", "Yiye can’t use the mic. Turn it on in Settings."),
+ "voice.openSettings": ("去设置", "Open Settings"),
+ "voice.failed": ("录不了：%@", "Couldn’t record: %@"),
+ "voice.play": ("播放", "Play"),
+ "voice.pause": ("暂停", "Pause"),
+ "voice.intent": ("录一段", "Record a voice note"),
+ "voice.intentDesc": ("打开一叶笺，直接开录。", "Opens Yiye and starts recording."),
+ "settings.voice": ("录一段", "Voice notes"),
+ "settings.voiceNote": ("说的话在手机上转成字，不上传。侧键一按就录：iPhone 的 Settings > Action Button > Shortcut，选一叶笺下面的「录一段」（手机是英文就叫 Record a voice note）。", "Your voice turns into text on this phone. Nothing is uploaded. To record with the Action Button: Settings > Action Button > Shortcut > Yiye “Record a voice note”."),
 }
 
 INFO = {
@@ -116,6 +136,8 @@ INFO = {
  "CFBundleName": ("一叶笺", "Yiye"),
  "NSCameraUsageDescription": ("拍一页纸，一叶笺在手机上把字认出来。", "Snap a page and Yiye turns the writing into text, right on your phone."),
  "NSPhotoLibraryAddUsageDescription": ("把笔记做成的图存进相册。", "Saves the pictures you make from notes to your Photos."),
+ "NSMicrophoneUsageDescription": ("录你说的话，跟笔记存在一起。", "Records what you say and keeps it with the note."),
+ "NSSpeechRecognitionUsageDescription": ("在手机上把你说的话转成字，不上传。", "Turns your voice into text right on your phone."),
 }
 
 def catalog(d):
@@ -137,7 +159,7 @@ root = pathlib.Path(__file__).resolve().parents[1]
 used = set()
 for f in (root / "Yiye").rglob("*.swift"):
     used |= set(re.findall(r'\.(?:t|f)\("([a-zA-Z][a-zA-Z0-9_.]+)"', f.read_text(encoding="utf-8")))
-used |= {f"paper.{p}" for p in ["white", "yellow", "green", "blue", "pink"]} | {"theme.note", "theme.white"}
+used |= {"voice.intent", "voice.intentDesc"} | {f"paper.{p}" for p in ["white", "yellow", "green", "blue", "pink"]} | {"theme.note", "theme.white"}
 missing = sorted(used - set(S))
 bad = [k for k, (zh, en) in S.items() if sorted(re.findall(r"%(?:lld|@)", zh)) != sorted(re.findall(r"%(?:lld|@)", en))]
 if missing or bad:
