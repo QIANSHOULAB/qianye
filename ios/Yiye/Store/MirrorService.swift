@@ -219,14 +219,13 @@ final class MirrorService {
         queue.async {
             let got = folder.importAll()
             // 附件拷回本机
-            var copied = 0
             for n in got.notes {
                 let short = MirrorFormat.shortID(n.meta.id)
                 let originals = (1...9).map { "\(MirrorFolder.attachName)/\(short)-原图-\($0).jpg" }.filter { folder.hasAttachment($0) }
                 for p in Markdown5.imagePaths(n.body) + originals where !FileManager.default.fileExists(atPath: store.url(p).path) {
                     let src = folder.url(p)
                     if folder.fs.ensureDownloaded(src), let d = try? folder.fs.read(src) {
-                        try? d.write(to: store.url(p), options: .atomic); copied += 1
+                        try? d.write(to: store.url(p), options: .atomic)
                     }
                 }
             }
@@ -235,14 +234,6 @@ final class MirrorService {
                 let r = app.mergeImported(got.notes)
                 app.show(app.lang.f("import.done", r.added, r.updated) + (got.pending.isEmpty ? "" : app.lang.f("import.pending", got.pending.count)))
             }
-        }
-    }
-}
-        queue.async {
-            for p in paths where !folder.hasAttachment(p) {
-                if let d = try? Data(contentsOf: store.url(p)) { try? folder.writeAttachment(d, relative: p) }
-            }
-            then()
         }
     }
 }

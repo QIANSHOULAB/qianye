@@ -135,6 +135,7 @@ jobs:
           (cd out && zip -qry "../Yiye-$V.ipa" Payload)
           ls -la "Yiye-$V.ipa"
           /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" -c "Print :CFBundleShortVersionString" -c "Print :MinimumOSVersion" out/Payload/Yiye.app/Info.plist
+          plutil -convert json -o info.json out/Payload/Yiye.app/Info.plist
 
       - name: 发 Releases
         env:
@@ -155,6 +156,7 @@ jobs:
           git fetch -q origin main
           git checkout -q -B main origin/main
           python3 ios/tools/update_source.py "$V" "$SIZE" "https://github.com/QIANSHOULAB/qianye/releases/download/$GITHUB_REF_NAME/Yiye-$V.ipa"
+          python3 ios/tools/check_source.py info.json
           git config user.name "$NAME"
           git config user.email "$MAIL"
           git add ios/sidestore.json
