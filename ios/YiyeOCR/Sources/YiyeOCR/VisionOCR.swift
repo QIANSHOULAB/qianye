@@ -41,7 +41,45 @@ public enum VisionOCR {
         guard let doc = observations.first?.document else {
             return Result(page: OCRPage(blocks: []), transcript: "", languages: langs.use.map { $0.maximalIdentifier })
         }
-        return Result(page: page(from: doc), transcript: doc.text.transcript, languages: langs.use.map { $0.maximalIdentifier })
+        var pg = page(from: doc)
+        // 第二遍：RecognizeTextRequest、不开语言校正，逐行对。两遍对不上的字就是拿不准的（网页版也是认两遍对答案）
+        var tr = RecognizeTextRequest()
+        tr.recognitionLevel = .accurate
+        tr.recognitionLanguages = langs.use
+        tr.usesLanguageCorrection = false
+        tr.automaticallyDetectsLanguage = false
+        if let second = try? await tr.perform(on: image, orientation: orientation) {
+            pg = crossCheck(pg, with: second)
+        }
+        return Result(page: pg, transcript: doc.text.transcript, languages: langs.use.map { $0.maximalIdentifier })
+    }
+
+    /// 每一行找第二遍里位置对得上的那行，字不一样就把第二遍的放进候选的第一个
+    static func crossCheck(_ page: OCRPage, with second: [RecognizedTextObservation]) -> OCRPage {
+        let others: [(text: String, top: Double, left: Double, h: Double, w: Double)] = second.compactMap { o in
+            guard let t = o.topCandidates(1).first?.string else { return nil }
+            let b = o.boundingBox.cgRect
+            return (t, 1 - Double(b.maxY), Double(b.minX), Double(b.height), Double(b.width))
+        }
+        var out = page
+        for bi in out.blocks.indices {
+            for li in out.blocks[bi].lines.indices {
+                let l = out.blocks[bi].lines[li]
+                guard l.crossCheck, l.width > 0, l.height > 0 else { continue }
+                var best: (score: Double, text: String)? = nil
+                for o in others {
+                    let v = max(0, min(l.top + l.height, o.top + o.h) - max(l.top, o.top)) / max(1e-6, min(l.height, o.h))
+                    let hz = max(0, min(l.left + l.width, o.left + o.w) - max(l.left, o.left)) / max(1e-6, l.width)
+                    guard v >= 0.5, hz >= 0.6 else { continue }
+                    let score = v + hz
+                    if best == nil || score > best!.score { best = (score, o.text) }
+                }
+                guard let b = best else { continue }
+                let a = l.text.filter { !$0.isWhitespace }, c = b.text.filter { !$0.isWhitespace }
+                if a != c { out.blocks[bi].lines[li].alternatives.insert(b.text, at: 0) }
+            }
+        }
+        return out
     }
 
     // ---------------------------------------------------------------- Vision → 纯数据
@@ -78,7 +116,7 @@ public enum VisionOCR {
                 guard !cellTexts.isEmpty else { continue }
                 let text = cellTexts.joined(separator: " ")
                 if conf < 0.5 { alts = [] }
-                blocks.append(OCRBlock(kind: .paragraph, lines: [OCRLine(text: text, confidence: conf, alternatives: alts, wraps: false, top: top, left: left, height: height)]))
+                blocks.append(OCRBlock(kind: .paragraph, lines: [OCRLine(text: text, confidence: conf, alternatives: alts, wraps: false, top: top, left: left, height: height, crossCheck: false)]))
             }
         }
         if let title = doc.title {
@@ -116,7 +154,7 @@ public enum VisionOCR {
                            alternatives: cands.dropFirst().map(\.string),
                            wraps: o.shouldWrapToNextLine,
                            isTitle: o.isTitle,
-                           top: 1 - Double(b.maxY), left: Double(b.minX), height: Double(b.height),
+                           top: 1 - Double(b.maxY), left: Double(b.minX), height: Double(b.height), width: Double(b.width),
                            weakWords: weak)
         }
     }
@@ -124,10 +162,10 @@ public enum VisionOCR {
 
 /// 认字以后的整条路：图 → 草稿（标题、清单、名字＋数字各归各位，拿不准的记位置）
 public enum PhotoToDraft {
-    public static func run(_ image: CGImage, orientation: CGImagePropertyOrientation = .up) async throws -> (draft: OCRDraft, transcript: String) {
+    public static func run(_ image: CGImage, orientation: CGImagePropertyOrientation = .up) async throws -> (draft: OCRDraft, transcript: String, page: OCRPage) {
         let r = try await VisionOCR.recognize(image, orientation: orientation)
         let built = DraftBuilder.build(r.page)
         let tidy = IntakeFormatter.tidy(Intake(kind: .photo, markdown: built.markdown, unsure: built.unsure))
-        return (OCRDraft(markdown: tidy.markdown, unsure: tidy.unsure), r.transcript)
+        return (OCRDraft(markdown: tidy.markdown, unsure: tidy.unsure), r.transcript, r.page)
     }
 }

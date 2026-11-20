@@ -15,13 +15,17 @@ public struct OCRLine: Equatable, Sendable {
     public var top: Double
     public var left: Double
     public var height: Double
+    public var width: Double
     /// 拿不准的词（Vision 给了逐词结果时才有）
     public var weakWords: [String]
+    /// 能不能拿第二遍认字来对（表格里拼起来的行不能）
+    public var crossCheck: Bool
 
     public init(text: String, confidence: Float, alternatives: [String] = [], wraps: Bool? = nil, isTitle: Bool = false,
-                top: Double = 0, left: Double = 0, height: Double = 0, weakWords: [String] = []) {
+                top: Double = 0, left: Double = 0, height: Double = 0, width: Double = 0, weakWords: [String] = [], crossCheck: Bool = true) {
         self.text = text; self.confidence = confidence; self.alternatives = alternatives; self.wraps = wraps
-        self.isTitle = isTitle; self.top = top; self.left = left; self.height = height; self.weakWords = weakWords
+        self.isTitle = isTitle; self.top = top; self.left = left; self.height = height; self.width = width
+        self.weakWords = weakWords; self.crossCheck = crossCheck
     }
 }
 
@@ -66,52 +70,83 @@ public enum DraftBuilder {
 
         var out = ""
         var unsure: [NSRange] = []
-        var outLines = 0
         func newline() { if !out.isEmpty { out += "\n" } }
-        func emit(_ prefix: String, _ parts: [OCRLine], joinWith sep: (OCRLine, OCRLine) -> String, suffix: String = "") {
+        /// 写一行：prefix + 各行接起来（drop：第一行开头去掉几个字，比如认成「口」的勾选框）
+        func emit(_ prefix: String, _ parts: [OCRLine], suffix: String = "", drop: Int = 0) {
             newline()
             out += prefix
             for (i, l) in parts.enumerated() {
-                if i > 0 { out += sep(parts[i - 1], l) }
+                if i > 0 { out += joiner(parts[i - 1], l) }
+                var text = clean(l.text)
+                var ranges = weak(text, l, threshold)
+                if i == 0 && drop > 0 {
+                    let d = min(drop, text.u16)
+                    text = text.sub16(NSRange(location: d, length: text.u16 - d)).trimmed
+                    let cut = clean(l.text).u16 - text.u16
+                    ranges = ranges.compactMap { r in
+                        let a = max(r.location - cut, 0), b = r.end - cut
+                        return b > a ? NSRange(location: a, length: b - a) : nil
+                    }
+                }
                 let at = out.u16
-                let text = clean(l.text)
                 out += text
-                for r in weak(text, l, threshold) { unsure.append(r.shifted(at)) }
+                for r in ranges { unsure.append(r.shifted(at)) }
             }
             out += suffix
-            outLines += 1
         }
 
         // 标题：Vision 认出来的标题；没有就看第一行是不是短句
         var titleDone = false
         if let ti = blocks.firstIndex(where: { $0.kind == .title }) {
             let b = blocks.remove(at: ti)
-            emit("# ", b.lines, joinWith: joiner)
+            emit("# ", b.lines)
             titleDone = true
         }
         for (bi, b) in blocks.enumerated() {
             switch b.kind {
             case .title:
-                emit("## ", b.lines, joinWith: joiner)
+                emit("## ", b.lines)
             case .listItem(let marker):
+                titleDone = true
                 let m = marker.trimmed
-                let prefix = bulletMarkers.contains(m) || m.isEmpty ? "- " : (m.hasSuffix(".") || m.hasSuffix("、") || m.hasSuffix(")") || m.hasSuffix("）") ? m + " " : m + " ")
-                emit(prefix, b.lines, joinWith: joiner)
+                let first = b.lines.first.map { clean($0.text) } ?? ""
+                let mCore = m.trimmingCharacters(in: CharacterSet(charactersIn: ".、．)）"))
+                if bulletMarkers.contains(m) || m.isEmpty {
+                    // 圆点、短横：换成 Markdown 列表；认出来的字里要是带着这个记号，去掉
+                    emit("- ", b.lines, drop: !m.isEmpty && first.hasPrefix(m) ? m.u16 : 0)
+                } else if !mCore.isEmpty && first.hasPrefix(mCore) {
+                    // 「1.螺丝」「A线早班」：编号本来就在字里，照原样
+                    emit("", b.lines)
+                } else {
+                    emit(m + " ", b.lines)
+                }
             case .paragraph:
                 var lines = b.lines
                 if !titleDone && bi == 0, let first = lines.first {
                     let rest = lines.count > 1 || blocks.count > 1
                     let t = clean(first.text)
                     if rest && (first.isTitle || looksTitle(t)) {
-                        emit("# ", [first], joinWith: joiner)
+                        emit("# ", [first])
                         lines.removeFirst()
-                        titleDone = true
                     }
                 }
                 titleDone = true
                 if lines.isEmpty { continue }
-                if keepLines(lines) {
-                    for l in lines { emit("", [l], joinWith: joiner) }
+                // 连着两行以上开头是「口 / □ / ☐」：那是勾选框，变成列表
+                let boxes = Set(["口", "□", "☐", "▢"])
+                let boxed = lines.count >= 2 && lines.filter { l in
+                    let t = clean(l.text)
+                    return t.count > 1 && boxes.contains(String(t.prefix(1)))
+                }.count >= 2
+                if keepLines(lines) || boxed {
+                    for l in lines {
+                        let t = clean(l.text)
+                        if boxed && t.count > 1 && boxes.contains(String(t.prefix(1))) {
+                            emit("- ", [l], drop: String(t.prefix(1)).u16)
+                        } else {
+                            emit("", [l])
+                        }
+                    }
                 } else {
                     // 一句话折了行的接起来；别的照原样分行
                     var group: [OCRLine] = []
@@ -121,9 +156,9 @@ public enum DraftBuilder {
                         if !cont {
                             let short = group.count == 1 && dw(clean(group[0].text)) <= 24
                             if b.centered && short && lines.count == 1 {
-                                emit("<center>", group, joinWith: joiner, suffix: "</center>")
+                                emit("<center>", group, suffix: "</center>")
                             } else {
-                                emit("", group, joinWith: joiner)
+                                emit("", group)
                             }
                             group = []
                         }
@@ -140,7 +175,7 @@ public enum DraftBuilder {
     static func clean(_ s: String) -> String { halfAlnum(s).trimmed }
 
     static func looksTitle(_ t: String) -> Bool {
-        dw(t) <= 30 && !Structure.endPunctRe.test(t) && Structure.asPair(t) == nil && Structure.asList(t) == nil
+        dw(t) <= 30 && !Structure.endPunctRe.test(t) && Structure.asPair(t) == nil && Structure.asList(t) == nil && !t.hasPrefix("口")
     }
 
     /// 都是「名字＋数字」、键值、短行：一行一条，不接

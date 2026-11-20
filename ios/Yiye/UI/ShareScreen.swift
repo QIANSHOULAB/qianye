@@ -189,7 +189,8 @@ struct ShareScreen: View {
 
     @ViewBuilder private func thumb(_ id: String) -> some View {
         if let img = images[id] {
-            Image(uiImage: img).resizable().scaledToFill().frame(width: 92, height: 92, alignment: .top).clipped()
+            Image(uiImage: img).resizable().scaledToFit().frame(width: 92)
+                .frame(width: 92, height: 92, alignment: .top).clipped()
         } else {
             Color(Ink.rule)
         }

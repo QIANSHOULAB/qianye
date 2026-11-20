@@ -15,10 +15,18 @@ let inDir = URL(fileURLWithPath: args[1], isDirectory: true)
 let outDir = URL(fileURLWithPath: args[2], isDirectory: true)
 try? FileManager.default.createDirectory(at: outDir, withIntermediateDirectories: true)
 
-func norm(_ s: String) -> [Character] {
+/// 标准答案里行首的勾选框（□ ☐）是记号不是字，跟草稿里的「- 」一样不算
+func stripBox(_ s: String) -> String {
+    var t = s.trimmingCharacters(in: .whitespaces)
+    if let f = t.first, "□☐".contains(f) { t.removeFirst() }
+    return t
+}
+
+func norm(_ s: String, truth: Bool = false) -> [Character] {
     var out: [Character] = []
     for line in s.components(separatedBy: "\n") {
-        guard let p = Markdown5.plain(line) else { continue }
+        guard var p = Markdown5.plain(line) else { continue }
+        if truth { p = stripBox(p) }
         for c in halfAlnum(p) where !c.isWhitespace { out.append(c) }
     }
     return out
@@ -40,7 +48,7 @@ func editDistance(_ a: [Character], _ b: [Character]) -> Int {
 
 /// 草稿每一行正文的每个字对不对：跟标准答案里最像的那行逐字比
 func correctness(draft: String, truth: String) -> [Int: [Bool]] {
-    let truthLines = truth.components(separatedBy: "\n").compactMap { Markdown5.plain($0)?.trimmed }.filter { !$0.isEmpty }
+    let truthLines = truth.components(separatedBy: "\n").compactMap { Markdown5.plain($0).map(stripBox)?.trimmed }.filter { !$0.isEmpty }
     var out: [Int: [Bool]] = [:]
     for (i, span) in lineSpans(draft).enumerated() {
         let l = Markdown5.parseLine(span.text, at: 0)
@@ -99,7 +107,15 @@ for f in files {
         let secs = Date().timeIntervalSince(t0)
         let draft = r.draft
         try? (draft.markdown + "\n").write(to: outDir.appendingPathComponent("\(name).md"), atomically: true, encoding: .utf8)
-        let a = norm(draft.markdown), b = norm(truth)
+        let a = norm(draft.markdown), b = norm(truth, truth: true)
+        // 每行认出来的字、信心、候选（第二遍的排第一），给人看哪里拿不准
+        var dump = ""
+        for blk in r.page.blocks {
+            for l in blk.lines {
+                dump += "\(l.text)\t信心 \(String(format: "%.2f", l.confidence))\t候选 \(l.alternatives.joined(separator: " | "))\n"
+            }
+        }
+        try? dump.write(to: outDir.appendingPathComponent("\(name).lines.txt"), atomically: true, encoding: .utf8)
         let ed = editDistance(a, b)
         let acc = b.isEmpty ? 0 : max(0, 1 - Double(ed) / Double(b.count))
         // 标黄准不准

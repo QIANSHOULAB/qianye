@@ -102,12 +102,12 @@ struct MarkdownStyler {
         return p
     }
 
-    /// 字在一行里往上提多少（行高固定、字贴着下面，提一点坐在横线上）
-    func lift(_ f: UIFont) -> CGFloat { max(0, ((m.line - f.lineHeight) / 2).rounded(.down) - 1) }
+    // 不用 baselineOffset：TextKit 2 里它会把固定行高吃掉一截（11-20 第 1 轮截图：行高成了 28，横线是 32，越往下越错位）。
+    // 行高固定时字贴着行底，正好坐在横线上，跟信纸一样。
 
     func base() -> [NSAttributedString.Key: Any] {
         let f = font(m.size)
-        return [.font: f, .foregroundColor: Ink.text, .paragraphStyle: para(), .baselineOffset: lift(f)]
+        return [.font: f, .foregroundColor: Ink.text, .paragraphStyle: para()]
     }
 
     func apply(_ s: NSTextStorage) {
@@ -118,6 +118,7 @@ struct MarkdownStyler {
         s.beginEditing()
         s.addAttributes(base(), range: full)
         s.removeAttribute(.backgroundColor, range: full)
+        s.removeAttribute(.baselineOffset, range: full)
         for l in Markdown5.parse(text) {
             guard l.range.length > 0, l.range.location + l.range.length <= s.length else { continue }
             let lineR = ns.paragraphRange(for: l.range)
@@ -134,17 +135,17 @@ struct MarkdownStyler {
                 break
             }
             if l.content.length > 0 {
-                s.addAttributes([.font: cf, .foregroundColor: color, .baselineOffset: lift(cf)], range: l.content)
+                s.addAttributes([.font: cf, .foregroundColor: color], range: l.content)
             }
             for b in l.bold where b.length > 0 {
                 let bf = font(cf.pointSize, .bold)
-                s.addAttributes([.font: bf, .baselineOffset: lift(bf)], range: b)
+                s.addAttribute(.font, value: bf, range: b)
             }
             for mk in l.markers where mk.length > 0 {
                 let piece = ns.substring(with: mk)
                 if piece.hasPrefix("<") {
                     let sf = font((m.size * 0.72).rounded())
-                    s.addAttributes([.font: sf, .foregroundColor: Ink.text3, .baselineOffset: lift(sf)], range: mk)
+                    s.addAttributes([.font: sf, .foregroundColor: Ink.text3], range: mk)
                 } else {
                     s.addAttribute(.foregroundColor, value: Ink.text3, range: mk)
                 }
@@ -153,7 +154,6 @@ struct MarkdownStyler {
         s.enumerateAttribute(.attachment, in: full, options: []) { v, r, _ in
             guard let a = v as? ImageAttachment else { return }
             s.addAttribute(.paragraphStyle, value: para(.center, height: a.slot), range: ns.paragraphRange(for: r))
-            s.addAttribute(.baselineOffset, value: 0, range: r)
         }
         s.enumerateAttribute(.yiyeUnsure, in: full, options: []) { v, r, _ in
             if v != nil { s.addAttribute(.backgroundColor, value: Ink.doubt, range: r) }

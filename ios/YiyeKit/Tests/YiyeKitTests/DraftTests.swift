@@ -62,4 +62,39 @@ final class DraftTests: XCTestCase {
         XCTAssertEqual(x.unsure.map { x.markdown.sub16($0) }, ["128O"])
         XCTAssertEqual(RangeCodec.decode(RangeCodec.encode(x.unsure)), x.unsure)
     }
+
+    func testMarkerAlreadyInText() {
+        let page = OCRPage(blocks: [
+            OCRBlock(kind: .paragraph, lines: [line("11月18日产量", 0.02)]),
+            OCRBlock(kind: .listItem(marker: "A"), lines: [line("A线早班1,280件", 0.1)]),
+            OCRBlock(kind: .listItem(marker: "B"), lines: [line("B线早班960件", 0.15)]),
+            OCRBlock(kind: .listItem(marker: "1."), lines: [line("1.螺丝200个", 0.2)]),
+            OCRBlock(kind: .listItem(marker: "•"), lines: [line("• 牛奶", 0.25)]),
+        ])
+        XCTAssertEqual(DraftBuilder.build(page).markdown, "# 11月18日产量\nA线早班1,280件\nB线早班960件\n1.螺丝200个\n- 牛奶")
+    }
+
+    func testCheckboxesBecomeList() {
+        let page = OCRPage(blocks: [
+            OCRBlock(kind: .paragraph, lines: [line("周末采购", 0.02)]),
+            OCRBlock(kind: .paragraph, lines: [
+                line("口牛奶2盒", 0.1, alt: ["口牛奶3盒"]),
+                line("口鸡蛋1盒", 0.15),
+                line("口洗衣液 1瓶", 0.2),
+            ]),
+        ])
+        let d = DraftBuilder.build(page)
+        XCTAssertEqual(d.markdown, "# 周末采购\n- 牛奶2盒\n- 鸡蛋1盒\n- 洗衣液 1瓶")
+        XCTAssertEqual(d.unsureTexts, ["2"])
+    }
+
+    func testIdsAndDatesAreNotNumbers() {
+        XCTAssertNil(Structure.asPair("Morning shift done, new blade on #3"))
+        XCTAssertNil(Structure.asPair("Shift report, Nov 18"))
+        XCTAssertNil(Structure.asPair("换刀 第3"))
+        XCTAssertNotNil(Structure.asPair("A线 1280件"))
+        XCTAssertNotNil(Structure.asPair("Line A 1,280 pcs"))
+        XCTAssertEqual(Structure.parse("Shift report, Nov 18\nLine A 1,280 pcs\nLine B 960 pcs").titleText, "Shift report, Nov 18")
+    }
 }
+

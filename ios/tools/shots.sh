@@ -23,7 +23,7 @@ for lang in zh-Hans en; do
     i=1
     for s in $SCREENS; do
       xcrun simctl terminate "$SIM" "$BID" >/dev/null 2>&1 || true
-      xcrun simctl launch "$SIM" "$BID" -YiyeDemo YES -YiyeScreen "$s" -YiyeLang "$lang" -YiyeAppearance "$ap" \
+      SIMCTL_CHILD_TZ=Asia/Singapore xcrun simctl launch "$SIM" "$BID" -YiyeDemo YES -YiyeScreen "$s" -YiyeLang "$lang" -YiyeAppearance "$ap" \
         -AppleLanguages "($lang)" -AppleLocale "$locale" >/dev/null
       if [ "$s" = ocr ]; then sleep 14; else sleep 5; fi
       png="$dir/$(printf %02d $i)-$s.png"

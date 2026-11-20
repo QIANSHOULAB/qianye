@@ -91,6 +91,9 @@ public enum Structure {
     static let dashStripRe = Re("^[—-]{1,2}\\s*")
     static let colonEndRe = Re("[:：]$")
     static let httpRe = Re("^https?$", [.caseInsensitive])
+    static let numberSignRe = Re("(?:#|＃|No\\.?|no\\.?|第)\\s*$")
+    static let monthTailRe = Re("\\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\\.?$", [.caseInsensitive])
+    static let sentenceRe = Re("[,，。;；]")
     static let numParseRe = Re("^([-+]?)([¥$€£￥]?)([0-9][0-9,]*)(\\.[0-9]+)?$")
 
     // ---------------------------------------------------------------- 小件
@@ -109,8 +112,12 @@ public enum Structure {
         if tailDigitColonRe.test(m1) && colonRe.test(after) { return nil }        // 「8:00」的冒号不是分隔
         if dateTailRe.test(m1) { return nil }                                       // 「11/1」的后半截不是数
         if let kv = kvLooseRe.match(line), let v = kv[2], !numUnitRe.test(v.trimmed) { return nil }   // 「时间：11月8日…」是键值
+        if numberSignRe.test(m1) { return nil }                                     // 「#3」「No. 5」「第3」是编号，不是数
         let label = labelTrimRe.re.stringByReplacingMatches(in: m1, options: [], range: NSRange(location: 0, length: m1.u16), withTemplate: "").trimmed
         if label.isEmpty || !hasLetterRe.test(label) || dw(label) > 36 { return nil }
+        if monthTailRe.test(label) { return nil }                                   // 「Shift report, Nov 18」是日期
+        if sentenceRe.test(label) && dw(label) > 20 { return nil }                  // 带逗号的长句子，末尾碰巧是个数
+
         guard let n = parseNum(m2) else { return nil }
         return (label, n, (m[3] ?? "").trimmed, totalRe.test(label))
     }
