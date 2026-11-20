@@ -93,6 +93,8 @@ final class MarkdownTests: XCTestCase {
         let t = "\n# 11月3日交接\n\nA线早班 **1280件**\n- 3号机换了刀\n![](附件/x.jpg)\n冷却液快没了"
         XCTAssertEqual(Markdown5.title(t), "11月3日交接")
         XCTAssertEqual(Markdown5.summary(t), "A线早班 1280件 3号机换了刀 冷却液快没了")
+        XCTAssertEqual(Markdown5.summary("周会\n周五之前把报表交上来。\n就这些"), "周五之前把报表交上来。就这些")
+        XCTAssertEqual(Markdown5.summary("Shift\nline A done.\nB next"), "line A done. B next")
         XCTAssertEqual(Markdown5.imagePaths(t), ["附件/x.jpg"])
     }
 

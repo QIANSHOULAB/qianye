@@ -115,20 +115,22 @@ public enum Markdown5 {
         return ""
     }
 
-    /// 摘要：标题下面接着的几行，去标记，用空格连起来
+    /// 摘要：标题下面接着的几行，去标记，用空格连起来；上一行以中文标点收尾就直接接（「交上来。就这些」）
     public static func summary(_ text: String, maxChars: Int = 90) -> String {
         var seenTitle = false
-        var parts: [String] = []
-        var total = 0
+        var s = ""
         for span in lineSpans(text) {
             guard let p = plain(span.text)?.trimmed, !p.isEmpty else { continue }
             if !seenTitle { seenTitle = true; continue }
-            parts.append(p); total += p.count
-            if total >= maxChars { break }
+            if let last = s.last, !closesTight.contains(last) { s += " " }
+            s += p
+            if s.count >= maxChars { break }
         }
-        let s = parts.joined(separator: " ")
         return s.count > maxChars ? String(s.prefix(maxChars)) + "…" : s
     }
+
+    /// 这些标点后面不再补空格
+    static let closesTight: Set<Character> = ["。", "！", "？", "；", "：", "，", "、", "）", "」", "』", "》", "…"]
 
     /// 正文里引用的图片路径（按出现顺序）
     public static func imagePaths(_ text: String) -> [String] {
