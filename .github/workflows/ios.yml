@@ -1,6 +1,7 @@
 name: iOS
 # 一叶笺 iPhone 版：macos-26 机器上 XcodeGen 生成工程 → 编译 → 单元测试 → 认字样张 → 模拟器截图 → 截图提交回 ios/shots/。
-# 只在 ios/** 变了才跑；CI 自己提交回来的截图（ios/shots/**、[skip ci]）不再触发。打 ios-v* 的 tag 出未签名 .ipa 发 Releases。
+# 只在 ios/** 变了才跑；CI 自己提交回来的截图（ios/shots/**、[skip ci]）不再触发。
+# 自动发版（Song 11-21 拍板 A）：main 上编译、单测、截图都过了，ios/project.yml 的 MARKETING_VERSION 还没发过，就出未签名 .ipa、建 ios-v<版本> 的 tag 和 Release、更新 SideStore 源。手推 ios-v* 的 tag 也照样发。
 # CI 提交用触发这次运行的那个提交的作者（git log -1）。
 on:
   push:
@@ -111,22 +112,38 @@ jobs:
           exit 1
 
   release:
-    if: ${{ startsWith(github.ref, 'refs/tags/ios-v') }}
+    needs: [build]
+    if: ${{ !cancelled() && (startsWith(github.ref, 'refs/tags/ios-v') || (github.ref == 'refs/heads/main' && needs.build.result == 'success')) }}
     runs-on: macos-26
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
+      - name: 版本号（这一版发过就不发）
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/ios-v* ]]; then
+            TAG="$GITHUB_REF_NAME"; V="${TAG#ios-v}"
+          else
+            V=$(grep -E '^\s*MARKETING_VERSION' ios/project.yml | head -1 | sed -E 's/.*: *"?([0-9.]+)"?.*/\1/')
+            TAG="ios-v$V"
+            if gh release view "$TAG" >/dev/null 2>&1; then echo "$TAG 发过了，不发"; echo "SKIP=1" >> "$GITHUB_ENV"; fi
+          fi
+          echo "$V" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::版本号不对：$V"; exit 1; }
+          echo "V=$V" >> "$GITHUB_ENV"; echo "TAG=$TAG" >> "$GITHUB_ENV"
+
       - name: Xcode 26
+        if: env.SKIP != '1'
         run: |
           sudo xcode-select -s "$XCODE"
           brew install xcodegen
           cd ios && xcodegen generate && bash tools/fix_regions.sh Yiye.xcodeproj/project.pbxproj
 
       - name: 编未签名的 .ipa
+        if: env.SKIP != '1'
         run: |
           set -o pipefail
-          V="${GITHUB_REF_NAME#ios-v}"
           xcodebuild -project ios/Yiye.xcodeproj -scheme Yiye -configuration Release \
             -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 | xcbeautify --renderer github-actions
@@ -138,24 +155,24 @@ jobs:
           plutil -convert json -o info.json out/Payload/Yiye.app/Info.plist
 
       - name: 发 Releases
+        if: env.SKIP != '1'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          V="${GITHUB_REF_NAME#ios-v}"
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" "Yiye-$V.ipa" --clobber
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "Yiye-$V.ipa" --clobber
           else
-            gh release create "$GITHUB_REF_NAME" "Yiye-$V.ipa" --title "一叶笺 iPhone $V" --notes-file ios/release-notes.md
+            gh release create "$TAG" "Yiye-$V.ipa" --target "$GITHUB_SHA" --title "一叶笺 iPhone $V" --notes-file ios/release-notes.md
           fi
 
       - name: 更新 SideStore 源（ios/sidestore.json）
+        if: env.SKIP != '1'
         run: |
-          V="${GITHUB_REF_NAME#ios-v}"
           SIZE=$(stat -f%z "Yiye-$V.ipa")
           NAME="$(git log -1 --format=%an)"; MAIL="$(git log -1 --format=%ae)"
           git fetch -q origin main
           git checkout -q -B main origin/main
-          python3 ios/tools/update_source.py "$V" "$SIZE" "https://github.com/QIANSHOULAB/qianye/releases/download/$GITHUB_REF_NAME/Yiye-$V.ipa"
+          python3 ios/tools/update_source.py "$V" "$SIZE" "https://github.com/QIANSHOULAB/qianye/releases/download/$TAG/Yiye-$V.ipa"
           python3 ios/tools/check_source.py info.json
           git config user.name "$NAME"
           git config user.email "$MAIL"
