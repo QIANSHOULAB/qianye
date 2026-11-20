@@ -23,14 +23,29 @@
         "https://qianshoulab.github.io/qianye/ios/shots/zh-light/04-ocr.jpg",
         "https://qianshoulab.github.io/qianye/ios/shots/zh-light/05-share-note.jpg"
       ],
-      "versions": [],
+      "versions": [
+        {
+          "version": "0.1.0",
+          "buildVersion": "1",
+          "date": "2026-11-20",
+          "localizedDescription": "一叶笺 iPhone 第一版：2014 年那本便签的样子（原木桌面、纸条、横线信纸），Markdown 五招，拍照认字（本机认，拿不准的标黄），分享成图（便签、白纸），每条笔记镜像到 iCloud 云盘的 .md，连掌机上的大管家理顺手写。",
+          "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.1.0/Yiye-0.1.0.ipa",
+          "size": 1296769,
+          "minOSVersion": "26.0"
+        }
+      ],
       "appPermissions": {
         "entitlements": [],
         "privacy": {
           "NSCameraUsageDescription": "Snap a page and Yiye turns the writing into text, right on your phone.",
           "NSPhotoLibraryAddUsageDescription": "Saves the pictures you make from notes to your Photos."
         }
-      }
+      },
+      "version": "0.1.0",
+      "versionDate": "2026-11-20",
+      "versionDescription": "一叶笺 iPhone 第一版：2014 年那本便签的样子（原木桌面、纸条、横线信纸），Markdown 五招，拍照认字（本机认，拿不准的标黄），分享成图（便签、白纸），每条笔记镜像到 iCloud 云盘的 .md，连掌机上的大管家理顺手写。",
+      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.1.0/Yiye-0.1.0.ipa",
+      "size": 1296769
     }
   ],
   "news": []
