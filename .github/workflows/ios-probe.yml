@@ -28,10 +28,9 @@ jobs:
           ls "$SDK/System/Library/Frameworks/Vision.framework/Modules/Vision.swiftmodule/"
           F=$(ls "$SDK"/System/Library/Frameworks/Vision.framework/Modules/Vision.swiftmodule/arm64*simulator.swiftinterface | head -1)
           echo "file $F $(wc -l < "$F")"
-          for k in 'struct RecognizeDocumentsRequest' 'struct DocumentObservation' 'struct RecognizeTextRequest' 'struct RecognizedTextObservation' 'struct RecognizedText ' 'struct NormalizedRegion' 'struct NormalizedRect ' 'struct DetectDocumentSegmentationRequest' 'struct DetectedDocumentObservation' 'protocol ImageProcessingRequest' 'extension Vision.ImageProcessingRequest' 'struct ImageRequestHandler'; do
+          for k in 'struct NormalizedPoint' 'NormalizedRegion' 'protocol BoundingRegionProviding' 'protocol QuadrilateralProviding' 'extension Vision.QuadrilateralProviding' 'extension Vision.BoundingRegionProviding' 'enum CoordinateOrigin'; do
             echo "=================== $k"
             awk -v key="$k" 'index($0,key){p=1;d=0} p{print; o=gsub(/\{/,"{"); c=gsub(/\}/,"}"); d+=o-c; if(d<=0 && (o>0||c>0)){p=0; n++; if(n>=6) exit}}' "$F" | grep -v '^ *@available(\(watchOS\|tvOS\|visionOS\)' | head -400
           done
-          echo "=================== DocumentObservation nested (Container/Text/List/Table)"
-          grep -n 'extension Vision.DocumentObservation' "$F" | head -40
-          awk '/extension Vision\.DocumentObservation/{p=1;d=0} p{print; o=gsub(/\{/,"{"); c=gsub(/\}/,"}"); d+=o-c; if(d<=0 && (o>0||c>0)){p=0}}' "$F" | grep -v '^ *@available(\(watchOS\|tvOS\|visionOS\)' | head -900
+          echo "=================== grep NormalizedRegion"
+          grep -n 'NormalizedRegion' "$F" | head -40
