@@ -104,7 +104,7 @@ enum Demo {
                 ago: 60 * 60 * 24 * 9, folder: home, paper: .green)
         // 录的那条：上面录音，下面字（大管家理过了）
         let voice = add(zh ? "周会安排\n明天上午九点在二楼会议室开周会，记得把上周的报表带上。\n冷却液快没了，晚班记得加。"
-                           : "Weekly sync\nTomorrow at nine in room two. Bring last week's report.\nCoolant is low, night shift top it up.",
+                           : "Tomorrow's sync\nTomorrow at nine in room two. Bring last week's report.\nCoolant is low, night shift top it up.",
                         ago: 60 * 5, folder: work, kind: "voice")
         if let rel = Demo.silence(app.attachments, name: VoiceText.fileName(note: voice.id, index: 1), seconds: 23) {
             voice.audioPaths = [rel]

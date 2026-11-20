@@ -7,11 +7,15 @@ v, size, url = sys.argv[1], int(sys.argv[2]), sys.argv[3]
 p = pathlib.Path(__file__).resolve().parents[1] / "sidestore.json"
 src = json.loads(p.read_text(encoding="utf-8"))
 app = src["apps"][0]
+import re
+proj = (pathlib.Path(__file__).resolve().parents[1] / "project.yml").read_text(encoding="utf-8")
+m = re.search(r'CURRENT_PROJECT_VERSION:\s*"?(\d+)"?', proj)
+build = m.group(1) if m else "1"
 today = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).strftime("%Y-%m-%d")
 notes = (pathlib.Path(__file__).resolve().parents[1] / "release-notes.md").read_text(encoding="utf-8").strip()
 entry = {
     "version": v,
-    "buildVersion": "1",
+    "buildVersion": build,
     "date": today,
     "localizedDescription": notes,
     "downloadURL": url,

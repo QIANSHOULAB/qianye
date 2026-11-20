@@ -31,5 +31,7 @@ for a in src.get("apps", []):
         if want != perms.get("privacy"): err.append(f"隐私说明对不上：包里 {want}，源里 {perms.get('privacy')}")
         if a.get("versions") and a["versions"][0].get("version") != info.get("CFBundleShortVersionString"):
             err.append(f"版本号对不上：包里 {info.get('CFBundleShortVersionString')}")
+        if a.get("versions") and a["versions"][0].get("buildVersion") != info.get("CFBundleVersion"):
+            err.append(f"buildVersion 对不上：包里 {info.get('CFBundleVersion')}，源里 {a['versions'][0].get('buildVersion')}")
 print("\n".join(err) if err else "sidestore.json 字段齐，跟包对得上")
 sys.exit(1 if err else 0)
