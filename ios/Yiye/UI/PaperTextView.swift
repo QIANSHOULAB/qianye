@@ -1,0 +1,418 @@
+import UIKit
+import SwiftUI
+import YiyeKit
+
+// 写字页：横线信纸。字一行一个行高，横线跟着行走；图片占整数行，横线照样对得上。
+// Markdown 标记字露在字里，颜色淡；拿不准的字黄底，点一下整段选中，直接打字替换。
+
+extension NSAttributedString.Key {
+    static let yiyeUnsure = NSAttributedString.Key("yiyeUnsure")
+}
+
+/// 正文里的一张图：记着它在附件里的路径
+final class ImageAttachment: NSTextAttachment {
+    var path = ""
+    /// 占的高度（行高的整数倍）
+    var slot: CGFloat = 0
+}
+
+/// 横线：一条线一个行高（图案平铺，随字滚动）
+final class RuledLinesView: UIView {
+    var lineHeight: CGFloat = 32 { didSet { if oldValue != lineHeight { refresh() } } }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = false
+        isOpaque = false
+        refresh()
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (v: RuledLinesView, _: UITraitCollection) in v.refresh() }
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:)") }
+
+    func refresh() {
+        let h = lineHeight
+        let fmt = UIGraphicsImageRendererFormat(for: traitCollection)
+        fmt.opaque = false
+        let lineW: CGFloat = 0.8
+        let color = Ink.rule.resolvedColor(with: traitCollection)
+        let img = UIGraphicsImageRenderer(size: CGSize(width: 4, height: h), format: fmt).image { ctx in
+            color.setFill()
+            ctx.fill(CGRect(x: 0, y: h - lineW, width: 4, height: lineW))
+        }
+        backgroundColor = UIColor(patternImage: img)
+    }
+}
+
+final class PaperTextView: UITextView {
+    let lines = RuledLinesView()
+    static let topInset: CGFloat = 4
+    static let side: CGFloat = 20
+    var onWidthChange: ((CGFloat) -> Void)?
+    private var lastWidth: CGFloat = 0
+
+    var metrics = EditorMetrics.of(1) {
+        didSet { lines.lineHeight = metrics.line; setNeedsLayout() }
+    }
+
+    init() {
+        super.init(frame: .zero, textContainer: nil)
+        backgroundColor = .clear
+        textContainerInset = UIEdgeInsets(top: PaperTextView.topInset, left: PaperTextView.side, bottom: 160, right: PaperTextView.side)
+        textContainer.lineFragmentPadding = 0
+        alwaysBounceVertical = true
+        keyboardDismissMode = .interactive
+        smartQuotesType = .no
+        smartDashesType = .no
+        smartInsertDeleteType = .no
+        insertSubview(lines, at: 0)
+        lines.lineHeight = metrics.line
+        tintColor = Ink.accent
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:)") }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let h = max(contentSize.height, bounds.height) + bounds.height
+        let f = CGRect(x: 12, y: textContainerInset.top, width: max(0, bounds.width - 24), height: h)
+        if lines.frame != f { lines.frame = f }
+        if subviews.first !== lines { sendSubviewToBack(lines) }
+        if abs(bounds.width - lastWidth) > 0.5 {
+            lastWidth = bounds.width
+            onWidthChange?(bounds.width)
+        }
+    }
+}
+
+/// 五招的样子：标题大、粗；列表、引用、居中的标记字淡；粗体里的字粗；引用的字灰一点
+@MainActor
+struct MarkdownStyler {
+    var m: EditorMetrics
+
+    func font(_ size: CGFloat, _ w: UIFont.Weight = .regular) -> UIFont { UIFont.systemFont(ofSize: size, weight: w) }
+
+    func para(_ align: NSTextAlignment = .natural, height: CGFloat? = nil) -> NSParagraphStyle {
+        let p = NSMutableParagraphStyle()
+        let h = height ?? m.line
+        p.minimumLineHeight = h
+        p.maximumLineHeight = h
+        p.alignment = align
+        p.lineBreakStrategy = .pushOut
+        return p
+    }
+
+    /// 字在一行里往上提多少（行高固定、字贴着下面，提一点坐在横线上）
+    func lift(_ f: UIFont) -> CGFloat { max(0, ((m.line - f.lineHeight) / 2).rounded(.down) - 1) }
+
+    func base() -> [NSAttributedString.Key: Any] {
+        let f = font(m.size)
+        return [.font: f, .foregroundColor: Ink.text, .paragraphStyle: para(), .baselineOffset: lift(f)]
+    }
+
+    func apply(_ s: NSTextStorage) {
+        let full = NSRange(location: 0, length: s.length)
+        guard full.length > 0 else { return }
+        let text = s.string
+        let ns = text as NSString
+        s.beginEditing()
+        s.addAttributes(base(), range: full)
+        s.removeAttribute(.backgroundColor, range: full)
+        for l in Markdown5.parse(text) {
+            guard l.range.length > 0, l.range.location + l.range.length <= s.length else { continue }
+            let lineR = ns.paragraphRange(for: l.range)
+            if l.centered { s.addAttribute(.paragraphStyle, value: para(.center), range: lineR) }
+            var cf = font(m.size)
+            var color = Ink.text
+            switch l.block {
+            case .heading(let n):
+                let k: CGFloat = n == 1 ? 1.36 : (n == 2 ? 1.18 : 1.06)
+                cf = font((m.size * k).rounded(), n == 3 ? .semibold : .bold)
+            case .quote:
+                color = Ink.text2
+            default:
+                break
+            }
+            if l.content.length > 0 {
+                s.addAttributes([.font: cf, .foregroundColor: color, .baselineOffset: lift(cf)], range: l.content)
+            }
+            for b in l.bold where b.length > 0 {
+                let bf = font(cf.pointSize, .bold)
+                s.addAttributes([.font: bf, .baselineOffset: lift(bf)], range: b)
+            }
+            for mk in l.markers where mk.length > 0 {
+                let piece = ns.substring(with: mk)
+                if piece.hasPrefix("<") {
+                    let sf = font((m.size * 0.72).rounded())
+                    s.addAttributes([.font: sf, .foregroundColor: Ink.text3, .baselineOffset: lift(sf)], range: mk)
+                } else {
+                    s.addAttribute(.foregroundColor, value: Ink.text3, range: mk)
+                }
+            }
+        }
+        s.enumerateAttribute(.attachment, in: full, options: []) { v, r, _ in
+            guard let a = v as? ImageAttachment else { return }
+            s.addAttribute(.paragraphStyle, value: para(.center, height: a.slot), range: ns.paragraphRange(for: r))
+            s.addAttribute(.baselineOffset, value: 0, range: r)
+        }
+        s.enumerateAttribute(.yiyeUnsure, in: full, options: []) { v, r, _ in
+            if v != nil { s.addAttribute(.backgroundColor, value: Ink.doubt, range: r) }
+        }
+        s.endEditing()
+    }
+}
+
+/// 写字页的大脑：装字、取字、五招、插图、黄字整段选中
+@MainActor
+final class EditorController: NSObject, UITextViewDelegate {
+    private(set) var tv: PaperTextView?
+    var store: AttachmentStore?
+    var metrics = EditorMetrics.of(1)
+    var onChange: (() -> Void)?
+    var onFocus: ((Bool) -> Void)?
+    private var programmatic = false
+
+    var styler: MarkdownStyler { MarkdownStyler(m: metrics) }
+
+    func makeView() -> PaperTextView {
+        if let tv { return tv }
+        let v = PaperTextView()
+        v.delegate = self
+        v.metrics = metrics
+        v.onWidthChange = { [weak self] _ in self?.resizeAttachments() }
+        tv = v
+        return v
+    }
+
+    func setMetrics(_ m: EditorMetrics) {
+        guard m != metrics else { return }
+        metrics = m
+        tv?.metrics = m
+        resizeAttachments()
+        restyle()
+    }
+
+    // ---------------------------------------------------------------- 装字、取字
+    func load(markdown: String, unsure: [NSRange]) {
+        guard let tv else { return }
+        let map = DisplayMap(markdown: markdown)
+        let s = NSMutableAttributedString(string: map.display, attributes: styler.base())
+        for img in map.images.reversed() {
+            s.replaceCharacters(in: img.display, with: NSAttributedString(attachment: attachment(img.path)))
+        }
+        for r in unsure {
+            let d = map.toDisplay(r)
+            if d.length > 0, d.location + d.length <= s.length { s.addAttribute(.yiyeUnsure, value: true, range: d) }
+        }
+        programmatic = true
+        let offset = tv.contentOffset
+        tv.attributedText = s
+        restyle()
+        tv.contentOffset = offset
+        programmatic = false
+    }
+
+    /// 写字页里现在的字 → Markdown + 拿不准的位置
+    func current() -> (markdown: String, unsure: [NSRange]) {
+        guard let tv else { return ("", []) }
+        let st = tv.textStorage
+        let full = NSRange(location: 0, length: st.length)
+        var paths: [Int: String] = [:]
+        st.enumerateAttribute(.attachment, in: full, options: []) { v, r, _ in
+            if let a = v as? ImageAttachment { paths[r.location] = a.path }
+        }
+        let md = markdownFromDisplay(st.string, paths: paths)
+        var disp: [NSRange] = []
+        st.enumerateAttribute(.yiyeUnsure, in: full, options: []) { v, r, _ in if v != nil { disp.append(r) } }
+        let map = DisplayMap(markdown: md)
+        return (md, disp.map { map.toMarkdown($0) }.filter { $0.length > 0 })
+    }
+
+    /// 光标在 Markdown 里的位置（拍照认字的字插在这儿）
+    func caretInMarkdown() -> Int? {
+        guard let tv else { return nil }
+        let md = current().markdown
+        return DisplayMap(markdown: md).toMarkdown(tv.selectedRange).location
+    }
+
+    func restyle() {
+        guard let tv, tv.markedTextRange == nil else { return }
+        let sel = tv.selectedRange
+        styler.apply(tv.textStorage)
+        tv.typingAttributes = styler.base()
+        if tv.selectedRange != sel { tv.selectedRange = sel }
+    }
+
+    // ---------------------------------------------------------------- 图
+    func attachment(_ path: String) -> ImageAttachment {
+        let a = ImageAttachment()
+        a.path = path
+        fit(a)
+        return a
+    }
+
+    private func fit(_ a: ImageAttachment) {
+        let width = (tv?.bounds.width ?? 0) > 50 ? tv!.bounds.width : 390
+        let maxW = width - PaperTextView.side * 2
+        let L = metrics.line
+        if let img = store?.image(a.path), img.size.width > 0 {
+            let ar = img.size.height / img.size.width
+            let slot = max(L * 2, ((maxW * ar + 8) / L).rounded(.up) * L)
+            let h = slot - 8
+            let w = min(maxW, h / ar)
+            let fmt = UIGraphicsImageRendererFormat()
+            fmt.scale = tv?.traitCollection.displayScale ?? 3
+            a.image = UIGraphicsImageRenderer(size: CGSize(width: w, height: h), format: fmt).image { _ in
+                img.draw(in: CGRect(x: 0, y: 0, width: w, height: h))
+            }
+            a.bounds = CGRect(x: 0, y: 0, width: w, height: h)
+            a.slot = slot
+        } else {
+            let h = L * 3 - 8
+            let fmt = UIGraphicsImageRendererFormat()
+            a.image = UIGraphicsImageRenderer(size: CGSize(width: maxW, height: h), format: fmt).image { ctx in
+                Ink.rule.setFill()
+                ctx.fill(CGRect(x: 0, y: 0, width: maxW, height: h))
+            }
+            a.bounds = CGRect(x: 0, y: 0, width: maxW, height: h)
+            a.slot = L * 3
+        }
+    }
+
+    private func resizeAttachments() {
+        guard let tv else { return }
+        let st = tv.textStorage
+        var any = false
+        st.enumerateAttribute(.attachment, in: NSRange(location: 0, length: st.length), options: []) { v, _, _ in
+            if let a = v as? ImageAttachment { fit(a); any = true }
+        }
+        if any {
+            restyle()
+            tv.setNeedsLayout()
+        }
+    }
+
+    /// 插一张图：独占一行，插完光标落在图下面
+    func insertImage(path: String) {
+        guard let tv else { return }
+        let att = attachment(path)
+        let sel = tv.selectedRange
+        let ns = tv.textStorage.string as NSString
+        let s = NSMutableAttributedString()
+        if sel.location > 0 && ns.character(at: sel.location - 1) != 10 { s.append(NSAttributedString(string: "\n")) }
+        s.append(NSAttributedString(attachment: att))
+        s.append(NSAttributedString(string: "\n"))
+        tv.textStorage.replaceCharacters(in: sel, with: s)
+        tv.selectedRange = NSRange(location: sel.location + s.length, length: 0)
+        restyle()
+        onChange?()
+    }
+
+    // ---------------------------------------------------------------- 五招
+    func apply(_ cmd: MDCommand) {
+        guard let tv else { return }
+        let e = Markdown5.apply(cmd, to: tv.textStorage.string, selection: tv.selectedRange)
+        programmatic = true
+        applyMinimal(e.range, e.replacement)
+        tv.selectedRange = e.selection
+        programmatic = false
+        restyle()
+        onChange?()
+    }
+
+    /// 只换真变了的那几个字（别的字上的黄底、图都不动）
+    private func applyMinimal(_ range: NSRange, _ newText: String) {
+        guard let tv else { return }
+        let old = tv.textStorage.string.sub16(range)
+        var chunks: [(NSRange, String)] = []
+        var pos = 0
+        var start: Int? = nil
+        var ins = ""
+        for op in TextDiff.ops(old, newText) {
+            switch op {
+            case .same(let c):
+                if let st = start { chunks.append((NSRange(location: st, length: pos - st), ins)); start = nil; ins = "" }
+                pos += String(c).u16
+            case .del(let c):
+                if start == nil { start = pos }
+                pos += String(c).u16
+            case .ins(let c):
+                if start == nil { start = pos }
+                ins.append(c)
+            }
+        }
+        if let st = start { chunks.append((NSRange(location: st, length: pos - st), ins)) }
+        for (r, s) in chunks.reversed() { replace(r.shifted(range.location), with: s) }
+    }
+
+    /// 走 UITextInput 换字（能撤销）
+    func replace(_ r: NSRange, with s: String) {
+        guard let tv,
+              let a = tv.position(from: tv.beginningOfDocument, offset: r.location),
+              let b = tv.position(from: a, offset: r.length),
+              let tr = tv.textRange(from: a, to: b) else { return }
+        tv.replace(tr, withText: s)
+    }
+
+    func focus() { tv?.becomeFirstResponder() }
+    func endEditing() { tv?.resignFirstResponder() }
+
+    // ---------------------------------------------------------------- UITextViewDelegate
+    func textViewDidChange(_ textView: UITextView) {
+        if textView.markedTextRange == nil { restyle() }
+        if !programmatic { onChange?() }
+    }
+
+    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        // 新打的字不带黄底
+        textView.typingAttributes = styler.base()
+        if text == "\n", !programmatic, continueList(range) { return false }
+        return true
+    }
+
+    /// 列表、引用行末回车：自动接上「- 」「> 」；空的那行再回车：去掉标记
+    private func continueList(_ range: NSRange) -> Bool {
+        guard let tv, range.length == 0 else { return false }
+        let text = tv.textStorage.string
+        guard let l = lineSpans(text).first(where: { range.location >= $0.range.location && range.location <= $0.range.end }),
+              range.location == l.range.location + l.range.length else { return false }
+        let md = Markdown5.parseLine(l.text, at: l.range.location)
+        let prefix: String
+        switch md.block {
+        case .bullet: prefix = "- "
+        case .quote: prefix = "> "
+        default: return false
+        }
+        programmatic = true
+        if md.content.length == 0 {
+            replace(l.range, with: "")
+        } else {
+            replace(range, with: "\n" + prefix)
+        }
+        programmatic = false
+        restyle()
+        onChange?()
+        return true
+    }
+
+    func textViewDidChangeSelection(_ textView: UITextView) {
+        guard !programmatic, textView.markedTextRange == nil else { return }
+        let sel = textView.selectedRange
+        guard sel.length == 0, sel.location < textView.textStorage.length else { return }
+        var eff = NSRange(location: 0, length: 0)
+        if textView.textStorage.attribute(.yiyeUnsure, at: sel.location, effectiveRange: &eff) != nil, eff.length > 0 {
+            programmatic = true
+            textView.selectedRange = eff
+            programmatic = false
+        }
+    }
+
+    func textViewDidBeginEditing(_ textView: UITextView) { onFocus?(true) }
+    func textViewDidEndEditing(_ textView: UITextView) { onFocus?(false) }
+}
+
+struct NoteTextEditor: UIViewRepresentable {
+    let controller: EditorController
+    func makeUIView(context: Context) -> PaperTextView { controller.makeView() }
+    func updateUIView(_ uiView: PaperTextView, context: Context) {}
+}

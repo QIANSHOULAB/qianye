@@ -1,0 +1,107 @@
+CFBundleDisplayName	Yiye
+CFBundleName	Yiye
+NSCameraUsageDescription	Snap a page and Yiye turns the writing into text, right on your phone.
+NSPhotoLibraryAddUsageDescription	Saves the pictures you make from notes to your Photos.
+app.name	Yiye
+busy.import	Bringing your notes home…
+busy.ocr	Squinting at your handwriting…
+butler.absent	Butler’s not around. It’ll pick this up later.
+butler.applied	The butler fixed %lld spots
+butler.failed	The butler hit a snag
+butler.more	%lld more
+butler.needMirror	The butler works out of your mirror folder. Pick one in Settings first.
+butler.needMirrorShort	Pick a mirror folder first
+butler.no	Skip
+butler.offer	Butler’s copy is ready. Tap to swap it in.
+butler.ok	Got it
+butler.online	Butler is online
+butler.retry	Try again
+butler.revert	Restore original
+butler.seen	Butler last seen %lld min ago
+butler.short.offer	Ready
+butler.short.waiting	Tidying
+butler.unchanged	The butler read it. Nothing to fix.
+butler.waiting	The butler’s on it
+capture.camera	Scan page
+capture.library	Scan a photo
+capture.libraryInto	Scan a photo
+capture.shoot	Shoot
+common.cancel	Cancel
+common.close	Close
+common.done	Done
+editor.back	Notes
+editor.more	More
+editor.original	Original photo
+editor.originalMissing	The original photo isn’t on this phone.
+editor.paper	Paper
+editor.toButler	Send to the butler
+folders.add	Add
+folders.delete	Delete folder
+folders.deleted	Deleted “%@”. Its notes are back in All Notes.
+folders.namePlaceholder	Folder name
+folders.new	New folder
+folders.title	Folders
+font.large	Large
+font.medium	Medium
+font.small	Small
+import.done	Imported %lld, updated %lld.
+import.pending	 %lld still coming down from iCloud. Try again in a bit.
+lang.system	System
+list.all	All Notes
+list.empty	A blank desk. Write a note or scan a page.
+list.new	New note
+list.noHit	No matches
+list.search	Search
+md.bold	Bold
+md.center	Center
+md.done	Hide keyboard
+md.heading	Heading
+md.image	Insert photo
+md.list	List
+md.quote	Quote
+mirror.ask	Keep a copy of every note in iCloud Drive. Survives new phones, and the butler works from there.
+mirror.choose	Choose folder
+mirror.failed	Can’t use that folder: %@
+mirror.icloud	iCloud Drive
+mirror.off	Off
+mirror.on	Mirroring to %@
+mirror.skip	Not now
+note.delete	Delete
+note.move	Move to folder
+note.pin	Pin
+note.unpin	Unpin
+note.untitled	Untitled
+ocr.failed	Couldn’t read it: %@
+ocr.nothing	No text in that one. Try a straighter, brighter shot.
+paper.blue	Sky
+paper.green	Sage
+paper.pink	Blush
+paper.white	White
+paper.yellow	Cream
+settings.butler	Butler
+settings.butlerAuto	Auto-send scans
+settings.butlerNote	The butler on your PC checks scans against the photo and sends back a clean copy, all through the mirror folder. No AI keys on this phone.
+settings.fontSize	Text size
+settings.import	Import from folder
+settings.language	Language
+settings.mirror	Mirror folder
+settings.mirrorChange	Change
+settings.mirrorNote	Every save writes a .md file here. Photos go in 附件, deleted notes in 废纸篓. Switch to another build later and everything moves back from here.
+settings.title	Settings
+settings.version	Version
+share.mark	Yiye
+share.noPermission	No access to Photos. Turn it on in Settings > Privacy & Security > Photos.
+share.save	Save
+share.saveFailed	Didn’t save: %@
+share.saved	Saved to Photos
+share.share	Share
+share.title	Share as image
+sort.created	Date created
+sort.new	Newest edits
+sort.old	Oldest edits
+sort.title	Sort
+theme.note	Note
+theme.white	Plain
+time.yesterday	Yesterday
+toast.deleted	Deleted “%@”
+toast.undo	Undo

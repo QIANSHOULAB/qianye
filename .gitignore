@@ -9,3 +9,10 @@ docs/对比/*.png
 docs/对比/r0/
 docs/对比/r0_通知/
 docs/对比/final/
+# iOS：工程和 Info.plist 都是 CI 里 XcodeGen 生成的；SwiftPM 的编译产物
+ios/Yiye.xcodeproj/
+ios/Yiye/Info.plist
+ios/YiyeKit/.build/
+ios/YiyeOCR/.build/
+ios/**/.swiftpm/
+build/

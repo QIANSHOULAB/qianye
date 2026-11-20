@@ -1,0 +1,156 @@
+name: iOS
+# 一叶笺 iPhone 版：macos-26 机器上 XcodeGen 生成工程 → 编译 → 单元测试 → 认字样张 → 模拟器截图 → 截图提交回 ios/shots/。
+# 只在 ios/** 变了才跑；CI 自己提交回来的截图（ios/shots/**、[skip ci]）不再触发。打 ios-v* 的 tag 出未签名 .ipa 发 Releases。
+# CI 提交用触发这次运行的那个提交的作者（git log -1）。
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - '!ios/shots/**'
+      - '!ios/**/*.md'
+      - '!ios/sidestore.json'
+      - '!ios/icon.png'
+      - '.github/workflows/ios.yml'
+    tags: ['ios-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  XCODE: /Applications/Xcode_26.6.app
+  HOMEBREW_NO_AUTO_UPDATE: 1
+  HOMEBREW_NO_INSTALL_CLEANUP: 1
+
+jobs:
+  build:
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    runs-on: macos-26
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode 26（UIDesignRequiresCompatibility 只给到 26）
+        run: |
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+          brew install xcodegen
+          xcodegen --version
+
+      - name: YiyeKit 单元测试
+        run: |
+          set -o pipefail
+          cd ios/YiyeKit
+          swift test 2>&1 | xcbeautify --renderer github-actions
+
+      - name: 生成工程
+        run: |
+          cd ios
+          xcodegen generate
+          bash tools/fix_regions.sh Yiye.xcodeproj/project.pbxproj
+
+      - name: 挑模拟器
+        run: python3 ios/tools/pick_sim.py >> "$GITHUB_ENV"
+
+      - name: 编译（模拟器）
+        run: |
+          set -o pipefail
+          xcodebuild -project ios/Yiye.xcodeproj -scheme Yiye -configuration Debug \
+            -destination "id=$SIM_UDID" -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO build 2>&1 | tee build.log | xcbeautify --renderer github-actions
+          ls build/Build/Products/Debug-iphonesimulator/Yiye.app | head -50
+
+      - name: 编不过：把错误原样贴出来
+        if: failure()
+        run: |
+          grep -E "error:" build.log | sort -u | head -80 || true
+
+      - name: 认字样张（macOS 26 的 Vision，跟 iPhone 同一套 RecognizeDocumentsRequest）
+        run: |
+          cd ios/YiyeOCR
+          swift run -c release ocr-eval ../tools/ocr-samples ../shots/ocr 2>&1 | tail -40
+
+      - name: 模拟器截图（主要界面 × 浅深 × 中英）
+        run: bash ios/tools/shots.sh "$SIM_UDID" build/Build/Products/Debug-iphonesimulator/Yiye.app ios/shots
+
+      - name: 截图提交回仓库
+        if: always()
+        run: |
+          git config user.name "$(git log -1 --format=%an)"
+          git config user.email "$(git log -1 --format=%ae)"
+          {
+            echo "# 截图和样张（CI 自动生成，每次覆盖）"
+            echo
+            echo "- 提交：${GITHUB_SHA::7}"
+            echo "- $(xcodebuild -version | head -1)，模拟器：${SIM_NAME:-?}（${SIM_RUNTIME:-?}）"
+            echo "- 目录：zh-light、zh-dark、en-light、en-dark 各 8 张；ocr/ 是 10 张认字样张的结果"
+          } > ios/shots/README.md
+          git add ios/shots
+          if git diff --cached --quiet; then echo "截图没变"; exit 0; fi
+          git commit -q -m "iOS 截图：${GITHUB_SHA::7} [skip ci]"
+          for i in 1 2 3 4 5; do
+            git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0
+            sleep 6
+          done
+          exit 1
+
+  release:
+    if: ${{ startsWith(github.ref, 'refs/tags/ios-v') }}
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode 26
+        run: |
+          sudo xcode-select -s "$XCODE"
+          brew install xcodegen
+          cd ios && xcodegen generate && bash tools/fix_regions.sh Yiye.xcodeproj/project.pbxproj
+
+      - name: 编未签名的 .ipa
+        run: |
+          set -o pipefail
+          V="${GITHUB_REF_NAME#ios-v}"
+          xcodebuild -project ios/Yiye.xcodeproj -scheme Yiye -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 | xcbeautify --renderer github-actions
+          rm -rf out && mkdir -p out/Payload
+          cp -R build/Build/Products/Release-iphoneos/Yiye.app out/Payload/
+          (cd out && zip -qry "../Yiye-$V.ipa" Payload)
+          ls -la "Yiye-$V.ipa"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" -c "Print :CFBundleShortVersionString" -c "Print :MinimumOSVersion" out/Payload/Yiye.app/Info.plist
+
+      - name: 发 Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V="${GITHUB_REF_NAME#ios-v}"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "Yiye-$V.ipa" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "Yiye-$V.ipa" --title "一叶笺 iPhone $V" --notes-file ios/release-notes.md
+          fi
+
+      - name: 更新 SideStore 源（ios/sidestore.json）
+        run: |
+          V="${GITHUB_REF_NAME#ios-v}"
+          SIZE=$(stat -f%z "Yiye-$V.ipa")
+          NAME="$(git log -1 --format=%an)"; MAIL="$(git log -1 --format=%ae)"
+          git fetch -q origin main
+          git checkout -q -B main origin/main
+          python3 ios/tools/update_source.py "$V" "$SIZE" "https://github.com/QIANSHOULAB/qianye/releases/download/$GITHUB_REF_NAME/Yiye-$V.ipa"
+          git config user.name "$NAME"
+          git config user.email "$MAIL"
+          git add ios/sidestore.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -q -m "SideStore 源：一叶笺 $V [skip ci]"
+          for i in 1 2 3 4 5; do
+            git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0
+            sleep 6
+          done
+          exit 1
