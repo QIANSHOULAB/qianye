@@ -63,7 +63,7 @@ struct EditorScreen: View {
             MarkdownBar(focused: focused, apply: { controller.apply($0) },
                         photo: { pickerMode = .insert; showPicker = true },
                         camera: { flush(); showCamera = true },
-                        voice: { flush(); if let note { app.startVoice(.into(note.id, controller.caretInMarkdown())) } },
+                        voice: { flush(); if let note { app.startVoice(.into(note.id, controller.caretInMarkdown() ?? note.markdown.u16)) } },
                         done: { controller.endEditing() })
         }
         .background(PaperBackground(tint: note?.tint ?? .white).ignoresSafeArea())
