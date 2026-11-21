@@ -46,7 +46,7 @@ extension AppModel {
                     n.pinned = it.meta.pinned
                     n.paper = it.meta.color
                     n.folder = folderNamed(it.meta.folder)
-                    if n.audioPaths.isEmpty { n.audioPaths = VoiceText.paths(note: n.id) { attachments.exists($0) } }
+                    if n.audioPaths.isEmpty { n.audioPaths = Listen.importPaths(note: n.id) { attachments.exists($0) }; loadMarks(n) }
                     updated += 1
                 }
                 continue
@@ -61,12 +61,22 @@ extension AppModel {
             n.kind = it.meta.kind
             n.folder = folderNamed(it.meta.folder)
             n.originalPaths = it.meta.kind == "photo" ? originalsFor(it.meta.id) : []
-            n.audioPaths = VoiceText.paths(note: it.meta.id) { attachments.exists($0) }
+            n.audioPaths = Listen.importPaths(note: it.meta.id) { attachments.exists($0) }
+            loadMarks(n)
             context.insert(n)
             added += 1
         }
         try? context.save()
         return (added, updated)
+    }
+
+    /// 导入时把每句表从「.marks.json」读回来
+    private func loadMarks(_ n: Note) {
+        var table: [String: [ListenMark]] = [:]
+        for p in n.audioPaths {
+            if let d = attachments.data(Listen.sidecar(for: p)), let m = try? JSONDecoder().decode([ListenMark].self, from: d) { table[p] = m }
+        }
+        if !table.isEmpty { n.markTable = table }
     }
 
     private func originalsFor(_ id: UUID) -> [String] {

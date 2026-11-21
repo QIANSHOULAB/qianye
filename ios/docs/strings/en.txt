@@ -7,6 +7,7 @@ NSSpeechRecognitionUsageDescription	Turns your voice into text right on your pho
 app.name	Yiye
 busy.import	Bringing your notes home…
 busy.ocr	Squinting at your handwriting…
+busy.speak	Reading it aloud…
 butler.absent	Butler’s not around. It’ll pick this up later.
 butler.applied	The butler fixed %lld spots
 butler.failed	The butler hit a snag
@@ -54,6 +55,28 @@ list.empty	A blank desk. Write a note, scan a page, or just talk.
 list.new	New note
 list.noHit	No matches
 list.search	Search
+listen.always	Loop
+listen.arrived	New from the butler: %@
+listen.close	Close
+listen.empty	Nothing to listen to yet. Tap “Read aloud” in a note’s menu, or wait for the butler to send some.
+listen.loopOne	Loop sentence
+listen.next	Next
+listen.nextSentence	Next sentence
+listen.noTiming	No sentence timing for this one, so tapping a line won’t jump.
+listen.pass	pass %lld
+listen.prev	Previous
+listen.prevSentence	Previous sentence
+listen.showText	Show text
+listen.speak	Read aloud
+listen.speakFailed	Couldn’t read it: %@
+listen.spoken	Done. It’s in Listening.
+listen.spokenBasic	Done. For a more natural voice, download a Premium English voice in Settings > Accessibility > Spoken Content > Voices.
+listen.text	Text
+listen.times1	1×
+listen.times2	2×
+listen.times3	3×
+listen.times5	5×
+listen.title	Listening
 md.bold	Bold
 md.center	Center
 md.done	Hide keyboard

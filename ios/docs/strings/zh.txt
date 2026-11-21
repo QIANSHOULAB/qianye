@@ -7,6 +7,7 @@ NSSpeechRecognitionUsageDescription	在手机上把你说的话转成字，不�
 app.name	一叶笺
 busy.import	从文件夹往回搬…
 busy.ocr	认字中，你去摸会儿鱼…
+busy.speak	一句一句念，稍等…
 butler.absent	大管家没来，回来接着理
 butler.applied	大管家改了 %lld 处
 butler.failed	大管家这回没理成
@@ -54,6 +55,28 @@ list.empty	一张纸都还没有。写一条，拍一页，或者说一段。
 list.new	写一条
 list.noHit	没搜到
 list.search	搜索
+listen.always	一直
+listen.arrived	大管家送来一篇：%@
+listen.close	关
+listen.empty	还没有听力稿。写字页右上角菜单里点「念出来」，或者等大管家送来。
+listen.loopOne	单句循环
+listen.next	下一篇
+listen.nextSentence	下一句
+listen.noTiming	这篇没有分句的时间，点句子跳不过去。
+listen.pass	第 %lld 遍
+listen.prev	上一篇
+listen.prevSentence	上一句
+listen.showText	看原文
+listen.speak	念出来
+listen.speakFailed	没念成：%@
+listen.spoken	念好了，在听力里。
+listen.spokenBasic	念好了。想念得更像真人：iPhone 的 Settings > Accessibility > Spoken Content > Voices > English，下一个 Premium 的声音。
+listen.text	文
+listen.times1	1 遍
+listen.times2	2 遍
+listen.times3	3 遍
+listen.times5	5 遍
+listen.title	听力
 md.bold	粗体
 md.center	居中
 md.done	收起键盘

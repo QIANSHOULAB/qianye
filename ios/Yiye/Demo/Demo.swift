@@ -109,6 +109,26 @@ enum Demo {
         if let rel = Demo.silence(app.attachments, name: VoiceText.fileName(note: voice.id, index: 1), seconds: 23) {
             voice.audioPaths = [rel]
         }
+        // 听力：三篇英语新闻（大管家配好音送来的样子），每篇一段没声音的录音 + 每句表
+        let english = Folder(name: zh ? "英语" : "English", order: 2)
+        ctx.insert(english)
+        let stories = [
+            "# Bitcoin falls below $62,000\nBitcoin fell below 62,000 dollars on Monday. That is the lowest price since March. Many people sold bitcoin funds this week. A fund is a basket of investments that many people put money into. When people sell the funds, the price can drop fast.",
+            "# Spain calls a snap election\nSpain will vote on November 29. A snap election means an early election. The prime minister called it after he lost a key vote. Polymarket gives the opposition leader an 87 percent chance to win.",
+            "# Google leads the AI race\nGoogle released Gemini 4 last week. Many testers say it is the best AI model right now. On Polymarket, people give Google an 88 percent chance to have the best model at the end of the year.",
+        ]
+        var listenFirst: UUID?
+        for (k, text) in stories.enumerated() {
+            let n = add(text, ago: Double(60 * (20 + k * 30)), folder: english, kind: "listen")
+            n.createdAt = now.addingTimeInterval(-Double(60 * (20 + k * 30)))
+            let sentences = Listen.sentences(text)
+            let marks = sentences.enumerated().map { ListenMark(t: Double($0.offset) * 4.5, s: $0.element) }
+            if let rel = Demo.silence(app.attachments, name: Listen.deliveryName(note: n.id, ext: "m4a"), seconds: Double(sentences.count) * 4.5) {
+                n.audioPaths = [rel]
+                app.setMarks(n, path: rel, marks: marks)
+            }
+            if k == 0 { listenFirst = n.id }
+        }
         try? ctx.save()
 
         switch cfg.screen {
@@ -117,6 +137,8 @@ enum Demo {
         case "share-note", "share-white", "butler": app.path = [.editor(photo.id)]
         case "settings": app.path = [.settings]
         case "voice": app.voiceTarget = .new
+        case "listen": app.listening = ListenOpen(startNote: listenFirst)
+        case "listen-text": app.listening = ListenOpen(startNote: listenFirst, showText: true)
         case "voice-note": app.path = [.editor(voice.id)]
         case "ocr":
             let name = zh ? "ocr-demo-zh" : "ocr-demo-en"

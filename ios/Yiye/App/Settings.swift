@@ -20,6 +20,11 @@ final class Settings {
     var mirrorAsked: Bool { didSet { save("yiye.mirrorAsked", mirrorAsked) } }
     /// 说话用的语言（录一段转字用）：zh-CN / en-US
     var voiceLang: String { didSet { save("yiye.voiceLang", voiceLang) } }
+    /// 听力：每篇放几遍（0 = 一直放）、倍速
+    var listenRepeat: Int { didSet { save("yiye.listenRepeat", listenRepeat) } }
+    var listenRate: Double { didSet { save("yiye.listenRate", listenRate) } }
+    /// 大管家送来的、已经收过的 id（iCloud 偶尔把删掉的文件同步回来，不收第二次）
+    var deliveredIDs: [String] { didSet { save("yiye.delivered", deliveredIDs) } }
     /// 文档相机上次没正常关（多半是闪退了）：以后换成自己做的相机
     var useFallbackCamera: Bool { didSet { save("yiye.fallbackCam", useFallbackCamera) } }
 
@@ -32,6 +37,9 @@ final class Settings {
         butlerAutoPhoto = persist ? (d.object(forKey: "yiye.butlerAuto") as? Bool ?? true) : true
         mirrorAsked = persist ? d.bool(forKey: "yiye.mirrorAsked") : true
         voiceLang = persist ? (d.string(forKey: "yiye.voiceLang") ?? "zh-CN") : "zh-CN"
+        listenRepeat = persist ? (d.object(forKey: "yiye.listenRepeat") as? Int ?? 3) : 3
+        listenRate = persist ? (d.object(forKey: "yiye.listenRate") as? Double ?? 1) : 1
+        deliveredIDs = persist ? (d.stringArray(forKey: "yiye.delivered") ?? []) : []
         useFallbackCamera = persist ? d.bool(forKey: "yiye.fallbackCam") : false
     }
 

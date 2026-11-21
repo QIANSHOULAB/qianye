@@ -23,6 +23,8 @@ final class Note {
     var originals: String = ""
     /// 录音（附件/…-语音-1.m4a），一行一个。不进正文，写字页最上面一条播放条
     var audios: String = ""
+    /// 听力录音的每句表（录音路径 → 每句从第几秒开始），JSON
+    var marks: String = ""
     /// 跟大管家打交道的状态（JSON）
     var butler: String = ""
     /// 左滑删了、还能撤销的
@@ -42,6 +44,11 @@ final class Note {
     var audioPaths: [String] {
         get { audios.split(separator: "\n").map(String.init).filter { !$0.isEmpty } }
         set { audios = newValue.joined(separator: "\n") }
+    }
+
+    var markTable: [String: [ListenMark]] {
+        get { Listen.decode(marks) }
+        set { marks = Listen.encode(newValue) }
     }
 
     var butlerState: ButlerNoteState {

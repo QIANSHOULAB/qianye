@@ -18,6 +18,13 @@ enum VoiceTarget: Identifiable, Equatable {
     }
 }
 
+/// 打开听力播放列表：从哪篇开始、要不要直接把原文翻出来
+struct ListenOpen: Identifiable, Equatable {
+    var id = UUID()
+    var startNote: UUID?
+    var showText = false
+}
+
 struct Toast: Identifiable {
     let id = UUID()
     var text: String
@@ -48,6 +55,8 @@ final class AppModel {
     var freshNoteID: UUID?
     /// 正在录一段（侧键、列表、写字页都从这儿开）
     var voiceTarget: VoiceTarget?
+    /// 听力播放列表开着
+    var listening: ListenOpen?
 
     @ObservationIgnored private var toastTask: Task<Void, Never>?
     @ObservationIgnored private var didStart = false
@@ -244,6 +253,84 @@ final class AppModel {
             else { intake(input, audio: [file]) }
         }
         if md.isEmpty { show(t.t("voice.noText")) }
+    }
+
+    // ---------------------------------------------------------------- 听力
+    /// 播放列表里的：带听力录音（念的、大管家送来的）的笔记，新的在前
+    func listenTracks() -> [Track] {
+        allNotes().filter { !$0.trashed }.sorted { $0.createdAt > $1.createdAt }.compactMap { n in
+            guard let path = n.audioPaths.first(where: { Listen.isListenAudio($0) }) else { return nil }
+            return Track(note: n.id, path: path, title: n.title.isEmpty ? t.t("note.untitled") : n.title, marks: n.markTable[path] ?? [])
+        }
+    }
+
+    /// 每句表存进笔记，也跟着录音存一份「.marks.json」（镜像、导入一起走）
+    func setMarks(_ n: Note, path: String, marks: [ListenMark]) {
+        var table = n.markTable
+        table[path] = marks.isEmpty ? nil : marks
+        n.markTable = table
+        if !marks.isEmpty, let d = try? JSONEncoder().encode(marks) {
+            try? attachments.save(d, name: (Listen.sidecar(for: path) as NSString).lastPathComponent)
+        }
+    }
+
+    func folderNamed(_ name: String) -> Folder? {
+        let name = name.trimmed
+        guard !name.isEmpty else { return nil }
+        let all = (try? context.fetch(FetchDescriptor<Folder>())) ?? []
+        if let f = all.first(where: { $0.name == name }) { return f }
+        let f = Folder(name: name, order: all.count)
+        context.insert(f)
+        return f
+    }
+
+    /// 「念出来」：手机用苹果的语音把这条念成录音，进听力列表
+    func speak(_ n: Note) {
+        let id = n.id
+        let md = n.markdown
+        busy = t.t("busy.speak")
+        Task {
+            defer { self.busy = nil }
+            let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("yiye-speak-\(UUID().uuidString).m4a")
+            do {
+                let out = try await PhoneVoice().render(md, to: tmp)
+                guard let n = self.note(id) else { return }
+                AudioPlayback.shared.forget(Listen.speakName(note: id))
+                let rel = try self.attachments.move(tmp, name: Listen.speakName(note: id))
+                n.audioPaths = [rel] + n.audioPaths.filter { $0 != rel }
+                self.setMarks(n, path: rel, marks: out.marks)
+                self.changed(n)
+                self.show(out.premium ? self.t.t("listen.spoken") : self.t.t("listen.spokenBasic"), seconds: out.premium ? 4 : 8)
+                self.listening = ListenOpen(startNote: id)
+            } catch {
+                self.show(self.t.f("listen.speakFailed", error.localizedDescription))
+            }
+        }
+    }
+
+    /// 大管家送来一篇（配好音的听力稿）：变成一条笔记，进「英语」文件夹
+    func addDelivery(_ d: ButlerDelivery, audio: Data?) {
+        let id = UUID(uuidString: d.id) ?? UUID()
+        guard !settings.deliveredIDs.contains(d.id), note(id) == nil else { return }
+        let n = Note()
+        n.id = id
+        n.kind = d.kind.isEmpty ? "listen" : d.kind
+        n.markdown = d.text
+        if let at = d.at.flatMap({ ISOTime.date($0) }) { n.createdAt = at; n.modifiedAt = at }
+        n.folder = folderNamed(d.folder ?? "英语")
+        context.insert(n)
+        if let audio, let a = d.audio {
+            let ext = (a as NSString).pathExtension.lowercased()
+            let name = (a as NSString).lastPathComponent.isEmpty ? Listen.deliveryName(note: id, ext: ext.isEmpty ? "mp3" : ext) : (a as NSString).lastPathComponent
+            if let rel = try? attachments.save(audio, name: name) {
+                n.audioPaths = [rel]
+                setMarks(n, path: rel, marks: d.marks ?? [])
+            }
+        }
+        try? context.save()
+        mirror.saveSoon(n, attachments: attachments)
+        settings.deliveredIDs = Array((settings.deliveredIDs + [d.id]).suffix(500))
+        show(t.f("listen.arrived", n.title.isEmpty ? t.t("note.untitled") : n.title))
     }
 
     // ---------------------------------------------------------------- 拍照认字

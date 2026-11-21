@@ -94,7 +94,7 @@ jobs:
             echo
             echo "- 提交：${GITHUB_SHA::7}"
             echo "- $(xcodebuild -version | head -1)，模拟器：${SIM_NAME:-?}（${SIM_RUNTIME:-?}）"
-            echo "- 目录：zh-light、zh-dark、en-light、en-dark 各 10 张；ocr/ 是 10 张认字样张的结果"
+            echo "- 目录：zh-light、zh-dark、en-light、en-dark 各 12 张；ocr/ 是 10 张认字样张的结果"
           } > ios/shots/README.md
           # 给 Song 在手机上看的网页：https://qianshoulab.github.io/qianye/ios/shots/
           python3 ios/tools/shots_page.py "${GITHUB_SHA::7}" "$(git log -1 --format=%s)" "$(git log -1 --format=%cI)" || true

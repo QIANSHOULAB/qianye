@@ -162,14 +162,16 @@ struct LevelBars: View {
     }
 }
 
-/// 写字页最上面：这条笔记的录音，一段一行（播放、进度、时长）
+/// 写字页最上面：这条笔记的录音，一段一行（播放、进度、时长）。听力录音多一个钮，打开播放列表
 struct AudioStrip: View {
-    let paths: [String]
+    let note: Note
     @Environment(AppModel.self) private var app
 
     var body: some View {
         VStack(spacing: 6) {
-            ForEach(paths, id: \.self) { p in AudioRow(path: p) }
+            ForEach(note.audioPaths, id: \.self) { p in
+                AudioRow(path: p, note: note.id, title: note.title, marks: note.markTable[p] ?? [])
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -178,15 +180,18 @@ struct AudioStrip: View {
 
 struct AudioRow: View {
     let path: String
+    var note: UUID? = nil
+    var title = ""
+    var marks: [ListenMark] = []
     @Environment(AppModel.self) private var app
     private var player: AudioPlayback { AudioPlayback.shared }
 
     var body: some View {
-        let total = app.demo != nil ? 23 : player.duration(path, store: app.attachments)
+        let total = player.duration(path, store: app.attachments)
         let mine = player.current == path
         let pos = mine ? player.position : 0
         HStack(spacing: 10) {
-            Button { player.toggle(path, store: app.attachments) } label: {
+            Button { player.toggle(path, store: app.attachments, note: note, marks: marks, title: title) } label: {
                 Image(systemName: mine && player.playing ? "pause.fill" : "play.fill")
                     .font(.system(size: 15))
                     .foregroundStyle(.white)
@@ -197,17 +202,8 @@ struct AudioRow: View {
             .buttonStyle(.plain)
             .accessibilityLabel(mine && player.playing ? app.lang.t("voice.pause") : app.lang.t("voice.play"))
 
-            GeometryReader { g in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Color(Ink.text3).opacity(0.3)).frame(height: 4)
-                    Capsule().fill(Color(Ink.accent)).frame(width: total > 0 ? g.size.width * CGFloat(pos / total) : 0, height: 4)
-                }
-                .frame(maxHeight: .infinity)
-                .contentShape(Rectangle())
-                .onTapGesture(coordinateSpace: .local) { x in
-                    guard mine, g.size.width > 0 else { return }
-                    player.seek(path, to: Double(x.x / g.size.width), store: app.attachments)
-                }
+            ProgressLine(position: pos, total: total) { f in
+                if mine { player.seek(path, to: f, store: app.attachments) }
             }
             .frame(height: 44)
 
@@ -216,6 +212,14 @@ struct AudioRow: View {
                 .foregroundStyle(Color(Ink.text2))
                 .lineLimit(1)
                 .fixedSize()
+
+            if Listen.isListenAudio(path), let note {
+                Button { app.listening = ListenOpen(startNote: note) } label: {
+                    Image(systemName: "headphones").font(.system(size: 15)).foregroundStyle(Color(Ink.text2)).hit44()
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(app.lang.t("listen.title"))
+            }
         }
         .padding(.leading, 4)
         .padding(.trailing, 12)
@@ -224,6 +228,28 @@ struct AudioRow: View {
                 .fill(Color(Ink.paper).opacity(0.9))
                 .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color(Ink.btnBorder), lineWidth: 0.75))
         )
-        .onDisappear { if player.current == path { player.stop() } }
+        .onDisappear { if player.current == path && !player.playlist { player.stop() } }
+    }
+}
+
+/// 细进度条：点哪跳哪
+struct ProgressLine: View {
+    let position: TimeInterval
+    let total: TimeInterval
+    let seek: (Double) -> Void
+
+    var body: some View {
+        GeometryReader { g in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color(Ink.text3).opacity(0.3)).frame(height: 4)
+                Capsule().fill(Color(Ink.accent)).frame(width: total > 0 ? g.size.width * CGFloat(min(1, position / total)) : 0, height: 4)
+            }
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .onTapGesture(coordinateSpace: .local) { x in
+                guard g.size.width > 0 else { return }
+                seek(Double(x.x / g.size.width))
+            }
+        }
     }
 }

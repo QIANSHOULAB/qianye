@@ -54,7 +54,7 @@ struct EditorScreen: View {
             }
 
             if let note, !note.audioPaths.isEmpty {
-                AudioStrip(paths: note.audioPaths)
+                AudioStrip(note: note)
             }
 
             NoteTextEditor(controller: controller)
@@ -116,6 +116,7 @@ struct EditorScreen: View {
                     Button { showOriginals = true } label: { Label(t.t("editor.original"), systemImage: "photo") }
                 }
                 Button { flush(); app.butler.submit(note) } label: { Label(t.t("editor.toButler"), systemImage: "wand.and.stars") }
+                Button { flush(); app.speak(note) } label: { Label(t.t("listen.speak"), systemImage: "speaker.wave.2") }
                 Button { pickerMode = .ocr; showPicker = true } label: { Label(t.t("capture.libraryInto"), systemImage: "text.viewfinder") }
                 Button { togglePin() } label: { Label(note.pinned ? t.t("note.unpin") : t.t("note.pin"), systemImage: "pin") }
                 FolderMenu(note: note)

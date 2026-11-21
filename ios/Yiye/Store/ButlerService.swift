@@ -93,12 +93,27 @@ final class ButlerService {
                 if let r = channel.result(rid) { got.append((nid, r)) }
             }
             let results = got
+            // 大管家送来的听力稿：录音还没同步过来的，下回再拿
+            var sent: [(URL, ButlerDelivery, Data?)] = []
+            for d in channel.deliveries() {
+                if let a = d.item.audio {
+                    guard let data = channel.deliveryAudio(a) else { continue }
+                    sent.append((d.url, d.item, data))
+                } else {
+                    sent.append((d.url, d.item, nil))
+                }
+            }
+            let deliveries = sent
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.looking = false
                 self.lastLook = Date()
                 self.presence = ButlerPresence.from(hb)
                 for (nid, r) in results { self.apply(r, to: nid, channel: channel) }
+                for (url, item, data) in deliveries {
+                    app.addDelivery(item, audio: data)
+                    app.mirror.afterPendingWrites { channel.removeDelivery(url) }
+                }
             }
         }
     }

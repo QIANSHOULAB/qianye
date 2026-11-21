@@ -36,6 +36,9 @@ struct RootView: View {
         .overlay(alignment: .bottom) { ToastView() }
         .overlay { if app.busy != nil { BusyOverlay() } }
         .fullScreenCover(item: $app.voiceTarget) { target in RecorderScreen(target: target) }
+        .background {
+            Color.clear.fullScreenCover(item: $app.listening) { o in PlaylistScreen(open: o) }
+        }
         .onAppear { app.started() }
     }
 }

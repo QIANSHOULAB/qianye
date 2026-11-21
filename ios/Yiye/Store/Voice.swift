@@ -1,4 +1,5 @@
 import AVFoundation
+import MediaPlayer
 import Speech
 import YiyeKit
 
@@ -238,7 +239,17 @@ final class TapSink: @unchecked Sendable {
     }
 }
 
-/// 写字页上面的播放条：同一时间只放一段
+/// 一篇能放的：哪条笔记、哪段录音、标题、每句表
+struct Track: Equatable {
+    var note: UUID
+    var path: String
+    var title: String
+    var marks: [ListenMark]
+}
+
+/// 放录音：同一时间只放一段。
+/// 写字页的播放条：放一遍就停。听力播放列表：每篇放几遍（1/2/3/5/一直），放够了自动下一篇；倍速；原文里能锁住一句反复听。
+/// 锁屏、耳机按键也能控制（反复听英语用）
 @MainActor @Observable
 final class AudioPlayback {
     static let shared = AudioPlayback()
@@ -246,10 +257,35 @@ final class AudioPlayback {
     var current: String?
     var playing = false
     var position: TimeInterval = 0
+    var duration: TimeInterval = 0
+    var rate: Float = 1 { didSet { player?.rate = rate; nowPlaying() } }
+
+    /// 播放列表（写字页那条只放一篇的，列表里就它一个）
+    var queue: [Track] = []
+    var index = 0
+    /// 列表模式：每篇放几遍（0 = 一直放）
+    var repeatTarget = 3
+    /// 这篇已经放完几遍
+    var passes = 0
+    var playlist = false
+    /// 单句循环：锁在哪一句（nil = 不锁）
+    var locked: Int?
+
+    var track: Track? { queue.indices.contains(index) ? queue[index] : nil }
+    var marks: [ListenMark] { track?.marks ?? [] }
+    var sentence: Int? { Listen.index(at: position, in: marks) }
 
     @ObservationIgnored private var player: AVAudioPlayer?
+    @ObservationIgnored private var store: AttachmentStore?
     @ObservationIgnored private var tick: Task<Void, Never>?
     @ObservationIgnored private var durations: [String: TimeInterval] = [:]
+    @ObservationIgnored private var remoteReady = false
+    @ObservationIgnored private let delegate = PlayerDelegate()
+
+    /// 文件换过了（重新念的），时长别用老的
+    func forget(_ name: String) {
+        for k in durations.keys where k.hasSuffix(name) { durations[k] = nil }
+    }
 
     func duration(_ rel: String, store: AttachmentStore) -> TimeInterval {
         if let d = durations[rel] { return d }
@@ -258,31 +294,116 @@ final class AudioPlayback {
         return d
     }
 
-    func toggle(_ rel: String, store: AttachmentStore) {
-        if current == rel, let player {
-            if player.isPlaying { player.pause(); playing = false } else { player.play(); playing = true; startTick() }
-            return
-        }
-        stop()
+    /// 写字页播放条上的那个钮：没在放这段就从头放（放一遍），在放就暂停 / 接着放
+    func toggle(_ rel: String, store: AttachmentStore, note: UUID? = nil, marks: [ListenMark] = [], title: String = "") {
+        if current == rel, player != nil { playing ? pause() : resume(); return }
+        playlist = false
+        queue = [Track(note: note ?? UUID(), path: rel, title: title, marks: marks)]
+        index = 0
+        load(store: store, at: 0, play: true)
+    }
+
+    /// 听力播放列表：从第 i 篇开始
+    func play(_ tracks: [Track], from i: Int, store: AttachmentStore) {
+        guard tracks.indices.contains(i) else { return }
+        playlist = true
+        queue = tracks
+        index = i
+        load(store: store, at: 0, play: true)
+    }
+
+    private func load(store: AttachmentStore, at time: TimeInterval, play: Bool) {
+        tick?.cancel()
+        player?.stop()
+        self.store = store
+        guard let t = track else { stop(); return }
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
             try AVAudioSession.sharedInstance().setActive(true)
-            let p = try AVAudioPlayer(contentsOf: store.url(rel))
-            p.play()
+            let p = try AVAudioPlayer(contentsOf: store.url(t.path))
+            p.enableRate = true
+            p.rate = rate
+            p.delegate = delegate
+            delegate.onFinish = { [weak self] in self?.finishedOnce() }
+            p.prepareToPlay()
+            p.currentTime = max(0, min(time, p.duration))
             player = p
-            current = rel
-            playing = true
-            position = 0
+            current = t.path
+            duration = p.duration
+            durations[t.path] = p.duration
+            position = p.currentTime
+            passes = 0
+            locked = nil
+            if play { p.play(); playing = true } else { playing = false }
+            setUpRemote()
+            nowPlaying()
             startTick()
         } catch {
-            stop()
+            // 这篇放不了：列表里就跳下一篇
+            if playlist, index + 1 < queue.count { index += 1; load(store: store, at: 0, play: play) } else { stop() }
         }
+    }
+
+    func pause() {
+        player?.pause()
+        playing = false
+        nowPlaying()
+    }
+
+    func resume() {
+        guard let p = player else { return }
+        p.play()
+        playing = true
+        nowPlaying()
+        startTick()
     }
 
     func seek(_ rel: String, to fraction: Double, store: AttachmentStore) {
         guard current == rel, let player else { return }
         player.currentTime = max(0, min(1, fraction)) * player.duration
         position = player.currentTime
+        if locked != nil { locked = sentence }
+        nowPlaying()
+    }
+
+    /// 跳到第 i 句；单句循环开着就锁到这句
+    func jump(to i: Int) {
+        guard let player, marks.indices.contains(i) else { return }
+        player.currentTime = marks[i].t
+        position = player.currentTime
+        if locked != nil { locked = i }
+        if !playing { resume() } else { nowPlaying() }
+    }
+
+    /// 单句循环开关：开就锁在正在放的这句
+    func toggleSentenceLoop() {
+        locked = locked == nil ? (sentence ?? 0) : nil
+    }
+
+    func nextTrack() {
+        guard let store, index + 1 < queue.count else { return }
+        index += 1
+        load(store: store, at: 0, play: true)
+    }
+
+    func previousTrack() {
+        guard let store else { return }
+        if position > 3 || index == 0 { player?.currentTime = 0; position = 0; passes = 0; if !playing { resume() }; nowPlaying(); return }
+        index -= 1
+        load(store: store, at: 0, play: true)
+    }
+
+    func nextSentence() {
+        guard !marks.isEmpty else { return }
+        let i = (locked ?? sentence ?? -1) + 1
+        if marks.indices.contains(i) { jump(to: i) }
+    }
+
+    func previousSentence() {
+        guard !marks.isEmpty else { return }
+        let cur = locked ?? sentence ?? 0
+        let i = position - marks[cur].t < 1.0 ? max(0, cur - 1) : cur
+        jump(to: i)
     }
 
     func stop() {
@@ -292,22 +413,101 @@ final class AudioPlayback {
         current = nil
         playing = false
         position = 0
+        locked = nil
+        passes = 0
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+    }
+
+    /// 放完一遍：列表模式按遍数重来或下一篇；写字页那条放完就停
+    private func finishedOnce() {
+        guard let store, let p = player else { return }
+        passes += 1
+        if playlist, repeatTarget == 0 || passes < repeatTarget {
+            p.currentTime = 0
+            position = 0
+            p.play()
+            nowPlaying()
+            return
+        }
+        if playlist, index + 1 < queue.count {
+            index += 1
+            load(store: store, at: 0, play: true)
+            return
+        }
+        playing = false
+        position = 0
+        p.currentTime = 0
+        nowPlaying()
     }
 
     private func startTick() {
         tick?.cancel()
         tick = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 100_000_000)
+                try? await Task.sleep(nanoseconds: 50_000_000)
                 guard let self, let p = self.player else { return }
-                self.position = p.currentTime
-                if !p.isPlaying && self.playing {
-                    // 放完了
-                    self.playing = false
-                    if p.currentTime == 0 || p.currentTime >= p.duration - 0.05 { self.position = 0 }
-                    return
+                // 单句循环：到这句结尾就回到这句开头
+                if let i = self.locked, self.playing {
+                    let span = Listen.span(i, in: self.marks, duration: p.duration)
+                    if p.currentTime >= span.end - 0.03 || !p.isPlaying {
+                        p.currentTime = span.start
+                        if !p.isPlaying { p.play() }
+                    }
                 }
+                self.position = p.currentTime
+                if !self.playing && !p.isPlaying { return }
             }
         }
+    }
+
+    // ---------------------------------------------------------------- 锁屏、耳机
+    private func nowPlaying() {
+        guard let player else { return }
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = [
+            MPMediaItemPropertyTitle: (track?.title).flatMap { $0.isEmpty ? nil : $0 } ?? "Yiye",
+            MPMediaItemPropertyPlaybackDuration: player.duration,
+            MPNowPlayingInfoPropertyElapsedPlaybackTime: player.currentTime,
+            MPNowPlayingInfoPropertyPlaybackRate: playing ? Double(rate) : 0.0,
+        ]
+    }
+
+    private func setUpRemote() {
+        guard !remoteReady else { return }
+        remoteReady = true
+        let c = MPRemoteCommandCenter.shared()
+        c.playCommand.addTarget { [weak self] _ in MainActor.assumeIsolated { self?.resume() }; return .success }
+        c.pauseCommand.addTarget { [weak self] _ in MainActor.assumeIsolated { self?.pause() }; return .success }
+        c.togglePlayPauseCommand.addTarget { [weak self] _ in
+            MainActor.assumeIsolated { if self?.playing == true { self?.pause() } else { self?.resume() } }
+            return .success
+        }
+        // 耳机按两下 / 锁屏的下一首：列表里跳下一篇；只有一篇时跳下一句
+        c.nextTrackCommand.addTarget { [weak self] _ in
+            MainActor.assumeIsolated { guard let self else { return }; if self.queue.count > 1 { self.nextTrack() } else { self.nextSentence() } }
+            return .success
+        }
+        c.previousTrackCommand.addTarget { [weak self] _ in
+            MainActor.assumeIsolated { guard let self else { return }; if self.queue.count > 1 { self.previousTrack() } else { self.previousSentence() } }
+            return .success
+        }
+        c.changePlaybackPositionCommand.addTarget { [weak self] e in
+            guard let e = e as? MPChangePlaybackPositionCommandEvent else { return .commandFailed }
+            MainActor.assumeIsolated {
+                guard let self, let p = self.player else { return }
+                p.currentTime = e.positionTime
+                self.position = p.currentTime
+                self.nowPlaying()
+            }
+            return .success
+        }
+    }
+}
+
+/// AVAudioPlayer 放完的回调（在别的线程来）转回主线程
+final class PlayerDelegate: NSObject, AVAudioPlayerDelegate, @unchecked Sendable {
+    var onFinish: (@MainActor () -> Void)?
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        let f = onFinish
+        Task { @MainActor in f?() }
     }
 }

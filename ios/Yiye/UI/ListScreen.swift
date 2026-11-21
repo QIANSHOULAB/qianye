@@ -38,6 +38,9 @@ struct ListScreen: View {
                 Button { app.path.append(.settings) } label: { Image(systemName: "gearshape") }
                     .buttonStyle(SmartButtonStyle())
                     .accessibilityLabel(t.t("settings.title"))
+                Button { app.listening = ListenOpen() } label: { Image(systemName: "headphones") }
+                    .buttonStyle(SmartButtonStyle())
+                    .accessibilityLabel(t.t("listen.title"))
             } center: {
                 Button { showFolders = true } label: {
                     HStack(spacing: 5) {
