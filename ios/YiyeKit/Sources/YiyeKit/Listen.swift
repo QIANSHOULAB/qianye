@@ -135,10 +135,14 @@ public struct ButlerDelivery: Codable, Equatable, Sendable {
     /// 放进哪个文件夹（没有就建），默认「英语」
     public var folder: String?
     public var at: String?
+    /// 给手机上已有的哪条笔记配的音（回「配音」请求时带上；没有就是新的一条）
+    public var note: String?
+    /// 回的是哪个请求
+    public var request: String?
     public init(v: Int = Butler.version, id: String, kind: String = "listen", title: String? = nil, text: String,
-                audio: String?, marks: [ListenMark]?, folder: String? = nil, at: String? = nil) {
+                audio: String?, marks: [ListenMark]?, folder: String? = nil, at: String? = nil, note: String? = nil, request: String? = nil) {
         self.v = v; self.id = id; self.kind = kind; self.title = title; self.text = text
-        self.audio = audio; self.marks = marks; self.folder = folder; self.at = at
+        self.audio = audio; self.marks = marks; self.folder = folder; self.at = at; self.note = note; self.request = request
     }
 }
 

@@ -224,6 +224,7 @@ struct NoteStrip: View {
             .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
             .shadow(color: Color(red: 0.27, green: 0.16, blue: 0.06).opacity(0.22), radius: 2.5, x: 0, y: 1.5)
         }
+        .lightIf(note.tint.keepsLight)
     }
 }
 

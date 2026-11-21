@@ -257,12 +257,54 @@ final class AppModel {
     }
 
     // ---------------------------------------------------------------- 听力
-    /// 播放列表里的：带听力录音（念的、大管家送来的）的笔记，新的在前
-    func listenTracks() -> [Track] {
-        allNotes().filter { !$0.trashed }.sorted { $0.createdAt > $1.createdAt }.compactMap { n in
-            guard let path = n.audioPaths.first(where: { Listen.isListenAudio($0) }) else { return nil }
-            return Track(note: n.id, path: path, title: n.title.isEmpty ? t.t("note.untitled") : n.title, marks: n.markTable[path] ?? [])
+    /// 播放列表里的：放进了听力的笔记，新的在前（还没录音的也列出来，显示在等配音）
+    func listenNotes() -> [Note] {
+        allNotes().filter { !$0.trashed && $0.inListen }.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    /// 能放的那些
+    func listenTracks() -> [Track] { listenNotes().compactMap { track($0) } }
+
+    /// 一条笔记的听力录音（没有就 nil）
+    func track(_ n: Note) -> Track? {
+        guard let path = n.listenPath else { return nil }
+        return Track(note: n.id, path: path, title: n.title.isEmpty ? t.t("note.untitled") : n.title, marks: n.markTable[path] ?? [])
+    }
+
+    /// 放进听力 / 从听力拿掉。放进去时还没录音：大管家在线就交它配音，不在线手机先念
+    func toggleListen(_ n: Note) {
+        if n.inListen {
+            n.inListen = false
+            changed(n)
+            show(t.t("listen.removed"))
+            return
         }
+        n.inListen = true
+        changed(n)
+        if n.listenPath == nil && n.dub.isEmpty {
+            if butler.presence.isHere { dub(n) } else { speak(n); show(t.t("listen.addedPhone"), seconds: 6) }
+        } else {
+            show(t.t("listen.added"))
+        }
+    }
+
+    /// 交大管家配音（ElevenLabs）：好了从「送来」回到这条，换掉手机念的。
+    /// 又交一次：旧的请求大管家还没拿走就撤回，不配两遍
+    func dub(_ n: Note) {
+        guard !n.markdown.trimmed.isEmpty else { show(t.t("listen.dubEmpty")); return }
+        let old = n.dubRequest
+        guard let rid = butler.requestDub(n, replacing: old) else { return }
+        n.dub = "\(rid)|\(ISOTime.string(Date()))"
+        changed(n)
+        show(butler.presence.isHere ? t.t("listen.dubSent") : t.t("listen.dubQueued"), seconds: 6)
+    }
+
+    /// 大管家说没配成：清掉「在等」，说一声
+    func dubFailed(_ n: Note, error: String?) {
+        n.dub = ""
+        changed(n)
+        let why = (error ?? "").trimmed
+        show(why.isEmpty ? t.t("listen.dubFailed") : t.f("listen.dubFailedWhy", String(why.prefix(80))), seconds: 8)
     }
 
     /// 每句表存进笔记，也跟着录音存一份「.marks.json」（镜像、导入一起走）
@@ -301,22 +343,50 @@ final class AppModel {
                 n.audioPaths = [rel] + n.audioPaths.filter { $0 != rel }
                 self.setMarks(n, path: rel, marks: out.marks)
                 self.changed(n)
-                self.show(out.premium ? self.t.t("listen.spoken") : self.t.t("listen.spokenBasic"), seconds: out.premium ? 4 : 8)
-                self.listening = ListenOpen(startNote: id)
+                if !n.inListen || out.premium == false {
+                    self.show(out.premium ? self.t.t("listen.spoken") : self.t.t("listen.spokenBasic"), seconds: out.premium ? 4 : 8)
+                }
             } catch {
                 self.show(self.t.f("listen.speakFailed", error.localizedDescription))
             }
         }
     }
 
-    /// 大管家送来一篇（配好音的听力稿）：变成一条笔记，进「英语」文件夹
+    /// 大管家送来一篇（配好音的听力稿）：变成一条笔记，进「英语」文件夹、进听力。
+    /// 回「配音」请求的（带 note）：录音挂到那条笔记上，换掉手机念的
     func addDelivery(_ d: ButlerDelivery, audio: Data?) {
+        guard !settings.deliveredIDs.contains(d.id) else { return }
+        if let nid = d.note.flatMap({ UUID(uuidString: $0) }), let n = note(nid) {
+            settings.deliveredIDs = Array((settings.deliveredIDs + [d.id]).suffix(500))
+            // 回的是最新那次请求（或者没写回的哪次）才算等到了；更早那次的先挂上，接着等新的
+            let latest = d.request == nil || d.request == n.dubRequest
+            guard let audio, let a = d.audio else {
+                if latest { dubFailed(n, error: nil) }
+                return
+            }
+            let ext = (a as NSString).pathExtension.lowercased()
+            let name = Listen.deliveryName(note: nid, ext: ext.isEmpty ? "mp3" : ext)
+            AudioPlayback.shared.forget(name)
+            if let rel = try? attachments.save(audio, name: name) {
+                let old = n.audioPaths.filter { Listen.isListenAudio($0) && $0 != rel }
+                var table = n.markTable
+                for o in old { table[o] = nil }
+                n.markTable = table
+                n.audioPaths = [rel] + n.audioPaths.filter { !Listen.isListenAudio($0) }
+                setMarks(n, path: rel, marks: d.marks ?? [])
+            }
+            if latest { n.dub = "" }
+            changed(n)
+            show(t.f("listen.dubbed", n.title.isEmpty ? t.t("note.untitled") : n.title))
+            return
+        }
         let id = UUID(uuidString: d.id) ?? UUID()
-        guard !settings.deliveredIDs.contains(d.id), note(id) == nil else { return }
+        guard note(id) == nil else { return }
         let n = Note()
         n.id = id
         n.kind = d.kind.isEmpty ? "listen" : d.kind
         n.markdown = d.text
+        n.inListen = true
         if let at = d.at.flatMap({ ISOTime.date($0) }) { n.createdAt = at; n.modifiedAt = at }
         n.folder = folderNamed(d.folder ?? "英语")
         context.insert(n)

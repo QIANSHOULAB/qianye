@@ -176,6 +176,11 @@ struct Segmented<T: Hashable>: View {
 }
 
 extension View {
+    /// 换了颜色的纸上那一块：夜里也按白天的颜色画
+    @ViewBuilder func lightIf(_ on: Bool) -> some View {
+        if on { self.environment(\.colorScheme, .light) } else { self }
+    }
+
     /// 能点的地方 ≥ 44
     func hit44() -> some View { frame(minWidth: 44, minHeight: 44).contentShape(Rectangle()) }
 }

@@ -32,5 +32,8 @@ final class VoiceTests: XCTestCase {
         let json = String(data: try JSONEncoder().encode(r), encoding: .utf8)!
         XCTAssertTrue(json.contains("\"kind\":\"voice\""))
         XCTAssertFalse(json.contains("images"))
+        XCTAssertTrue(json.contains("\"ask\":\"fix\""))
+        let speak = ButlerRequest(id: "y", note: "n", kind: .text, text: "Hello.", images: nil, unsure: nil, ask: "speak", at: "2026-11-21T19:30:00+08:00", app: "0.4.0")
+        XCTAssertTrue(String(data: try JSONEncoder().encode(speak), encoding: .utf8)!.contains("\"ask\":\"speak\""))
     }
 }

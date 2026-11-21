@@ -61,7 +61,31 @@ final class ListenTests: XCTestCase {
         XCTAssertNil(ch.deliveryAudio("附件/D-1.mp3"))
         try fs.plantPlaceholder(root.appendingPathComponent("附件/D-1.mp3"), Data([1, 2, 3]))
         XCTAssertEqual(ch.deliveryAudio("附件/D-1.mp3"), Data([1, 2, 3]))
+        XCTAssertNil(got[0].item.note)
         ch.removeDelivery(got[0].url)
         XCTAssertEqual(ch.deliveries().count, 0)
+        // 回「配音」请求的：带 note，手机挂到那条笔记上
+        let dub = #"{ "v": 1, "id": "D-3", "kind": "listen", "text": "Hi.", "audio": "附件/X-听-1.mp3", "note": "9F1C2D4E-0B7A-4C61-9E52-2A6F1D3B8C70", "request": "R-1" }"#
+        try fs.write(Data(dub.utf8), to: ch.delivered.appendingPathComponent("D-3.json"))
+        XCTAssertEqual(ch.deliveries().first?.item.note, "9F1C2D4E-0B7A-4C61-9E52-2A6F1D3B8C70")
+        XCTAssertEqual(ch.deliveries().first?.item.request, "R-1")
+        // 又交了一次配音：旧请求还在信箱里就撤回
+        let req = ButlerRequest(id: "R-2", note: "n", kind: .text, text: "Hi.", images: nil, unsure: nil, ask: "speak", at: "2026-11-21T19:30:00+08:00", app: "0.4.0")
+        try ch.submit(req)
+        XCTAssertTrue(ch.hasRequest("R-2"))
+        ch.withdraw("R-2")
+        XCTAssertFalse(ch.hasRequest("R-2"))
+        ch.withdraw("R-2")
+    }
+
+    func testPresenceIsHere() {
+        let now = Date()
+        func beat(_ minsAgo: Double) -> ButlerHeartbeat {
+            ButlerHeartbeat(v: 1, at: ISOTime.string(now.addingTimeInterval(-minsAgo * 60)))
+        }
+        XCTAssertTrue(ButlerPresence.from(beat(1), now: now).isHere)
+        XCTAssertTrue(ButlerPresence.from(beat(6), now: now).isHere)
+        XCTAssertFalse(ButlerPresence.from(beat(30), now: now).isHere)
+        XCTAssertFalse(ButlerPresence.from(nil, now: now).isHere)
     }
 }

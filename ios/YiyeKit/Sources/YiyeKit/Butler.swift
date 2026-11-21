@@ -19,8 +19,9 @@ public struct ButlerRequest: Codable, Equatable, Sendable {
     public var at: String
     public var app: String
 
-    public init(id: String, note: String, kind: ButlerKind, text: String, images: [String]?, unsure: [String]?, at: String, app: String) {
-        self.id = id; self.note = note; self.kind = kind; self.text = text
+    /// ask：fix = 理顺（结果回 已理顺/）；speak = 配音（0.4.0 起，结果走 送来/，带 note）
+    public init(id: String, note: String, kind: ButlerKind, text: String, images: [String]?, unsure: [String]?, ask: String = "fix", at: String, app: String) {
+        self.id = id; self.note = note; self.kind = kind; self.text = text; self.ask = ask
         self.images = (images?.isEmpty ?? true) ? nil : images
         self.unsure = (unsure?.isEmpty ?? true) ? nil : unsure
         self.at = at; self.app = app
@@ -62,6 +63,15 @@ public enum ButlerPresence: Equatable, Sendable {
         let mins = Int((now.timeIntervalSince(at) / 60).rounded(.down))
         if mins < 3 { return .online }
         return .seen(minutes: mins, offline: mins > 10)
+    }
+
+    /// 算在不在：3 分钟内来过，或者 10 分钟内来过（iCloud 把心跳带过来有时要慢几分钟）
+    public var isHere: Bool {
+        switch self {
+        case .online: return true
+        case .seen(_, let offline): return !offline
+        case .never: return false
+        }
     }
 }
 
@@ -130,6 +140,11 @@ public final class ButlerChannel {
     }
 
     public func hasRequest(_ id: String) -> Bool { fs.exists(inbox.appendingPathComponent("\(id).json")) }
+
+    /// 撤回还没被大管家拿走的请求（同一条又交了一次，旧的不用再做）
+    public func withdraw(_ id: String) {
+        try? fs.remove(inbox.appendingPathComponent("\(id).json"))
+    }
 
     /// 读某个请求的结果（还没回来就 nil）。iCloud 占位的先叫它下载
     public func result(_ id: String) -> ButlerResult? {
