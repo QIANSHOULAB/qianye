@@ -25,6 +25,15 @@
       ],
       "versions": [
         {
+          "version": "0.3.0",
+          "buildVersion": "3",
+          "date": "2026-11-21",
+          "localizedDescription": "0.3.0：听力。列表左上角的耳机打开一张播放列表，一行一篇，默认只有声音；每篇放几遍可选（1、2、3、5 遍或一直），放够了自动下一篇；0.75、1、1.25 倍速；锁屏、揣兜里接着放，耳机按两下跳下一篇。点一行后面的「文」看原文，点哪句从哪句放，能锁住一句反复听。写字页菜单里「念出来」：手机自己把稿子念成录音进听力；大管家配好音送来的，自己进「英语」文件夹。",
+          "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.3.0/Yiye-0.3.0.ipa",
+          "size": 1569114,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.2.0",
           "buildVersion": "2",
           "date": "2026-11-21",
@@ -52,11 +61,11 @@
           "NSSpeechRecognitionUsageDescription": "Turns your voice into text right on your phone."
         }
       },
-      "version": "0.2.0",
+      "version": "0.3.0",
       "versionDate": "2026-11-21",
-      "versionDescription": "0.2.0：录一段。按话筒（或者在 iPhone 设置里把侧键设成一叶笺「录一段」，一按就录），边说边出字，说完存成一条：上面是录音能播，下面是字。字在手机上转，不上传；录完自动交给大管家理顺（纠同音字、去口头禅、分段）。",
-      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.2.0/Yiye-0.2.0.ipa",
-      "size": 1423709
+      "versionDescription": "0.3.0：听力。列表左上角的耳机打开一张播放列表，一行一篇，默认只有声音；每篇放几遍可选（1、2、3、5 遍或一直），放够了自动下一篇；0.75、1、1.25 倍速；锁屏、揣兜里接着放，耳机按两下跳下一篇。点一行后面的「文」看原文，点哪句从哪句放，能锁住一句反复听。写字页菜单里「念出来」：手机自己把稿子念成录音进听力；大管家配好音送来的，自己进「英语」文件夹。",
+      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.3.0/Yiye-0.3.0.ipa",
+      "size": 1569114
     }
   ],
   "news": []
