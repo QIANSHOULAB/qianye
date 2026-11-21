@@ -4,7 +4,9 @@ NSCameraUsageDescription	Snap a page and Yiye turns the writing into text, right
 NSMicrophoneUsageDescription	Records what you say and keeps it with the note.
 NSPhotoLibraryAddUsageDescription	Saves the pictures you make from notes to your Photos.
 NSSpeechRecognitionUsageDescription	Turns your voice into text right on your phone.
+album.failed	Couldn’t get that photo: %@
 app.name	Yiye
+busy.album	Getting the photo…
 busy.import	Bringing your notes home…
 busy.ocr	Squinting at your handwriting…
 busy.speak	Reading it aloud…
@@ -26,9 +28,11 @@ butler.short.waiting	Tidying
 butler.unchanged	The butler read it. Nothing to fix.
 butler.waiting	The butler’s on it
 capture.camera	Scan page
+capture.fromAlbum	Choose from Photos
 capture.library	Scan a photo
 capture.libraryInto	Scan a photo
 capture.shoot	Shoot
+capture.shootPage	Take a photo
 common.cancel	Cancel
 common.close	Close
 common.done	Done

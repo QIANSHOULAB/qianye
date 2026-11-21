@@ -3,6 +3,7 @@ import SwiftData
 import UIKit
 import YiyeKit
 import YiyeOCR
+import PhotosUI
 
 enum Route: Hashable {
     case editor(UUID)
@@ -331,6 +332,23 @@ final class AppModel {
         mirror.saveSoon(n, attachments: attachments)
         settings.deliveredIDs = Array((settings.deliveredIDs + [d.id]).suffix(500))
         show(t.f("listen.arrived", n.title.isEmpty ? t.t("note.untitled") : n.title))
+    }
+
+    // ---------------------------------------------------------------- 相册
+    /// 相册里挑的图取出来（iCloud 照片要现下，可能要几秒）；取不出来说一声
+    func loadPicked(_ item: PhotosPickerItem, _ done: @escaping (UIImage) -> Void) {
+        busy = t.t("busy.album")
+        Task {
+            do {
+                guard let data = try await item.loadTransferable(type: Data.self) else { throw CocoaError(.fileReadNoSuchFile) }
+                guard let img = UIImage(data: data) else { throw CocoaError(.fileReadCorruptFile) }
+                self.busy = nil
+                done(img)
+            } catch {
+                self.busy = nil
+                self.show(self.t.f("album.failed", error.localizedDescription))
+            }
+        }
     }
 
     // ---------------------------------------------------------------- 拍照认字

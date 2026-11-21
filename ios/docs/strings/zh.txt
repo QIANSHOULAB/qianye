@@ -4,7 +4,9 @@ NSCameraUsageDescription	拍一页纸，一叶笺在手机上把字认出来。
 NSMicrophoneUsageDescription	录你说的话，跟笔记存在一起。
 NSPhotoLibraryAddUsageDescription	把笔记做成的图存进相册。
 NSSpeechRecognitionUsageDescription	在手机上把你说的话转成字，不上传。
+album.failed	这张图没取出来：%@
 app.name	一叶笺
+busy.album	从相册取图…
 busy.import	从文件夹往回搬…
 busy.ocr	认字中，你去摸会儿鱼…
 busy.speak	一句一句念，稍等…
@@ -26,9 +28,11 @@ butler.short.waiting	在理
 butler.unchanged	大管家看过了，一个字没改
 butler.waiting	大管家在理
 capture.camera	拍照认字
+capture.fromAlbum	从相册选
 capture.library	从相册认字
 capture.libraryInto	从相册认字
 capture.shoot	拍
+capture.shootPage	拍一页
 common.cancel	取消
 common.close	关
 common.done	好了

@@ -13,9 +13,9 @@ struct EditorScreen: View {
     @State private var showShare = false
     @State private var showCamera = false
     @State private var showOriginals = false
-    @State private var showPicker = false
-    @State private var pickerMode: PickerMode = .insert
-    @State private var pickedItem: PhotosPickerItem?
+    /// 相册里挑的：插进正文的图 / 要认字的图
+    @State private var insertItem: PhotosPickerItem?
+    @State private var ocrItem: PhotosPickerItem?
     @State private var saveTask: Task<Void, Never>?
     @State private var loaded = false
 
@@ -61,7 +61,8 @@ struct EditorScreen: View {
                 .background(PaperBackground(tint: note?.tint ?? .white))
 
             MarkdownBar(focused: focused, apply: { controller.apply($0) },
-                        photo: { pickerMode = .insert; showPicker = true },
+                        insertItem: $insertItem,
+                        ocrItem: $ocrItem,
                         camera: { flush(); showCamera = true },
                         voice: { flush(); if let note { app.startVoice(.into(note.id, controller.caretInMarkdown() ?? note.markdown.u16)) } },
                         done: { controller.endEditing() })
@@ -76,15 +77,16 @@ struct EditorScreen: View {
             controller.load(markdown: note.markdown, unsure: note.unsureRanges)
         }
         .onChange(of: app.settings.fontSize) { _, v in controller.setMetrics(EditorMetrics.of(v)) }
-        .photosPicker(isPresented: $showPicker, selection: $pickedItem, matching: .images)
-        .onChange(of: pickedItem) { _, item in
+        .onChange(of: insertItem) { _, item in
             guard let item else { return }
-            let mode = pickerMode
-            pickedItem = nil
-            Task {
-                guard let data = try? await item.loadTransferable(type: Data.self), let img = UIImage(data: data) else { return }
-                handlePicked(img, mode: mode)
-            }
+            insertItem = nil
+            app.loadPicked(item) { img in handlePicked(img, mode: .insert) }
+        }
+        .onChange(of: ocrItem) { _, item in
+            guard let item else { return }
+            ocrItem = nil
+            flush()
+            app.loadPicked(item) { img in handlePicked(img, mode: .ocr) }
         }
         .fullScreenCover(isPresented: $showShare) {
             if let note { ShareScreen(note: note, initialTheme: app.demo?.shareTheme ?? "note") }
@@ -117,7 +119,9 @@ struct EditorScreen: View {
                 }
                 Button { flush(); app.butler.submit(note) } label: { Label(t.t("editor.toButler"), systemImage: "wand.and.stars") }
                 Button { flush(); app.speak(note) } label: { Label(t.t("listen.speak"), systemImage: "speaker.wave.2") }
-                Button { pickerMode = .ocr; showPicker = true } label: { Label(t.t("capture.libraryInto"), systemImage: "text.viewfinder") }
+                PhotosPicker(selection: $ocrItem, matching: .images) {
+                    Label(t.t("capture.libraryInto"), systemImage: "text.viewfinder")
+                }
                 Button { togglePin() } label: { Label(note.pinned ? t.t("note.unpin") : t.t("note.pin"), systemImage: "pin") }
                 FolderMenu(note: note)
                 Button(role: .destructive) { deleteNote() } label: { Label(t.t("note.delete"), systemImage: "trash") }
@@ -157,7 +161,7 @@ struct EditorScreen: View {
     }
 
     private func tearDown() {
-        guard let note, !showShare, !showCamera, !showOriginals, !showPicker, app.voiceTarget == nil else { return }
+        guard let note, !showShare, !showCamera, !showOriginals, app.voiceTarget == nil, app.busy == nil else { return }
         flush()
         app.leave(note)
     }
@@ -252,7 +256,8 @@ struct FolderMenu: View {
 struct MarkdownBar: View {
     let focused: Bool
     let apply: (MDCommand) -> Void
-    let photo: () -> Void
+    @Binding var insertItem: PhotosPickerItem?
+    @Binding var ocrItem: PhotosPickerItem?
     let camera: () -> Void
     let voice: () -> Void
     let done: () -> Void
@@ -266,8 +271,20 @@ struct MarkdownBar: View {
             key(symbol: "text.quote", label: app.lang.t("md.quote")) { apply(.quote) }
             key(symbol: "text.aligncenter", label: app.lang.t("md.center")) { apply(.center) }
             Rectangle().fill(Color(Ink.barLine)).frame(width: 0.5, height: 22).padding(.horizontal, 2)
-            key(symbol: "photo", label: app.lang.t("md.image")) { photo() }
-            key(symbol: "camera", label: app.lang.t("capture.camera")) { camera() }
+            PhotosPicker(selection: $insertItem, matching: .images) { keyFace(symbol: "photo") }
+                .buttonStyle(KeyStyle())
+                .accessibilityLabel(app.lang.t("md.image"))
+            Menu {
+                Button { camera() } label: { Label(app.lang.t("capture.shootPage"), systemImage: "camera") }
+                PhotosPicker(selection: $ocrItem, matching: .images) {
+                    Label(app.lang.t("capture.fromAlbum"), systemImage: "photo.on.rectangle")
+                }
+            } label: {
+                keyFace(symbol: "camera")
+            }
+            .menuStyle(.button)
+            .buttonStyle(KeyStyle())
+            .accessibilityLabel(app.lang.t("capture.camera"))
             key(symbol: "mic", label: app.lang.t("voice.title")) { voice() }
             if focused {
                 key(symbol: "keyboard.chevron.compact.down", label: app.lang.t("md.done")) { done() }
@@ -283,6 +300,14 @@ struct MarkdownBar: View {
             }
             .ignoresSafeArea(edges: .bottom)
         }
+    }
+
+    /// 只有图标的键面（相册、拍照那两个不是普通按钮，用同一个样子）
+    private func keyFace(symbol: String) -> some View {
+        Image(systemName: symbol).font(.system(size: 17))
+            .foregroundStyle(Color(Ink.text2))
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .contentShape(Rectangle())
     }
 
     private func key(_ text: String = "", symbol: String? = nil, bold: Bool = false, label: String, _ run: @escaping () -> Void) -> some View {

@@ -10,7 +10,6 @@ struct ListScreen: View {
     @Query(sort: \Folder.order) private var folders: [Folder]
     @State private var query = ""
     @State private var showFolders = false
-    @State private var showLibrary = false
     @State private var pickedItem: PhotosPickerItem?
     @State private var showCamera = false
     @State private var showMirrorPicker = false
@@ -56,14 +55,24 @@ struct ListScreen: View {
                 Button { app.startVoice() } label: { Image(systemName: "mic") }
                     .buttonStyle(SmartButtonStyle())
                     .accessibilityLabel(t.t("voice.title"))
-                Button { startCamera() } label: { Image(systemName: "camera") }
-                    .buttonStyle(SmartButtonStyle())
-                    .accessibilityLabel(t.t("capture.camera"))
+                Menu {
+                    Button { startCamera() } label: { Label(t.t("capture.shootPage"), systemImage: "camera") }
+                    PhotosPicker(selection: $pickedItem, matching: .images) {
+                        Label(t.t("capture.fromAlbum"), systemImage: "photo.on.rectangle")
+                    }
+                } label: {
+                    Image(systemName: "camera")
+                }
+                .menuStyle(.button)
+                .buttonStyle(SmartButtonStyle())
+                .accessibilityLabel(t.t("capture.camera"))
                 Menu {
                     Button { app.newNote() } label: { Label(t.t("list.new"), systemImage: "square.and.pencil") }
                     Button { app.startVoice() } label: { Label(t.t("voice.title"), systemImage: "mic") }
                     Button { startCamera() } label: { Label(t.t("capture.camera"), systemImage: "camera") }
-                    Button { showLibrary = true } label: { Label(t.t("capture.library"), systemImage: "photo.on.rectangle") }
+                    PhotosPicker(selection: $pickedItem, matching: .images) {
+                        Label(t.t("capture.library"), systemImage: "photo.on.rectangle")
+                    }
                 } label: {
                     Image(systemName: "plus")
                 } primaryAction: {
@@ -120,15 +129,10 @@ struct ListScreen: View {
         .background(DeskBackground())
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showFolders) { FolderSheet().presentationDetents([.medium, .large]) }
-        .photosPicker(isPresented: $showLibrary, selection: $pickedItem, matching: .images)
         .onChange(of: pickedItem) { _, item in
             guard let item else { return }
             pickedItem = nil
-            Task {
-                if let data = try? await item.loadTransferable(type: Data.self), let img = UIImage(data: data) {
-                    app.recognize(img)
-                }
-            }
+            app.loadPicked(item) { img in app.recognize(img) }
         }
         .fullScreenCover(isPresented: $showCamera) {
             CameraFlow { img in

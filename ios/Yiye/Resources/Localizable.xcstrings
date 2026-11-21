@@ -1,6 +1,23 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "album.failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t get that photo: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这张图没取出来：%@"
+          }
+        }
+      }
+    },
     "app.name": {
       "extractionState": "manual",
       "localizations": {
@@ -14,6 +31,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "一叶笺"
+          }
+        }
+      }
+    },
+    "busy.album": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Getting the photo…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从相册取图…"
           }
         }
       }
@@ -375,6 +409,23 @@
         }
       }
     },
+    "capture.fromAlbum": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose from Photos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从相册选"
+          }
+        }
+      }
+    },
     "capture.library": {
       "extractionState": "manual",
       "localizations": {
@@ -422,6 +473,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "拍"
+          }
+        }
+      }
+    },
+    "capture.shootPage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a photo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拍一页"
           }
         }
       }
