@@ -43,8 +43,8 @@ enum Demo {
     static func seed(_ app: AppModel, _ cfg: DemoConfig) {
         let zh = cfg.lang == "zh-Hans"
         let ctx = app.context
-        // 截图每次一样：笔记的时间按固定的「现在」算；心跳按真的现在（显示在线）
-        let now = ISOTime.date("2026-11-20T09:41:00+08:00") ?? Date()
+        // 笔记的时间按「今天 9:41」算（列表上显示几点，不显示「昨天」）；心跳按真的现在（显示在线）
+        let now = Calendar.current.date(bySettingHour: 9, minute: 41, second: 0, of: Date()) ?? Date()
 
         // 镜像：临时文件夹；心跳：一分钟前来过 → 在线
         let mirrorRoot = FileManager.default.temporaryDirectory.appendingPathComponent("demo-mirror/\(MirrorService.folderName)", isDirectory: true)
