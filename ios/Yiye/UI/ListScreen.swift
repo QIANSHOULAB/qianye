@@ -224,6 +224,7 @@ struct NoteStrip: View {
             .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
             .shadow(color: Color(red: 0.27, green: 0.16, blue: 0.06).opacity(0.22), radius: 2.5, x: 0, y: 1.5)
         }
+        .lightIf(note.tint.keepsLight)
     }
 }
 
@@ -234,7 +235,14 @@ struct ButlerMark: View {
     var body: some View {
         let s = note.butlerState
         switch s.phase {
-        case .waiting: Label(app.lang.t("butler.short.waiting"), systemImage: "hourglass").labelStyle(.titleAndIcon).font(.system(size: 11))
+        case .waiting:
+            // 大管家没连上：写「排队」、标红，不再假装「在理」
+            if app.butler.presence.isHere {
+                Label(app.lang.t("butler.short.waiting"), systemImage: "hourglass").labelStyle(.titleAndIcon).font(.system(size: 11))
+            } else {
+                Label(app.lang.t("butler.short.queued"), systemImage: "hourglass").labelStyle(.titleAndIcon).font(.system(size: 11))
+                    .foregroundStyle(Color(Ink.danger))
+            }
         case .offer: Label(app.lang.t("butler.short.offer"), systemImage: "sparkles").font(.system(size: 11)).foregroundStyle(Color(Ink.accent))
         case .failed: Image(systemName: "exclamationmark.circle").font(.system(size: 11)).foregroundStyle(Color(Ink.danger))
         default: EmptyView()

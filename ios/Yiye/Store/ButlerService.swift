@@ -74,6 +74,26 @@ final class ButlerService {
         }
     }
 
+    /// 交大管家配音：放一个 ask=speak 的请求（好了从「送来」回来，带 note；没配成从「已理顺」回一个 ok=false）。
+    /// replacing：这条之前交过、大管家还没拿走的，先撤回。没选镜像文件夹就说一声
+    func requestDub(_ n: Note, replacing old: String? = nil) -> String? {
+        guard let app else { return nil }
+        guard let channel = app.mirror.channel else {
+            app.show(app.lang.t("butler.needMirror"), seconds: 6)
+            return nil
+        }
+        let id = UUID().uuidString
+        let kind = IntakeKind(rawValue: n.kind)?.butlerKind ?? .text
+        let req = ButlerRequest(id: id, note: n.id.uuidString, kind: kind, text: n.markdown, images: nil, unsure: nil,
+                                ask: "speak", at: ISOTime.string(Date()), app: ButlerService.appVersion)
+        app.mirror.saveNow(n, attachments: app.attachments)
+        app.mirror.afterPendingWrites {
+            if let old { channel.withdraw(old) }
+            try? channel.submit(req)
+        }
+        return id
+    }
+
     /// 看一眼：心跳、在等的结果
     func look() {
         guard let app, !looking, let channel = app.mirror.channel else {
@@ -81,11 +101,14 @@ final class ButlerService {
             return
         }
         looking = true
-        let waiting: [(UUID, String)] = app.allNotes().compactMap { n in
+        let notes = app.allNotes()
+        let waiting: [(UUID, String)] = notes.compactMap { n in
             let s = n.butlerState
             guard s.phase == .waiting, let rid = s.requestID else { return nil }
             return (n.id, rid)
         }
+        // 交了配音在等的：配好了从「送来」回来；没配成的从「已理顺」回来
+        let dubbing: [(UUID, String)] = notes.compactMap { n in n.dubRequest.map { (n.id, $0) } }
         app.mirror.afterPendingWrites {
             let hb = channel.heartbeat()
             var got: [(UUID, ButlerResult)] = []
@@ -93,6 +116,11 @@ final class ButlerService {
                 if let r = channel.result(rid) { got.append((nid, r)) }
             }
             let results = got
+            var dubGot: [(UUID, ButlerResult)] = []
+            for (nid, rid) in dubbing {
+                if let r = channel.result(rid) { dubGot.append((nid, r)) }
+            }
+            let dubResults = dubGot
             // 大管家送来的听力稿：录音还没同步过来的，下回再拿
             var sent: [(URL, ButlerDelivery, Data?)] = []
             for d in channel.deliveries() {
@@ -110,6 +138,11 @@ final class ButlerService {
                 self.lastLook = Date()
                 self.presence = ButlerPresence.from(hb)
                 for (nid, r) in results { self.apply(r, to: nid, channel: channel) }
+                for (nid, r) in dubResults {
+                    if !r.ok, let n = app.note(nid), n.dubRequest == r.id { app.dubFailed(n, error: r.error) }
+                    let id = r.id
+                    app.mirror.afterPendingWrites { channel.removeResult(id) }
+                }
                 for (url, item, data) in deliveries {
                     app.addDelivery(item, audio: data)
                     app.mirror.afterPendingWrites { channel.removeDelivery(url) }

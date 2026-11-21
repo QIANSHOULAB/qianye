@@ -25,6 +25,10 @@ final class Note {
     var audios: String = ""
     /// 听力录音的每句表（录音路径 → 每句从第几秒开始），JSON
     var marks: String = ""
+    /// 在不在听力播放列表里（Song 11-21：「我选择的才会进去」）
+    var inListen: Bool = false
+    /// 交给大管家配音、还没回来的：「请求 id|交出去的时间」
+    var dub: String = ""
     /// 跟大管家打交道的状态（JSON）
     var butler: String = ""
     /// 左滑删了、还能撤销的
@@ -62,6 +66,20 @@ final class Note {
     }
 
     var tint: PaperTint { PaperTint(rawValue: paper) ?? .white }
+
+    /// 听力用的录音（念的、大管家配的）
+    var listenPath: String? { audioPaths.first(where: { Listen.isListenAudio($0) }) }
+
+    var dubSentAt: Date? {
+        let p = dub.split(separator: "|", maxSplits: 1)
+        return p.count == 2 ? ISOTime.date(String(p[1])) : nil
+    }
+
+    /// 在等的配音请求 id
+    var dubRequest: String? {
+        let id = dub.split(separator: "|", maxSplits: 1).first.map(String.init) ?? ""
+        return id.isEmpty ? nil : id
+    }
 }
 
 @Model

@@ -48,17 +48,20 @@ struct EditorScreen: View {
                 menu
             }
 
-            if let note, note.butlerState.phase != .none {
-                ButlerBanner(note: note)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
+            VStack(spacing: 0) {
+                if let note, note.butlerState.phase != .none {
+                    ButlerBanner(note: note)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
 
-            if let note, !note.audioPaths.isEmpty {
-                AudioStrip(note: note)
-            }
+                if let note, !note.audioPaths.isEmpty || !note.dub.isEmpty {
+                    AudioStrip(note: note)
+                }
 
-            NoteTextEditor(controller: controller)
-                .background(PaperBackground(tint: note?.tint ?? .white))
+                NoteTextEditor(controller: controller)
+            }
+            .background(PaperBackground(tint: note?.tint ?? .white))
+            .lightIf(note?.tint.keepsLight == true)
 
             MarkdownBar(focused: focused, apply: { controller.apply($0) },
                         insertItem: $insertItem,
@@ -67,7 +70,7 @@ struct EditorScreen: View {
                         voice: { flush(); if let note { app.startVoice(.into(note.id, controller.caretInMarkdown() ?? note.markdown.u16)) } },
                         done: { controller.endEditing() })
         }
-        .background(PaperBackground(tint: note?.tint ?? .white).ignoresSafeArea())
+        .background(PaperBackground(tint: note?.tint ?? .white).lightIf(note?.tint.keepsLight == true).ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
         .animation(.easeOut(duration: 0.24), value: note?.butlerState.phase)
         .onAppear(perform: setUp)
@@ -118,7 +121,13 @@ struct EditorScreen: View {
                     Button { showOriginals = true } label: { Label(t.t("editor.original"), systemImage: "photo") }
                 }
                 Button { flush(); app.butler.submit(note) } label: { Label(t.t("editor.toButler"), systemImage: "wand.and.stars") }
-                Button { flush(); app.speak(note) } label: { Label(t.t("listen.speak"), systemImage: "speaker.wave.2") }
+                Menu {
+                    Button { flush(); app.toggleListen(note) } label: {
+                        Label(note.inListen ? t.t("listen.remove") : t.t("listen.add"), systemImage: note.inListen ? "minus.circle" : "plus.circle")
+                    }
+                    Button { flush(); app.dub(note) } label: { Label(t.t("listen.dub"), systemImage: "waveform.badge.mic") }
+                    Button { flush(); app.speak(note) } label: { Label(t.t("listen.speak"), systemImage: "speaker.wave.2") }
+                } label: { Label(t.t("listen.title"), systemImage: "headphones") }
                 PhotosPicker(selection: $ocrItem, matching: .images) {
                     Label(t.t("capture.libraryInto"), systemImage: "text.viewfinder")
                 }
@@ -143,6 +152,7 @@ struct EditorScreen: View {
         controller.store = app.attachments
         controller.setMetrics(EditorMetrics.of(app.settings.fontSize))
         _ = controller.makeView()
+        controller.setForceLight(n.tint.keepsLight)
         controller.load(markdown: n.markdown, unsure: n.unsureRanges)
         controller.onChange = { scheduleSave() }
         controller.onFocus = { f in withAnimation(.easeOut(duration: 0.2)) { focused = f } }
@@ -208,6 +218,7 @@ struct EditorScreen: View {
     private func setPaper(_ p: PaperTint) {
         guard let note else { return }
         withAnimation(.easeOut(duration: 0.24)) { note.paper = p.rawValue }
+        controller.setForceLight(p.keepsLight)
         app.changed(note)
     }
 

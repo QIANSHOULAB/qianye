@@ -184,6 +184,11 @@ final class EditorController: NSObject, UITextViewDelegate {
         return v
     }
 
+    /// 换了颜色的纸：字、横线、标黄都按白天的颜色
+    func setForceLight(_ on: Bool) {
+        tv?.overrideUserInterfaceStyle = on ? .light : .unspecified
+    }
+
     func setMetrics(_ m: EditorMetrics) {
         guard m != metrics else { return }
         metrics = m

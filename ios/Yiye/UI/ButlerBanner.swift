@@ -14,7 +14,8 @@ struct ButlerBanner: View {
         VStack(alignment: .leading, spacing: 0) {
             switch s.phase {
             case .waiting:
-                row(icon: "hourglass", text: t.t("butler.waiting"), sub: presenceHint, color: Ink.text2) { EmptyView() }
+                let here = app.butler.presence.isHere
+                row(icon: "hourglass", text: here ? t.t("butler.waiting") : t.t("butler.queued"), sub: waitingHint(s), color: here ? Ink.text2 : Ink.danger) { EmptyView() }
             case .applied:
                 Button { withAnimation(.easeOut(duration: 0.24)) { open.toggle() } } label: {
                     row(icon: "wand.and.stars", text: t.f("butler.applied", s.count), sub: nil, color: Ink.accent) {
@@ -62,11 +63,13 @@ struct ButlerBanner: View {
         .onAppear { if app.demo?.screen == "butler" { open = true } }
     }
 
-    private var presenceHint: String? {
+    /// 交出去几点、大管家在不在：在线「交出去 19:12」；没来「大管家还没连上……」
+    private func waitingHint(_ s: ButlerNoteState) -> String {
+        let sent = s.sentAt.map { t.f("butler.sentAt", When.short($0, t)) } ?? ""
         switch app.butler.presence {
-        case .never: return t.t("butler.absent")
-        case .online: return nil
-        case .seen(let m, _): return t.f("butler.seen", m)
+        case .online: return sent
+        case .seen(let m, _): return [t.f("butler.seen", m), sent].filter { !$0.isEmpty }.joined(separator: " · ")
+        case .never: return [t.t("butler.absent"), sent].filter { !$0.isEmpty }.joined(separator: " · ")
         }
     }
 

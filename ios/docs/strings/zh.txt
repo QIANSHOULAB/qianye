@@ -10,7 +10,7 @@ busy.album	从相册取图…
 busy.import	从文件夹往回搬…
 busy.ocr	认字中，你去摸会儿鱼…
 busy.speak	一句一句念，稍等…
-butler.absent	大管家没来，回来接着理
+butler.absent	大管家还没连上：掌机装好 iCloud、登录同一个 Apple ID 就连上了
 butler.applied	大管家改了 %lld 处
 butler.failed	大管家这回没理成
 butler.more	还有 %lld 处
@@ -20,10 +20,13 @@ butler.no	不要
 butler.offer	大管家理好了，点一下换上
 butler.ok	知道了
 butler.online	大管家在线
+butler.queued	排着队，等大管家
 butler.retry	再交一次
 butler.revert	换回原文
 butler.seen	大管家 %lld 分钟前来过
+butler.sentAt	交出去 %@
 butler.short.offer	理好了
+butler.short.queued	排队
 butler.short.waiting	在理
 butler.unchanged	大管家看过了，一个字没改
 butler.waiting	大管家在理
@@ -59,21 +62,34 @@ list.empty	一张纸都还没有。写一条，拍一页，或者说一段。
 list.new	写一条
 list.noHit	没搜到
 list.search	搜索
+listen.add	放进听力
+listen.added	放进听力了
+listen.addedPhone	放进听力了。大管家没连上，先用手机的声音念。
 listen.always	一直
 listen.arrived	大管家送来一篇：%@
 listen.close	关
-listen.empty	还没有听力稿。写字页右上角菜单里点「念出来」，或者等大管家送来。
+listen.dub	交大管家配音
+listen.dubEmpty	这条没字，配不了音。
+listen.dubFailed	大管家这回没配成，可以再交一次。
+listen.dubFailedWhy	大管家没配成：%@
+listen.dubQueued	排上了，大管家连上就配。
+listen.dubSent	交给大管家了，配好音自己回到这条。
+listen.dubbed	大管家配好音了：%@
+listen.empty	还没有听力稿。在写字页右上角「⋯」里点「听力 › 放进听力」，或者等大管家送来。
 listen.loopOne	单句循环
 listen.next	下一篇
 listen.nextSentence	下一句
+listen.noAudio	还没声音 · 点一下先用手机念
 listen.noTiming	这篇没有分句的时间，点句子跳不过去。
 listen.pass	第 %lld 遍
 listen.prev	上一篇
 listen.prevSentence	上一句
+listen.remove	从听力拿掉
+listen.removed	从听力拿掉了，笔记还在
 listen.showText	看原文
 listen.speak	念出来
 listen.speakFailed	没念成：%@
-listen.spoken	念好了，在听力里。
+listen.spoken	念好了，点上面的播放就能听。
 listen.spokenBasic	念好了。想念得更像真人：iPhone 的 Settings > Accessibility > Spoken Content > Voices > English，下一个 Premium 的声音。
 listen.text	文
 listen.times1	1 遍
@@ -81,6 +97,8 @@ listen.times2	2 遍
 listen.times3	3 遍
 listen.times5	5 遍
 listen.title	听力
+listen.waitDub	等大管家配音 · 交出去 %@
+listen.waitDubAway	等大管家配音 · 大管家还没连上
 md.bold	粗体
 md.center	居中
 md.done	收起键盘

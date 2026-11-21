@@ -170,11 +170,37 @@ struct AudioStrip: View {
     var body: some View {
         VStack(spacing: 6) {
             ForEach(note.audioPaths, id: \.self) { p in
-                AudioRow(path: p, note: note.id, title: note.title, marks: note.markTable[p] ?? [])
+                AudioRow(path: p, note: note.id, title: note.title, marks: note.markTable[p] ?? [], inListen: note.inListen)
             }
+            if note.dubRequest != nil { DubWaitingRow(note: note) }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+    }
+}
+
+/// 交了大管家配音、还没回来：几点交的；大管家没连上就标红说一声
+struct DubWaitingRow: View {
+    let note: Note
+    @Environment(AppModel.self) private var app
+
+    var body: some View {
+        let t = app.lang
+        let here = app.butler.presence.isHere
+        let text = here ? t.f("listen.waitDub", note.dubSentAt.map { When.short($0, t) } ?? "") : t.t("listen.waitDubAway")
+        HStack(spacing: 8) {
+            Image(systemName: "hourglass").font(.system(size: 14))
+            Text(text).font(.system(size: 14)).lineLimit(2)
+            Spacer(minLength: 0)
+        }
+        .foregroundStyle(here ? Color(Ink.text2) : Color(Ink.danger))
+        .padding(.horizontal, 12)
+        .frame(minHeight: 40)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(Ink.paper).opacity(0.9))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color(Ink.btnBorder), lineWidth: 0.75))
+        )
     }
 }
 
@@ -183,6 +209,8 @@ struct AudioRow: View {
     var note: UUID? = nil
     var title = ""
     var marks: [ListenMark] = []
+    /// 这条在听力列表里：后面多一个耳机，点了进列表从这篇放
+    var inListen = false
     @Environment(AppModel.self) private var app
     private var player: AudioPlayback { AudioPlayback.shared }
 
@@ -213,7 +241,7 @@ struct AudioRow: View {
                 .lineLimit(1)
                 .fixedSize()
 
-            if Listen.isListenAudio(path), let note {
+            if inListen, Listen.isListenAudio(path), let note {
                 Button { app.listening = ListenOpen(startNote: note) } label: {
                     Image(systemName: "headphones").font(.system(size: 15)).foregroundStyle(Color(Ink.text2)).hit44()
                 }

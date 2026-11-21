@@ -51,12 +51,14 @@ enum PaperTint: String, CaseIterable, Identifiable {
     var color: UIColor {
         switch self {
         case .white: return Ink.paper
-        case .yellow: return .dyn(0xFBF2D2, 0x332D1E)
-        case .green: return .dyn(0xEDF3E2, 0x242B21)
-        case .blue: return .dyn(0xE8F0F7, 0x1F2730)
-        case .pink: return .dyn(0xF9EAE6, 0x322425)
+        case .yellow: return .dyn(0xFBF0CC, 0xFBF0CC)
+        case .green: return .dyn(0xE9F2DC, 0xE9F2DC)
+        case .blue: return .dyn(0xE3EDF7, 0xE3EDF7)
+        case .pink: return .dyn(0xF9E6E1, 0xF9E6E1)
         }
     }
+    /// 换了颜色的纸：夜里也照原色，上面的字、横线按白天的来（Song 11-21：「换的米黄色不是米黄色」）
+    var keepsLight: Bool { self != .white }
     var key: String { "paper.\(rawValue)" }
 }
 

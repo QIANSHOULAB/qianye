@@ -1,18 +1,25 @@
+import SwiftData
 import SwiftUI
 import YiyeKit
 
 /// 听力：一张播放列表，跟音乐 app 一样一行一篇，默认只有声音。
+/// 只放 Song 点了「放进听力」的（大管家照每日简讯送来的自己进）。还没声音的也列着，写明在等大管家配音。
 /// 每篇放几遍（1/2/3/5/一直），放够了自动下一篇；想看字点那一行后面的「文」
 struct PlaylistScreen: View {
     let open: ListenOpen
     @Environment(AppModel.self) private var app
-    @State private var tracks: [Track] = []
+    @Query(filter: #Predicate<Note> { $0.trashed == false && $0.inListen == true }, sort: \Note.createdAt, order: .reverse)
+    private var notes: [Note]
     @State private var textFor: Track?
     @State private var began = false
     private var player: AudioPlayback { AudioPlayback.shared }
     private var t: Lang { app.lang }
 
+    /// 能放的（有录音的那些）
+    private var tracks: [Track] { notes.compactMap { app.track($0) } }
+
     var body: some View {
+        let tracks = self.tracks
         VStack(spacing: 0) {
             SmartBar {
                 Button(t.t("listen.close")) { app.listening = nil }
@@ -23,7 +30,7 @@ struct PlaylistScreen: View {
                 EmptyView()
             }
 
-            if tracks.isEmpty {
+            if notes.isEmpty {
                 VStack(spacing: 12) {
                     Spacer()
                     Image(systemName: "headphones").font(.system(size: 34)).foregroundStyle(Color(Ink.text3))
@@ -39,7 +46,13 @@ struct PlaylistScreen: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 8) {
-                        ForEach(tracks.indices, id: \.self) { i in row(i) }
+                        ForEach(notes) { n in
+                            if let i = tracks.firstIndex(where: { $0.note == n.id }) {
+                                row(i, tracks)
+                            } else {
+                                waitingRow(n)
+                            }
+                        }
                     }
                     .padding(12)
                 }
@@ -56,16 +69,16 @@ struct PlaylistScreen: View {
     private func begin() {
         guard !began else { return }
         began = true
-        tracks = app.listenTracks()
         player.repeatTarget = app.settings.listenRepeat
         player.rate = Float(app.settings.listenRate)
+        let tracks = self.tracks
         guard let id = open.startNote, let i = tracks.firstIndex(where: { $0.note == id }) else { return }
-        // 从写字页、「念出来」进来的：直接放这篇
+        // 从写字页进来的：直接放这篇
         if player.track?.note != id || !player.playlist { player.play(tracks, from: i, store: app.attachments) }
         if open.showText { textFor = tracks[i] }
     }
 
-    private func row(_ i: Int) -> some View {
+    private func row(_ i: Int, _ tracks: [Track]) -> some View {
         let tr = tracks[i]
         let on = player.playlist && player.track?.note == tr.note
         let total = player.duration(tr.path, store: app.attachments)
@@ -96,24 +109,78 @@ struct PlaylistScreen: View {
             }
             .buttonStyle(.plain)
 
-            Button { textFor = tr } label: { Text(t.t("listen.text")).font(.system(size: 15, weight: .medium)) }
-                .buttonStyle(SmartButtonStyle())
-                .accessibilityLabel(t.t("listen.showText"))
+            textButton(tr)
         }
-        .padding(.leading, 10)
-        .padding(.trailing, 6)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 3)
-                .fill(Color(Ink.paper))
-                .shadow(color: .black.opacity(0.12), radius: 1.5, y: 1)
-        )
+        .modifier(PlaylistCard())
+    }
+
+    /// 还没声音的一行：在等大管家配音（几点交的、大管家在不在），或者点一下让手机先念
+    private func waitingRow(_ n: Note) -> some View {
+        let waiting = n.dubRequest != nil
+        let here = app.butler.presence.isHere
+        let title = n.title.isEmpty ? t.t("note.untitled") : n.title
+        let sub: String
+        if waiting {
+            sub = here ? t.f("listen.waitDub", n.dubSentAt.map { When.short($0, t) } ?? "") : t.t("listen.waitDubAway")
+        } else {
+            sub = t.t("listen.noAudio")
+        }
+        return HStack(spacing: 10) {
+            Button {
+                if !waiting { app.speak(n) }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: waiting ? "hourglass" : "speaker.wave.2")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color(Ink.text2))
+                        .frame(width: 34, height: 34)
+                        .background(Circle().fill(Color(Ink.text3).opacity(0.14)))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(title)
+                            .font(.system(size: 16))
+                            .foregroundStyle(Color(Ink.text2))
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                        Text(sub)
+                            .font(.system(size: 13))
+                            .foregroundStyle(waiting && !here ? Color(Ink.danger) : Color(Ink.text3))
+                    }
+                    Spacer(minLength: 0)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            textButton(Track(note: n.id, path: "", title: title, marks: []))
+        }
+        .modifier(PlaylistCard())
+    }
+
+    private func textButton(_ tr: Track) -> some View {
+        Button { textFor = tr } label: { Text(t.t("listen.text")).font(.system(size: 15, weight: .medium)) }
+            .buttonStyle(SmartButtonStyle())
+            .accessibilityLabel(t.t("listen.showText"))
     }
 
     private func passLine(_ total: TimeInterval) -> String {
         let n = player.passes + 1
         let of = player.repeatTarget == 0 ? "∞" : "\(player.repeatTarget)"
         return "\(VoiceText.clock(player.position)) / \(VoiceText.clock(total))  ·  " + t.f("listen.pass", n) + " / \(of)"
+    }
+}
+
+/// 播放列表一行的纸片底
+private struct PlaylistCard: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(.leading, 10)
+            .padding(.trailing, 6)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color(Ink.paper))
+                    .shadow(color: .black.opacity(0.12), radius: 1.5, y: 1)
+            )
     }
 }
 
@@ -214,7 +281,7 @@ struct TextSheet: View {
                                 .onTapGesture { tap(i) }
                                 .id(i)
                         }
-                        if track.marks.isEmpty {
+                        if track.marks.isEmpty && !track.path.isEmpty {
                             Text(t.t("listen.noTiming")).font(.system(size: 13)).foregroundStyle(Color(Ink.text3)).padding(10)
                         }
                     }
@@ -256,5 +323,5 @@ struct TextSheet: View {
 }
 
 extension Track: Identifiable {
-    var id: String { path }
+    var id: String { "\(note.uuidString)|\(path)" }
 }

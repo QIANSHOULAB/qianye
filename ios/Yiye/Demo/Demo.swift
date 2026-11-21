@@ -105,10 +105,14 @@ enum Demo {
         // 录的那条：上面录音，下面字（大管家理过了）
         let voice = add(zh ? "周会安排\n明天上午九点在二楼会议室开周会，记得把上周的报表带上。\n冷却液快没了，晚班记得加。"
                            : "Tomorrow's sync\nTomorrow at nine in room two. Bring last week's report.\nCoolant is low, night shift top it up.",
-                        ago: 60 * 5, folder: work, kind: "voice")
+                        ago: 60 * 5, folder: work, paper: .yellow, kind: "voice")
         if let rel = Demo.silence(app.attachments, name: VoiceText.fileName(note: voice.id, index: 1), seconds: 23) {
             voice.audioPaths = [rel]
         }
+        // 米黄纸：深色模式下也是米黄；交给大管家了，横条写着几点交的
+        var vst = ButlerNoteState()
+        vst.submitted(id: UUID().uuidString, text: voice.markdown, at: now.addingTimeInterval(-60 * 4))
+        voice.butlerState = vst
         // 听力：三篇英语新闻（大管家配好音送来的样子），每篇一段没声音的录音 + 每句表
         let english = Folder(name: zh ? "英语" : "English", order: 2)
         ctx.insert(english)
@@ -127,8 +131,15 @@ enum Demo {
                 n.audioPaths = [rel]
                 app.setMarks(n, path: rel, marks: marks)
             }
+            n.inListen = true
             if k == 0 { listenFirst = n.id }
         }
+        // 刚放进听力、交给大管家配音还没回来的一篇
+        let waiting = add("# Oil prices climb again\nOil prices rose 3 percent on Tuesday. Winter is coming, and people need more fuel to heat their homes.",
+                          ago: 60 * 8, folder: english, kind: "text")
+        waiting.createdAt = now.addingTimeInterval(-60 * 8)
+        waiting.inListen = true
+        waiting.dub = "\(UUID().uuidString)|\(ISOTime.string(now.addingTimeInterval(-60 * 6)))"
         try? ctx.save()
 
         switch cfg.screen {

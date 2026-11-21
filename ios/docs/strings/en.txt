@@ -10,7 +10,7 @@ busy.album	Getting the photo…
 busy.import	Bringing your notes home…
 busy.ocr	Squinting at your handwriting…
 busy.speak	Reading it aloud…
-butler.absent	Butler’s not around. It’ll pick this up later.
+butler.absent	Butler not connected yet. It connects once the PC has iCloud, signed in with this Apple ID.
 butler.applied	The butler fixed %lld spots
 butler.failed	The butler hit a snag
 butler.more	%lld more
@@ -20,10 +20,13 @@ butler.no	Skip
 butler.offer	Butler’s copy is ready. Tap to swap it in.
 butler.ok	Got it
 butler.online	Butler is online
+butler.queued	Queued for the butler
 butler.retry	Try again
 butler.revert	Restore original
 butler.seen	Butler last seen %lld min ago
+butler.sentAt	sent %@
 butler.short.offer	Ready
+butler.short.queued	Queued
 butler.short.waiting	Tidying
 butler.unchanged	The butler read it. Nothing to fix.
 butler.waiting	The butler’s on it
@@ -59,21 +62,34 @@ list.empty	A blank desk. Write a note, scan a page, or just talk.
 list.new	New note
 list.noHit	No matches
 list.search	Search
+listen.add	Add to Listening
+listen.added	Added to Listening
+listen.addedPhone	Added. The butler’s offline, so your phone reads it for now.
 listen.always	Loop
 listen.arrived	New from the butler: %@
 listen.close	Close
-listen.empty	Nothing to listen to yet. Tap “Read aloud” in a note’s menu, or wait for the butler to send some.
+listen.dub	Have the butler voice it
+listen.dubEmpty	This note is empty. Nothing to voice.
+listen.dubFailed	The butler couldn’t voice it this time. Try again.
+listen.dubFailedWhy	The butler couldn’t voice it: %@
+listen.dubQueued	Queued. The butler will voice it once it’s connected.
+listen.dubSent	Sent to the butler. The voice lands back in this note.
+listen.dubbed	The butler voiced “%@”
+listen.empty	Nothing here yet. In a note, tap ⋯ › Listening › Add to Listening, or wait for the butler to send some.
 listen.loopOne	Loop sentence
 listen.next	Next
 listen.nextSentence	Next sentence
+listen.noAudio	No audio yet · tap to have your phone read it
 listen.noTiming	No sentence timing for this one, so tapping a line won’t jump.
 listen.pass	pass %lld
 listen.prev	Previous
 listen.prevSentence	Previous sentence
+listen.remove	Remove from Listening
+listen.removed	Removed from Listening. The note stays.
 listen.showText	Show text
 listen.speak	Read aloud
 listen.speakFailed	Couldn’t read it: %@
-listen.spoken	Done. It’s in Listening.
+listen.spoken	Done. Tap play at the top to listen.
 listen.spokenBasic	Done. For a more natural voice, download a Premium English voice in Settings > Accessibility > Spoken Content > Voices.
 listen.text	Text
 listen.times1	1×
@@ -81,6 +97,8 @@ listen.times2	2×
 listen.times3	3×
 listen.times5	5×
 listen.title	Listening
+listen.waitDub	Waiting for the butler · sent %@
+listen.waitDubAway	Waiting for the butler · not connected yet
 md.bold	Bold
 md.center	Center
 md.done	Hide keyboard

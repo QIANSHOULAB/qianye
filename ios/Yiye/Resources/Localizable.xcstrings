@@ -109,13 +109,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Butler’s not around. It’ll pick this up later."
+            "value": "Butler not connected yet. It connects once the PC has iCloud, signed in with this Apple ID."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "大管家没来，回来接着理"
+            "value": "大管家还没连上：掌机装好 iCloud、登录同一个 Apple ID 就连上了"
           }
         }
       }
@@ -273,6 +273,23 @@
         }
       }
     },
+    "butler.queued": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Queued for the butler"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "排着队，等大管家"
+          }
+        }
+      }
+    },
     "butler.retry": {
       "extractionState": "manual",
       "localizations": {
@@ -324,6 +341,23 @@
         }
       }
     },
+    "butler.sentAt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sent %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "交出去 %@"
+          }
+        }
+      }
+    },
     "butler.short.offer": {
       "extractionState": "manual",
       "localizations": {
@@ -337,6 +371,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "理好了"
+          }
+        }
+      }
+    },
+    "butler.short.queued": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Queued"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "排队"
           }
         }
       }
@@ -936,6 +987,57 @@
         }
       }
     },
+    "listen.add": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to Listening"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "放进听力"
+          }
+        }
+      }
+    },
+    "listen.added": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added to Listening"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "放进听力了"
+          }
+        }
+      }
+    },
+    "listen.addedPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added. The butler’s offline, so your phone reads it for now."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "放进听力了。大管家没连上，先用手机的声音念。"
+          }
+        }
+      }
+    },
     "listen.always": {
       "extractionState": "manual",
       "localizations": {
@@ -987,19 +1089,138 @@
         }
       }
     },
+    "listen.dub": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Have the butler voice it"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "交大管家配音"
+          }
+        }
+      }
+    },
+    "listen.dubEmpty": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This note is empty. Nothing to voice."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这条没字，配不了音。"
+          }
+        }
+      }
+    },
+    "listen.dubFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The butler couldn’t voice it this time. Try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大管家这回没配成，可以再交一次。"
+          }
+        }
+      }
+    },
+    "listen.dubFailedWhy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The butler couldn’t voice it: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大管家没配成：%@"
+          }
+        }
+      }
+    },
+    "listen.dubQueued": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Queued. The butler will voice it once it’s connected."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "排上了，大管家连上就配。"
+          }
+        }
+      }
+    },
+    "listen.dubSent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent to the butler. The voice lands back in this note."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "交给大管家了，配好音自己回到这条。"
+          }
+        }
+      }
+    },
+    "listen.dubbed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The butler voiced “%@”"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大管家配好音了：%@"
+          }
+        }
+      }
+    },
     "listen.empty": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nothing to listen to yet. Tap “Read aloud” in a note’s menu, or wait for the butler to send some."
+            "value": "Nothing here yet. In a note, tap ⋯ › Listening › Add to Listening, or wait for the butler to send some."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "还没有听力稿。写字页右上角菜单里点「念出来」，或者等大管家送来。"
+            "value": "还没有听力稿。在写字页右上角「⋯」里点「听力 › 放进听力」，或者等大管家送来。"
           }
         }
       }
@@ -1051,6 +1272,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "下一句"
+          }
+        }
+      }
+    },
+    "listen.noAudio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No audio yet · tap to have your phone read it"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没声音 · 点一下先用手机念"
           }
         }
       }
@@ -1123,6 +1361,40 @@
         }
       }
     },
+    "listen.remove": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from Listening"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从听力拿掉"
+          }
+        }
+      }
+    },
+    "listen.removed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removed from Listening. The note stays."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从听力拿掉了，笔记还在"
+          }
+        }
+      }
+    },
     "listen.showText": {
       "extractionState": "manual",
       "localizations": {
@@ -1180,13 +1452,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Done. It’s in Listening."
+            "value": "Done. Tap play at the top to listen."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "念好了，在听力里。"
+            "value": "念好了，点上面的播放就能听。"
           }
         }
       }
@@ -1306,6 +1578,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "听力"
+          }
+        }
+      }
+    },
+    "listen.waitDub": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for the butler · sent %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等大管家配音 · 交出去 %@"
+          }
+        }
+      }
+    },
+    "listen.waitDubAway": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for the butler · not connected yet"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等大管家配音 · 大管家还没连上"
           }
         }
       }
