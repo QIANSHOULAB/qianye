@@ -1,6 +1,6 @@
 import Foundation
 
-// 一叶笺 ⇄ 大管家 接口 v1（ios/docs/大管家接口.md）。管子就是镜像文件夹：
+// 一叶笺 ⇄ 大管家 接口 v1（ios/docs/大管家接口.md）。v2 走 Cloudflare 信箱（Mailbox.swift），这根 iCloud 的管子留着当备胎：
 //   _大管家/待理顺/<id>.json   手机放请求
 //   _大管家/已理顺/<id>.json   大管家放结果
 //   _大管家/心跳.json          大管家每 60 秒覆盖写一次
@@ -57,6 +57,8 @@ public enum ButlerPresence: Equatable, Sendable {
     case online
     /// X 分钟前来过；offline=true 表示超过 10 分钟，算离线
     case seen(minutes: Int, offline: Bool)
+    /// 信箱（v2）说大管家不在：最后一次见到是 since（从没见过就 nil）
+    case away(since: Date?)
 
     public static func from(_ hb: ButlerHeartbeat?, now: Date = Date()) -> ButlerPresence {
         guard let hb, let at = ISOTime.date(hb.at) else { return .never }
@@ -70,7 +72,7 @@ public enum ButlerPresence: Equatable, Sendable {
         switch self {
         case .online: return true
         case .seen(_, let offline): return !offline
-        case .never: return false
+        case .never, .away: return false
         }
     }
 }

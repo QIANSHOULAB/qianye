@@ -366,6 +366,14 @@ enum When {
         return f.string(from: d)
     }
 
+    /// 几点几分；不是今天的带上日期（「上次在线」用）
+    static func clock(_ d: Date, _ lang: Lang) -> String {
+        let f = DateFormatter()
+        f.locale = lang.locale
+        f.setLocalizedDateFormatFromTemplate(Calendar.current.isDateInToday(d) ? "jmm" : "MMMdjmm")
+        return f.string(from: d)
+    }
+
     static func long(_ d: Date, _ lang: Lang) -> String {
         let f = DateFormatter()
         f.locale = lang.locale

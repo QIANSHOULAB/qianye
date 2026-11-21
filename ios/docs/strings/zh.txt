@@ -12,15 +12,18 @@ busy.ocr	认字中，你去摸会儿鱼…
 busy.speak	一句一句念，稍等…
 butler.absent	大管家还没连上：掌机装好 iCloud、登录同一个 Apple ID 就连上了
 butler.applied	大管家改了 %lld 处
+butler.away	大管家不在线，上次在线 %@
+butler.awayNever	大管家还没连上信箱：掌机开着、大管家开着就连上了
 butler.failed	大管家这回没理成
 butler.more	还有 %lld 处
-butler.needMirror	大管家从镜像文件夹拿活，先在设置里选一个文件夹。
-butler.needMirrorShort	先选镜像文件夹
+butler.needMirror	先在设置里配上大管家的信箱（扫掌机屏幕上的码），或者选一个镜像文件夹。
+butler.needMirrorShort	先配信箱，或者选镜像文件夹
 butler.no	不要
 butler.offer	大管家理好了，点一下换上
 butler.ok	知道了
 butler.online	大管家在线
 butler.queued	排着队，等大管家
+butler.queuedSeen	排着队，等大管家（上次在线 %@）
 butler.retry	再交一次
 butler.revert	换回原文
 butler.seen	大管家 %lld 分钟前来过
@@ -120,6 +123,10 @@ note.unpin	取消置顶
 note.untitled	无题
 ocr.failed	没认出来：%@
 ocr.nothing	这张图上没找到字。拍正一点、亮一点再来。
+pair.bad	这不是大管家的配对码
+pair.done	配好了：以后交给大管家几秒就到
+pair.noCamera	相机用不了：设置里给一叶笺开一下相机
+pair.scanTitle	对准掌机屏幕上的码
 paper.blue	天青
 paper.green	豆青
 paper.pink	藕粉
@@ -127,13 +134,17 @@ paper.white	素白
 paper.yellow	米黄
 settings.butler	大管家
 settings.butlerAuto	拍照、录音的自动交给大管家
-settings.butlerNote	手写认不准的字，掌机上的大管家对着原图理顺再送回来。走的就是镜像文件夹，手机上不存任何 AI 钥匙。
+settings.butlerNote	手写认不准的字，掌机上的大管家对着原图理顺再送回来。走 Cloudflare 信箱，几秒就到，信两头加密；信箱连不上才走镜像文件夹。手机上不存任何 AI 钥匙。
 settings.fontSize	字号
 settings.import	从文件夹导入
 settings.language	语言
 settings.mirror	镜像文件夹
 settings.mirrorChange	换一个
 settings.mirrorNote	每存一次往里写一个 .md，图片进「附件」，删掉的进「废纸篓」。以后换正式版，从这儿一条不落搬回来。
+settings.pairOff	信箱还没配：掌机配好会自己配上；等不及就扫掌机屏幕上的码。
+settings.pairOn	信箱配好了：交给大管家的几秒就到，信两头加密。
+settings.pairPaste	粘贴配对码
+settings.pairScan	扫码配对
 settings.title	设置
 settings.version	版本
 settings.voice	录一段

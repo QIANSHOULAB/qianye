@@ -12,15 +12,18 @@ busy.ocr	Squinting at your handwriting…
 busy.speak	Reading it aloud…
 butler.absent	Butler not connected yet. It connects once the PC has iCloud, signed in with this Apple ID.
 butler.applied	The butler fixed %lld spots
+butler.away	Butler offline, last online %@
+butler.awayNever	The butler hasn’t connected yet. It will once the PC is on.
 butler.failed	The butler hit a snag
 butler.more	%lld more
-butler.needMirror	The butler works out of your mirror folder. Pick one in Settings first.
-butler.needMirrorShort	Pick a mirror folder first
+butler.needMirror	Pair with the butler in Settings (scan the code on the PC), or pick a mirror folder first.
+butler.needMirrorShort	Pair first, or pick a mirror folder
 butler.no	Skip
 butler.offer	Butler’s copy is ready. Tap to swap it in.
 butler.ok	Got it
 butler.online	Butler is online
 butler.queued	Queued for the butler
+butler.queuedSeen	Queued for the butler (last online %@)
 butler.retry	Try again
 butler.revert	Restore original
 butler.seen	Butler last seen %lld min ago
@@ -120,6 +123,10 @@ note.unpin	Unpin
 note.untitled	Untitled
 ocr.failed	Couldn’t read it: %@
 ocr.nothing	No text in that one. Try a straighter, brighter shot.
+pair.bad	That’s not a butler pairing code.
+pair.done	Paired. Notes now reach the butler in seconds.
+pair.noCamera	Camera’s off for Yiye. Turn it on in Settings.
+pair.scanTitle	Point at the code on the PC’s screen
 paper.blue	Sky
 paper.green	Sage
 paper.pink	Blush
@@ -127,13 +134,17 @@ paper.white	White
 paper.yellow	Cream
 settings.butler	Butler
 settings.butlerAuto	Auto-send scans and voice notes
-settings.butlerNote	The butler on your PC checks scans against the photo and sends back a clean copy, all through the mirror folder. No AI keys on this phone.
+settings.butlerNote	The butler on your PC checks scans against the photo and sends back a clean copy. It goes through an encrypted mailbox in seconds, and falls back to the mirror folder. No AI keys on this phone.
 settings.fontSize	Text size
 settings.import	Import from folder
 settings.language	Language
 settings.mirror	Mirror folder
 settings.mirrorChange	Change
 settings.mirrorNote	Every save writes a .md file here. Photos go in 附件, deleted notes in 废纸篓. Switch to another build later and everything moves back from here.
+settings.pairOff	Not paired yet. It pairs itself once the PC is set up, or scan the code on the PC’s screen.
+settings.pairOn	Paired. Notes reach the butler in seconds, encrypted end to end.
+settings.pairPaste	Paste code
+settings.pairScan	Scan to pair
 settings.title	Settings
 settings.version	Version
 settings.voice	Voice notes

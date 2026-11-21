@@ -5,6 +5,7 @@ import YiyeKit
 struct SettingsScreen: View {
     @Environment(AppModel.self) private var app
     @State private var showPicker = false
+    @State private var showScanner = false
 
     private var t: Lang { app.lang }
 
@@ -76,6 +77,21 @@ struct SettingsScreen: View {
                                 Spacer()
                             }
                             .frame(minHeight: 32)
+                            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                                Image(systemName: app.butler.pairing != nil ? "envelope.fill" : "envelope")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(Color(app.butler.pairing != nil ? Ink.accent : Ink.text3))
+                                Text(app.butler.pairing != nil ? t.t("settings.pairOn") : t.t("settings.pairOff"))
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(Color(Ink.text2))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            HStack(spacing: 16) {
+                                Button(t.t("settings.pairScan")) { showScanner = true }
+                                    .buttonStyle(SmartButtonStyle())
+                                Button(t.t("settings.pairPaste")) { pastePairing() }
+                                    .buttonStyle(PlainTextButtonStyle())
+                            }
                             Toggle(isOn: $settings.butlerAutoPhoto) {
                                 Text(t.t("settings.butlerAuto")).font(.system(size: 16)).foregroundStyle(Color(Ink.text))
                             }
@@ -125,15 +141,32 @@ struct SettingsScreen: View {
             }
             .ignoresSafeArea()
         }
+        .fullScreenCover(isPresented: $showScanner) {
+            PairScanner { code in
+                showScanner = false
+                if let code { app.butler.pair(code: code) }
+            }
+            .ignoresSafeArea()
+        }
         .onAppear { app.butler.look() }
     }
 
+    /// 粘贴配对码（掌机屏幕上二维码旁边那串字）
+    private func pastePairing() {
+        guard let s = UIPasteboard.general.string, !s.isEmpty else {
+            app.show(t.t("pair.bad"))
+            return
+        }
+        app.butler.pair(code: s)
+    }
+
     private var presenceText: String {
-        guard app.mirror.isOn else { return t.t("butler.needMirrorShort") }
+        guard app.mirror.isOn || app.butler.pairing != nil else { return t.t("butler.needMirrorShort") }
         switch app.butler.presence {
         case .never: return t.t("butler.absent")
         case .online: return t.t("butler.online")
         case .seen(let m, _): return t.f("butler.seen", m)
+        case .away(let since): return since.map { t.f("butler.away", When.clock($0, t)) } ?? t.t("butler.awayNever")
         }
     }
 
@@ -141,7 +174,7 @@ struct SettingsScreen: View {
         switch app.butler.presence {
         case .online: return .dyn(0x34C759, 0x30D158)
         case .seen(_, let off): return off ? Ink.text3 : .dyn(0xFF9F0A, 0xFFD60A)
-        case .never: return Ink.text3
+        case .never, .away: return Ink.text3
         }
     }
 

@@ -137,6 +137,40 @@
         }
       }
     },
+    "butler.away": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Butler offline, last online %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大管家不在线，上次在线 %@"
+          }
+        }
+      }
+    },
+    "butler.awayNever": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The butler hasn’t connected yet. It will once the PC is on."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大管家还没连上信箱：掌机开着、大管家开着就连上了"
+          }
+        }
+      }
+    },
     "butler.failed": {
       "extractionState": "manual",
       "localizations": {
@@ -177,13 +211,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The butler works out of your mirror folder. Pick one in Settings first."
+            "value": "Pair with the butler in Settings (scan the code on the PC), or pick a mirror folder first."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "大管家从镜像文件夹拿活，先在设置里选一个文件夹。"
+            "value": "先在设置里配上大管家的信箱（扫掌机屏幕上的码），或者选一个镜像文件夹。"
           }
         }
       }
@@ -194,13 +228,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pick a mirror folder first"
+            "value": "Pair first, or pick a mirror folder"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "先选镜像文件夹"
+            "value": "先配信箱，或者选镜像文件夹"
           }
         }
       }
@@ -286,6 +320,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "排着队，等大管家"
+          }
+        }
+      }
+    },
+    "butler.queuedSeen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Queued for the butler (last online %@)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "排着队，等大管家（上次在线 %@）"
           }
         }
       }
@@ -1973,6 +2024,74 @@
         }
       }
     },
+    "pair.bad": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That’s not a butler pairing code."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这不是大管家的配对码"
+          }
+        }
+      }
+    },
+    "pair.done": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paired. Notes now reach the butler in seconds."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配好了：以后交给大管家几秒就到"
+          }
+        }
+      }
+    },
+    "pair.noCamera": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera’s off for Yiye. Turn it on in Settings."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "相机用不了：设置里给一叶笺开一下相机"
+          }
+        }
+      }
+    },
+    "pair.scanTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Point at the code on the PC’s screen"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "对准掌机屏幕上的码"
+          }
+        }
+      }
+    },
     "paper.blue": {
       "extractionState": "manual",
       "localizations": {
@@ -2098,13 +2217,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The butler on your PC checks scans against the photo and sends back a clean copy, all through the mirror folder. No AI keys on this phone."
+            "value": "The butler on your PC checks scans against the photo and sends back a clean copy. It goes through an encrypted mailbox in seconds, and falls back to the mirror folder. No AI keys on this phone."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "手写认不准的字，掌机上的大管家对着原图理顺再送回来。走的就是镜像文件夹，手机上不存任何 AI 钥匙。"
+            "value": "手写认不准的字，掌机上的大管家对着原图理顺再送回来。走 Cloudflare 信箱，几秒就到，信两头加密；信箱连不上才走镜像文件夹。手机上不存任何 AI 钥匙。"
           }
         }
       }
@@ -2207,6 +2326,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "每存一次往里写一个 .md，图片进「附件」，删掉的进「废纸篓」。以后换正式版，从这儿一条不落搬回来。"
+          }
+        }
+      }
+    },
+    "settings.pairOff": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not paired yet. It pairs itself once the PC is set up, or scan the code on the PC’s screen."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "信箱还没配：掌机配好会自己配上；等不及就扫掌机屏幕上的码。"
+          }
+        }
+      }
+    },
+    "settings.pairOn": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paired. Notes reach the butler in seconds, encrypted end to end."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "信箱配好了：交给大管家的几秒就到，信两头加密。"
+          }
+        }
+      }
+    },
+    "settings.pairPaste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste code"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粘贴配对码"
+          }
+        }
+      }
+    },
+    "settings.pairScan": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan to pair"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扫码配对"
           }
         }
       }

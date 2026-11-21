@@ -1,0 +1,36 @@
+name: iOS 信箱
+# 施工单 065：一叶笺 ⇄ 大管家 走 Cloudflare 信箱（接口 v2）的端到端。
+# 手机这头是 YiyeKit 的 LiveRelayTests（app 里那套 MailClient + MailSocket），对面是假掌机（ios/tools/relay/fake_butler.mjs），来回 10 次，每段列时间。
+# 线上 luruseng-relay 已经有 /dgj 就对着线上跑；还没有就在这台机器上起一个 wrangler dev（luruseng-relay + ios/tools/relay/ 里的补丁）。
+# 不挡发版：发版看 ios.yml。
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ios/YiyeKit/**'
+      - 'ios/tools/relay/**'
+      - '.github/workflows/ios-relay.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-relay-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  relay:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Xcode 26
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.6.app
+          swift --version
+      - name: 信箱来回 10 次（假掌机 + LiveRelayTests）
+        run: bash ios/tools/relay/e2e.sh

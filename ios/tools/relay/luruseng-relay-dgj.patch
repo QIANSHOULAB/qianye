@@ -1,0 +1,686 @@
+From 35af64cc76dbcfef5b8fcbd4eba10485b71eb829 Mon Sep 17 00:00:00 2001
+From: QIANSHOULAB <oilsongchengmin@gmail.com>
+Date: Sat, 21 Nov 2026 15:56:02 +0000
+Subject: [PATCH] =?UTF-8?q?=E5=8A=A0=20/dgj=EF=BC=9A=E4=B8=80=E5=8F=B6?=
+ =?UTF-8?q?=E7=AC=BA=20=E2=87=84=20=E5=A4=A7=E7=AE=A1=E5=AE=B6=20=E5=8F=8C?=
+ =?UTF-8?q?=E5=90=91=E4=BF=A1=E7=AE=B1=EF=BC=88=E6=96=BD=E5=B7=A5=E5=8D=95?=
+ =?UTF-8?q?=20065=EF=BC=89?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+信箱号 128 位随机，两头加密站里只有密文；手机 → 大管家、大管家 → 手机两个方向，连着就推、没连着攒着下次一次取完；
+处理完 ack 才删，没人取的 7 天删；掌机的 WebSocket 连着（90 秒内 ping 过）算在线；大的拆成 1.9MB 一片存，一封最大 24MB，
+一个信箱最多 200 封 / 64MB；不带 Origin 的只放行这条路；WebSocket 休眠 + 自动回 pong，掌机长连着不费额度。
+测试：新加 9 个（dgj、dgj-expire），录入僧、点钞机原来的 14 个照旧全过。
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01KCV9xv2kh6iV2UsPBtiH52
+---
+ README.md                |  23 ++++
+ package.json             |   2 +-
+ src/dgj.js               | 253 +++++++++++++++++++++++++++++++++++++++
+ src/index.js             |   7 +-
+ test/dev.mjs             |  48 ++++++++
+ test/dgj-expire.test.mjs |  46 +++++++
+ test/dgj.test.mjs        | 194 ++++++++++++++++++++++++++++++
+ wrangler.jsonc           |   5 +-
+ 8 files changed, 574 insertions(+), 4 deletions(-)
+ create mode 100644 src/dgj.js
+ create mode 100644 test/dev.mjs
+ create mode 100644 test/dgj-expire.test.mjs
+ create mode 100644 test/dgj.test.mjs
+
+diff --git a/README.md b/README.md
+index 3c892cd..4e575af 100644
+--- a/README.md
++++ b/README.md
+@@ -20,3 +20,26 @@
+ - `?pass=audit`：第二眼。网页把数过的托盘裁大、每件点一个小品红点发过来，这里用写死的复查提示词让模型找没点的（missed）和点错的（extra）。
+ - 额度（新加坡时间零点重置，按请求算，一张照片两次）：每个 IP 每天 60 次，所有人每天 600 次（`COUNT_IP_MAX`、`COUNT_ALL_MAX`），超了回 429，网页让用户贴自己的钥匙。
+ - 谷歌的报错原样还回去，钥匙抹成 ***。
++
++## 一叶笺 ⇄ 大管家 · 信箱（/dgj，施工单 065）
++
++一叶笺（iPhone）和大管家（掌机）之间的双向信箱，代替 iCloud 文件夹那根慢管子。接口见 qianye 仓库 `ios/docs/大管家接口.md` 的 v2 一节。
++
++- 地址：`/dgj/<信箱号>/...`，信箱号 128 位随机（32 个小写十六进制字），知道号就能用。跟录入僧（`/r`）、点钞机（`/count`）互不相干。
++- 信两头加密（AES-256-GCM），钥匙只在手机和掌机上，站里只有密文，日志不记内容。
++- 手机 app、掌机发请求不带 Origin：不带 Origin 的只有 `/dgj` 放行；别的网站来的一律 403。
++- 两个方向：`to=pc`（手机 → 大管家）、`to=phone`（大管家 → 手机）。收信的一方连着 WebSocket 就马上推（48KB 以下的小信内容跟着推送走）；没连着就攒着，下次连上时 `hello` 里一次给全。
++- 收信的一方处理完回 ack（WebSocket 发 `{"t":"ack","seq":N}`，或 `DELETE /dgj/<信箱号>/msg/<N>`）才删；没人取的 7 天删，两头都会收到 `gone`。
++- 大管家在不在线由站里判断：掌机的 WebSocket（`?as=pc`）连着、而且 90 秒内 ping 过就算在线。手机收到 `{"t":"pc","on":…,"seen":…}`。
++- 一封最大 24MB（一行存不下就拆成 1.9MB 一片存，取的时候拼回一整封）；一个信箱没取的最多 200 封、64MB，超了回 413 / 429。
++- 掌机长连着不费额度：WebSocket 休眠（`acceptWebSocket`），文本 `ping` 由站里自动回 `pong`，不叫醒 Durable Object。
++
++| 做什么 | 怎么发 |
++|---|---|
++| 连上 | `GET /dgj/<信箱号>/ws?as=pc` 或 `?as=phone`（WebSocket）；先收到 `hello`：`{t, role, pc, pcSeen, phone, pending, items:[…]}` |
++| 寄一封 | `PUT /dgj/<信箱号>/msg?to=pc|phone&mid=<信的 id>`，正文是密文；回 `{seq, at, parts, pc, phone}`；同一个 mid 再寄回 `again:true`，不存第二份 |
++| 有新信 | 推送 `{t:"msg", item:{seq, mid, to, at, size, data?}}`（`data` 是小信的 base64 密文） |
++| 取一封 | `GET /dgj/<信箱号>/msg/<seq>`，回整封密文 |
++| 收到了 / 撤回 | WebSocket `{"t":"ack","seq":N}` 或 `DELETE /dgj/<信箱号>/msg/<seq>`；两头都收到 `{t:"gone", seq, mid, to}` |
++| 看状态 | `GET /dgj/<信箱号>/state` 或 WebSocket `{"t":"state"}` → `{pc, pcSeen, phone, pending:{pc, phone}}` |
++| 列没取的 | `GET /dgj/<信箱号>/msgs?for=pc|phone` |
+diff --git a/package.json b/package.json
+index 078b22a..f98cce9 100644
+--- a/package.json
++++ b/package.json
+@@ -5,7 +5,7 @@
+   "scripts": {
+     "dev": "wrangler dev",
+     "deploy": "wrangler deploy",
+-    "test": "node --test test/relay.test.mjs test/count.test.mjs"
++    "test": "node --test test/relay.test.mjs test/count.test.mjs test/dgj.test.mjs test/dgj-expire.test.mjs"
+   },
+   "devDependencies": {
+     "wrangler": "4.156.0"
+diff --git a/src/dgj.js b/src/dgj.js
+new file mode 100644
+index 0000000..83870b7
+--- /dev/null
++++ b/src/dgj.js
+@@ -0,0 +1,253 @@
++// 一叶笺 ⇄ 大管家 信箱（施工单 065）：/dgj/<信箱号>/...
++// - 信箱号 128 位随机（32 个小写十六进制字），知道号就能用。
++// - 信两头加密（AES-256-GCM，钥匙只在手机和掌机上），这里只存密文、不拆、不看，日志不记内容。
++// - 两个方向：手机 → 大管家（to=pc），大管家 → 手机（to=phone）。收信的一方连着 WebSocket 就马上推过去；
++//   没连着就攒着，等它下次连上一次取完。收信的一方处理完回 ack 才删；没人取的 7 天删。
++// - 大管家在不在线：掌机的 WebSocket 连着（90 秒内 ping 过）就算在线，手机的横条照这个显示。
++// - 掌机长连着也不费额度：WebSocket 休眠那一套（acceptWebSocket + 自动回 pong），ping 不叫醒它，空着不算时长。
++// - 照片、配音 mp3 几 MB 一封：一行存不下就拆成几片存，取的时候拼回一整封。每个信箱有上限，防止被灌爆。
++// - 手机 app、掌机发请求不带 Origin：不带 Origin 的只有这条路放行（录入僧 /r、点钞机 /count 照旧只认网页）。
++
++const BOX_RE = /^[0-9a-f]{32}$/;
++const MID_RE = /^[A-Za-z0-9_-]{6,64}$/;
++const ROLES = new Set(['pc', 'phone']);
++const PART = 1_900_000;                // 一片最大（Durable Object 一行最多 2MB）
++const MAX_MSG = 24_000_000;            // 一封最大
++const MAX_BOX_BYTES = 64_000_000;      // 一个信箱里没取的加起来最多
++const MAX_ITEMS = 200;                 // 一个信箱里没取的最多几封
++const KEEP_MS = 7 * 24 * 3600 * 1000;  // 没人取的放 7 天
++const STALE_MS = 90_000;               // 掌机 ping 过、之后 90 秒没再 ping：当它不在了（半死的连接不会一直显示在线）
++const INLINE = 48 * 1024;              // 小信（理好的字、请求的字）直接跟着推送走，省一次来回
++const INLINE_HELLO = 256 * 1024;       // 刚连上时跟着 hello 一起带过去的，最多这么多
++
++export const DGJ_PATH = /^\/dgj\/([^/]+)\/(ws|msg|msgs|state)(?:\/([^/]+))?$/;
++
++const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
++
++/** 谁能用这条路：不带 Origin 的（手机 app、掌机）、跟站同一个 Origin 的、ALLOW_ORIGINS 里的网页。别的网站一律不行 */
++function access(req, env) {
++  const origin = req.headers.get('Origin');
++  if (!origin || origin === new URL(req.url).origin) return {};
++  const allow = String(env.ALLOW_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
++  if (!allow.includes('*') && !allow.includes(origin)) return null;
++  return {
++    'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, PUT, DELETE, OPTIONS',
++    'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Expose-Headers': 'x-mid, x-to',
++    'Access-Control-Max-Age': '86400', Vary: 'Origin',
++  };
++}
++
++export async function handleDgj(req, env, m) {
++  if (!BOX_RE.test(m[1])) return new Response('not found', { status: 404 });
++  const h = access(req, env);
++  if (!h) return new Response('origin not allowed', { status: 403 });
++  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: h });
++  const res = await env.BOX.get(env.BOX.idFromName(m[1])).fetch(req);
++  if (res.status === 101) return res;   // WebSocket
++  const out = new Response(res.body, res);
++  for (const [k, v] of Object.entries(h)) out.headers.set(k, v);
++  return out;
++}
++
++function b64(buf) {
++  const u8 = new Uint8Array(buf);
++  let s = '';
++  for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
++  return btoa(s);
++}
++
++export class Box {
++  constructor(ctx, env) {
++    this.ctx = ctx;
++    this.sql = ctx.storage.sql;
++    this.sql.exec(`CREATE TABLE IF NOT EXISTS msgs (
++      seq INTEGER PRIMARY KEY AUTOINCREMENT, mid TEXT NOT NULL, dest TEXT NOT NULL, at INTEGER NOT NULL,
++      size INTEGER NOT NULL, parts INTEGER NOT NULL, UNIQUE (dest, mid))`);
++    this.sql.exec('CREATE TABLE IF NOT EXISTS parts (seq INTEGER NOT NULL, n INTEGER NOT NULL, data BLOB NOT NULL, PRIMARY KEY (seq, n))');
++    this.sql.exec('CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT NOT NULL)');
++    ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'));   // 心跳不叫醒它
++    // 测试时用 --var 调小（DGJ_KEEP_MS 等）；线上不设，用上面的数
++    const num = (k, d) => { const n = Number(env?.[k]); return Number.isFinite(n) && n > 0 ? n : d; };
++    this.keepMs = num('DGJ_KEEP_MS', KEEP_MS);
++    this.staleMs = num('DGJ_STALE_MS', STALE_MS);
++    this.maxMsg = num('DGJ_MAX_MSG', MAX_MSG);
++    this.maxBox = num('DGJ_MAX_BOX_BYTES', MAX_BOX_BYTES);
++    this.maxItems = num('DGJ_MAX_ITEMS', MAX_ITEMS);
++  }
++
++  // ------------------------------------------------------------------ 账
++  list(dest) {
++    const q = 'SELECT seq, mid, dest AS "to", at, size FROM msgs' + (dest ? ' WHERE dest = ?' : '') + ' ORDER BY seq';
++    return (dest ? this.sql.exec(q, dest) : this.sql.exec(q)).toArray();
++  }
++  row(seq) { return this.sql.exec('SELECT seq, mid, dest AS "to", at, size FROM msgs WHERE seq = ?', seq).toArray()[0]; }
++  body(seq) {
++    const rows = this.sql.exec('SELECT data FROM parts WHERE seq = ? ORDER BY n', seq).toArray();
++    if (rows.length === 1) return rows[0].data;
++    const out = new Uint8Array(rows.reduce((a, r) => a + r.data.byteLength, 0));
++    let at = 0;
++    for (const r of rows) { out.set(new Uint8Array(r.data), at); at += r.data.byteLength; }
++    return out.buffer;
++  }
++  getMeta(k) { const r = this.sql.exec('SELECT v FROM meta WHERE k = ?', k).toArray()[0]; return r ? r.v : null; }
++  setMeta(k, v) { this.sql.exec('INSERT OR REPLACE INTO meta (k, v) VALUES (?, ?)', k, String(v)); }
++  counts() {
++    const c = { pc: 0, phone: 0 };
++    for (const r of this.sql.exec('SELECT dest, COUNT(*) AS n FROM msgs GROUP BY dest').toArray()) c[r.dest] = r.n;
++    return c;
++  }
++
++  /** 小信把内容也带上（base64），收的一方不用再来取一趟 */
++  inline(items, budget) {
++    let left = budget;
++    return items.map((it) => {
++      if (it.size > INLINE || it.size > left) return it;
++      left -= it.size;
++      return { ...it, data: b64(this.body(it.seq)) };
++    });
++  }
++
++  remove(seq, expired = false) {
++    const r = this.row(seq);
++    if (!r) return false;
++    this.ctx.storage.transactionSync(() => {
++      this.sql.exec('DELETE FROM parts WHERE seq = ?', seq);
++      this.sql.exec('DELETE FROM msgs WHERE seq = ?', seq);
++    });
++    this.send({ t: 'gone', seq: r.seq, mid: r.mid, to: r.to, ...(expired ? { expired: true } : {}) });
++    return true;
++  }
++
++  // ------------------------------------------------------------------ 谁在
++  /** 大管家在不在：掌机的连接还在，而且没「ping 过又 90 秒不 ping」。seen = 最后一次见到它（在线时就是现在） */
++  pc(except = null) {
++    const now = Date.now();
++    let on = false;
++    let seen = Number(this.getMeta('pcSeen')) || null;
++    for (const ws of this.ctx.getWebSockets('pc')) {
++      if (ws === except) continue;
++      const t = this.ctx.getWebSocketAutoResponseTimestamp(ws);
++      const a = ws.deserializeAttachment() || {};
++      const last = Math.max(a.at || 0, t ? t.getTime() : 0);
++      if (!t || now - last < this.staleMs) on = true;
++      else seen = Math.max(seen || 0, last);
++    }
++    return { on, seen: on ? now : seen };
++  }
++  phoneOn(except = null) { return this.ctx.getWebSockets('phone').some((ws) => ws !== except); }
++  state() { const pc = this.pc(); return { pc: pc.on, pcSeen: pc.seen, phone: this.phoneOn(), pending: this.counts() }; }
++
++  send(msg, role = undefined, except = null) {
++    const s = JSON.stringify(msg);
++    for (const ws of this.ctx.getWebSockets(role)) {
++      if (ws === except) continue;
++      try { ws.send(s); } catch (e) { /* 断了的不管 */ }
++    }
++  }
++
++  // ------------------------------------------------------------------ 请求
++  async fetch(req) {
++    const url = new URL(req.url);
++    const [, , , what, arg] = url.pathname.split('/');
++    const method = req.method;
++
++    if (what === 'ws') {                 // 掌机（?as=pc）一直连着；手机（?as=phone）开着时连着
++      if (req.headers.get('Upgrade') !== 'websocket') return new Response('expected websocket', { status: 426 });
++      const role = url.searchParams.get('as');
++      if (!ROLES.has(role)) return json({ error: 'as=pc 或 as=phone' }, 400);
++      const [client, server] = Object.values(new WebSocketPair());
++      this.ctx.acceptWebSocket(server, [role]);
++      const now = Date.now();
++      server.serializeAttachment({ role, at: now });
++      if (role === 'pc') this.setMeta('pcSeen', now);
++      const st = this.state();
++      server.send(JSON.stringify({ t: 'hello', role, ...st, items: this.inline(this.list(role), INLINE_HELLO) }));
++      if (role === 'pc') this.send({ t: 'pc', on: true, seen: now }, 'phone');
++      else this.send({ t: 'phone', on: true }, 'pc');
++      return new Response(null, { status: 101, webSocket: client });
++    }
++
++    if (what === 'state' && method === 'GET') return json(this.state());
++
++    if (what === 'msgs' && method === 'GET') {
++      const dest = url.searchParams.get('for');
++      if (dest && !ROLES.has(dest)) return json({ error: 'for=pc 或 for=phone' }, 400);
++      return json(this.list(dest));
++    }
++
++    if (what === 'msg' && !arg && method === 'PUT') {
++      const to = url.searchParams.get('to');
++      const mid = url.searchParams.get('mid') || '';
++      if (!ROLES.has(to) || !MID_RE.test(mid)) return json({ error: 'bad to/mid' }, 400);
++      if (Number(req.headers.get('Content-Length') || 0) > this.maxMsg) return json({ error: `太大了：一封最多 ${this.maxMsg} 字节` }, 413);
++      const buf = await req.arrayBuffer();
++      if (!buf.byteLength) return json({ error: 'empty' }, 400);
++      if (buf.byteLength > this.maxMsg) return json({ error: `太大了：一封最多 ${this.maxMsg} 字节` }, 413);
++      // 从这儿往下不 await，查重、查上限、存，一口气做完
++      const had = this.sql.exec('SELECT seq, at FROM msgs WHERE dest = ? AND mid = ?', to, mid).toArray()[0];
++      if (had) return json({ seq: had.seq, at: had.at, again: true, pc: this.pc().on });   // 重传同一封：不存第二份
++      const tot = this.sql.exec('SELECT COUNT(*) AS n, COALESCE(SUM(size), 0) AS b FROM msgs').one();
++      if (tot.n >= this.maxItems) return json({ error: `信箱满了：攒了 ${tot.n} 封没取` }, 429);
++      if (tot.b + buf.byteLength > this.maxBox) return json({ error: `信箱满了：没取的已经有 ${tot.b} 字节` }, 429);
++      const at = Date.now();
++      const parts = Math.ceil(buf.byteLength / PART);
++      let seq = 0;
++      this.ctx.storage.transactionSync(() => {
++        this.sql.exec('INSERT INTO msgs (mid, dest, at, size, parts) VALUES (?, ?, ?, ?, ?)', mid, to, at, buf.byteLength, parts);
++        seq = this.sql.exec('SELECT last_insert_rowid() AS s').one().s;
++        for (let i = 0; i < parts; i++) {
++          this.sql.exec('INSERT INTO parts (seq, n, data) VALUES (?, ?, ?)', seq, i, buf.slice(i * PART, Math.min((i + 1) * PART, buf.byteLength)));
++        }
++      });
++      const item = { seq, mid, to, at, size: buf.byteLength };
++      this.send({ t: 'msg', item: this.inline([item], INLINE)[0] }, to);
++      if (!(await this.ctx.storage.getAlarm())) await this.ctx.storage.setAlarm(at + this.keepMs + 1000);
++      return json({ seq, at, parts, pc: this.pc().on, phone: this.phoneOn() });
++    }
++
++    if (what === 'msg' && arg) {
++      const seq = Number(arg);
++      if (!Number.isSafeInteger(seq) || seq < 1) return json({ error: 'bad seq' }, 400);
++      if (method === 'GET') {
++        const r = this.row(seq);
++        if (!r) return json({ error: 'gone' }, 404);
++        return new Response(this.body(seq), {
++          headers: { 'content-type': 'application/octet-stream', 'cache-control': 'no-store', 'x-mid': r.mid, 'x-to': r.to },
++        });
++      }
++      if (method === 'DELETE') return json({ ok: true, had: this.remove(seq) });   // 收到了（ack），或者寄的人撤回
++    }
++    return new Response('not found', { status: 404 });
++  }
++
++  webSocketMessage(ws, message) {        // ping 自动回了不进这里；这里只认 ack 和 state
++    if (typeof message !== 'string' || message.length > 512) return;
++    let m;
++    try { m = JSON.parse(message); } catch (e) { return; }
++    if (m && m.t === 'ack' && Number.isSafeInteger(m.seq)) this.remove(m.seq);
++    else if (m && m.t === 'state') {
++      try { ws.send(JSON.stringify({ t: 'state', ...this.state() })); } catch (e) { /* 断了 */ }
++    }
++  }
++
++  webSocketClose(ws, code) {
++    try { ws.close(code === 1005 || code === 1006 ? 1000 : code, 'bye'); } catch (e) { /* 已经关了 */ }
++    const a = ws.deserializeAttachment() || {};
++    if (a.role === 'pc') {
++      const now = Date.now();
++      this.setMeta('pcSeen', now);
++      const st = this.pc(ws);
++      this.send({ t: 'pc', on: st.on, seen: now }, 'phone');
++    } else if (a.role === 'phone') {
++      this.send({ t: 'phone', on: this.phoneOn(ws) }, 'pc');
++    }
++  }
++  webSocketError(ws) { this.webSocketClose(ws, 1011); }
++
++  async alarm() {                        // 放了 7 天没人取的：删掉，两头都说一声
++    const cut = Date.now() - this.keepMs;
++    for (const r of this.sql.exec('SELECT seq FROM msgs WHERE at < ?', cut).toArray()) this.remove(r.seq, true);
++    const next = this.sql.exec('SELECT MIN(at) AS a FROM msgs').one().a;
++    if (next) await this.ctx.storage.setAlarm(next + this.keepMs + 1000);
++  }
++}
+diff --git a/src/index.js b/src/index.js
+index d3d90b4..4a69492 100644
+--- a/src/index.js
++++ b/src/index.js
+@@ -10,7 +10,8 @@ const ROOM_RE = /^[A-Za-z0-9_-]{20,64}$/;
+ const BATCH_RE = /^[A-Za-z0-9_-]{6,64}$/;
+ 
+ import { handleCount, Quota } from './count.js';
+-export { Quota };
++import { handleDgj, Box, DGJ_PATH } from './dgj.js';
++export { Quota, Box };
+ 
+ const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json' } });
+ 
+@@ -30,6 +31,10 @@ export default {
+     if (url.pathname === '/' || url.pathname === '/ping') {
+       return new Response('录入僧中转站：在。\n', { headers: { 'content-type': 'text/plain; charset=utf-8', 'Access-Control-Allow-Origin': '*' } });
+     }
++    if (url.pathname.startsWith('/dgj/')) {   // 一叶笺 ⇄ 大管家 信箱（src/dgj.js）：不带 Origin 的只有这条路放行
++      const d = url.pathname.match(DGJ_PATH);
++      return d ? handleDgj(req, env, d) : new Response('not found', { status: 404 });
++    }
+     if (url.pathname === '/count') {     // 铁件点钞机：免钥匙数工件（src/count.js）
+       const h = cors(req, env);
+       if (!h) return new Response('origin not allowed', { status: 403 });
+diff --git a/test/dev.mjs b/test/dev.mjs
+new file mode 100644
+index 0000000..839cfa5
+--- /dev/null
++++ b/test/dev.mjs
+@@ -0,0 +1,48 @@
++// 信箱测试用：起一个 wrangler dev（不用 Cloudflare 账号），等它好了再测；测完整组关掉。
++import { spawn } from 'node:child_process';
++
++export async function startDev(port, persist, vars = []) {
++  const args = ['wrangler', 'dev', '--ip', '127.0.0.1', '--port', String(port), '--persist-to', persist];
++  for (const v of vars) args.push('--var', v);
++  const dev = spawn('npx', args, { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, WRANGLER_SEND_METRICS: 'false', CI: '1' }, detached: true });
++  let out = '';
++  await new Promise((ok, bad) => {
++    const t = setTimeout(() => bad(new Error('wrangler dev 没起来：\n' + out)), 90000);
++    const look = (d) => { out += d; if (/Ready on/.test(out)) { clearTimeout(t); ok(); } };
++    dev.stdout.on('data', look);
++    dev.stderr.on('data', look);
++  });
++  const base = `http://127.0.0.1:${port}`;
++  for (let i = 0; i < 50; i++) { try { if ((await fetch(base + '/ping')).ok) break; } catch (e) { /* 还没好 */ } await new Promise((r) => setTimeout(r, 200)); }
++  return {
++    base,
++    stop() {                            // npx 底下还有 wrangler、workerd：整组一起关
++      try { process.kill(-dev.pid, 'SIGTERM'); } catch (e) { /* 已经没了 */ }
++      dev.stdout.destroy();
++      dev.stderr.destroy();
++    },
++  };
++}
++
++/** 一个 WebSocket：收到的都记下来，next(条件) 等某一条 */
++export function socket(url, opts = {}) {
++  const s = new WebSocket(url, opts);
++  s.got = [];
++  s.waiters = [];
++  s.onmessage = (e) => {
++    const m = e.data === 'pong' ? { t: 'pong' } : JSON.parse(e.data);
++    s.got.push(m);
++    s.waiters = s.waiters.filter((w) => !w(m));
++  };
++  s.next = (pred, ms = 5000) => new Promise((ok, bad) => {
++    const hit = s.got.find(pred);
++    if (hit) return ok(hit);
++    const t = setTimeout(() => bad(new Error('等不到消息，收到的：' + JSON.stringify(s.got).slice(0, 2000))), ms);
++    s.waiters.push((m) => (pred(m) ? (clearTimeout(t), ok(m), true) : false));
++  });
++  s.closed = new Promise((r) => { s.onclose = (e) => r(e); });
++  return new Promise((ok, bad) => { s.onopen = () => ok(s); s.onerror = (e) => bad(new Error('连不上 ' + url + '：' + (e.message || e.type))); });
++}
++
++export const newBox = () => [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, '0')).join('');
++export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+diff --git a/test/dgj-expire.test.mjs b/test/dgj-expire.test.mjs
+new file mode 100644
+index 0000000..804670e
+--- /dev/null
++++ b/test/dgj-expire.test.mjs
+@@ -0,0 +1,46 @@
++// 信箱的两个「时间到了」：没人取的信过期删掉（线上 7 天）、掌机不再 ping 就算不在（线上 90 秒）。
++// 这里用 --var 调成 2 秒、1.5 秒，跑得快；另起一个 wrangler dev，免得影响别的测试。
++import test, { after, before } from 'node:test';
++import assert from 'node:assert/strict';
++import { startDev, socket, newBox, sleep } from './dev.mjs';
++
++const PORT = 9200 + Math.floor(Math.random() * 100);
++let dev, BASE, WS;
++
++before(async () => {
++  dev = await startDev(PORT, '.wrangler/dgj-expire-state', ['DGJ_KEEP_MS:2000', 'DGJ_STALE_MS:1500']);
++  BASE = dev.base;
++  WS = BASE.replace('http', 'ws');
++});
++after(() => dev.stop());
++
++test('mail nobody takes is deleted when its time is up, and both sides are told', async () => {
++  const b = newBox();
++  const phone = await socket(`${WS}/dgj/${b}/ws?as=phone`);
++  const r = await fetch(`${BASE}/dgj/${b}/msg?to=pc&mid=OLD-REQ-1`, { method: 'PUT', body: new Uint8Array([1, 2, 3]) });
++  const { seq } = await r.json();
++  const gone = await phone.next((m) => m.t === 'gone', 10000);
++  assert.deepEqual([gone.seq, gone.mid, gone.expired], [seq, 'OLD-REQ-1', true]);
++  assert.equal((await fetch(`${BASE}/dgj/${b}/msg/${seq}`)).status, 404);
++  assert.deepEqual((await (await fetch(`${BASE}/dgj/${b}/state`)).json()).pending, { pc: 0, phone: 0 });
++  phone.close();
++});
++
++test('a butler that pinged and then went quiet counts as gone; pinging again brings it back', async () => {
++  const b = newBox();
++  const state = async () => (await fetch(`${BASE}/dgj/${b}/state`)).json();
++  const pc = await socket(`${WS}/dgj/${b}/ws?as=pc`);
++  assert.equal((await state()).pc, true);
++  pc.send('ping');
++  await pc.next((m) => m.t === 'pong');
++  const pinged = Date.now();
++  assert.equal((await state()).pc, true);
++  await sleep(2200);                                                  // 连接还在，可它不 ping 了（掌机睡了、网断了一半）
++  const st = await state();
++  assert.equal(st.pc, false);
++  assert.ok(Math.abs(st.pcSeen - pinged) < 1500, `pcSeen ${st.pcSeen} vs ${pinged}`);
++  pc.send('ping');
++  await pc.next((m) => m.t === 'pong' && pc.got.filter((x) => x.t === 'pong').length === 2);
++  assert.equal((await state()).pc, true);
++  pc.close();
++});
+diff --git a/test/dgj.test.mjs b/test/dgj.test.mjs
+new file mode 100644
+index 0000000..8168015
+--- /dev/null
++++ b/test/dgj.test.mjs
+@@ -0,0 +1,194 @@
++// 一叶笺 ⇄ 大管家 信箱（/dgj）：npm test 里一起跑。起一个 wrangler dev，真发请求、真连 WebSocket、真加密。
++// 手机 app 和掌机发请求不带 Origin，所以这里默认都不带。
++import test, { after, before } from 'node:test';
++import assert from 'node:assert/strict';
++import { startDev, socket, newBox } from './dev.mjs';
++
++const PORT = 9100 + Math.floor(Math.random() * 100);
++let dev, BASE, WS;
++
++before(async () => {
++  // 上限调小好测：一封最多 8MB、一个信箱最多 5 封 / 9MB（线上是 24MB、200 封、64MB）
++  dev = await startDev(PORT, '.wrangler/dgj-state', ['DGJ_MAX_MSG:8000000', 'DGJ_MAX_ITEMS:5', 'DGJ_MAX_BOX_BYTES:9000000']);
++  BASE = dev.base;
++  WS = BASE.replace('http', 'ws');
++});
++after(() => dev.stop());
++
++const put = (b, to, mid, body, headers = {}) => fetch(`${BASE}/dgj/${b}/msg?to=${to}&mid=${mid}`, { method: 'PUT', body, headers });
++const get = (b, path, headers = {}) => fetch(`${BASE}/dgj/${b}/${path}`, { headers });
++const del = (b, seq) => fetch(`${BASE}/dgj/${b}/msg/${seq}`, { method: 'DELETE' });
++const ws = (b, as) => socket(`${WS}/dgj/${b}/ws?as=${as}`);
++const bytes = (n, k = 7) => new Uint8Array(n).map((_, i) => (i * k + (i >> 8)) % 256);
++const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
++const sha = async (u8) => Buffer.from(await crypto.subtle.digest('SHA-256', u8)).toString('hex');
++
++// 两头的加密（接口 v2）：AES-256-GCM，12 字节随机 nonce 放最前面，附加数据「yiye-dgj/2/<信箱号>/<收信的一方>」
++async function seal(keyRaw, box, to, text) {
++  const key = await crypto.subtle.importKey('raw', keyRaw, 'AES-GCM', false, ['encrypt']);
++  const iv = crypto.getRandomValues(new Uint8Array(12));
++  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: new TextEncoder().encode(`yiye-dgj/2/${box}/${to}`) }, key, new TextEncoder().encode(text)));
++  const out = new Uint8Array(12 + ct.length);
++  out.set(iv); out.set(ct, 12);
++  return out;
++}
++async function open(keyRaw, box, to, data) {
++  const key = await crypto.subtle.importKey('raw', keyRaw, 'AES-GCM', false, ['decrypt']);
++  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: data.slice(0, 12), additionalData: new TextEncoder().encode(`yiye-dgj/2/${box}/${to}`) }, key, data.slice(12));
++  return new TextDecoder().decode(pt);
++}
++
++test('phone → butler: pushed at once, only ciphertext on the relay, ack deletes it, phone hears it was taken', async () => {
++  const b = newBox();
++  const key = crypto.getRandomValues(new Uint8Array(32));
++  const pc = await ws(b, 'pc');
++  const phone = await ws(b, 'phone');
++  const hello = await phone.next((m) => m.t === 'hello');
++  assert.equal(hello.pc, true);                                       // 手机看得见大管家在线
++  assert.equal((await pc.next((m) => m.t === 'phone')).on, true);
++  const plain = JSON.stringify({ v: 2, kind: 'request', id: 'REQ-0001', data: { v: 1, id: 'REQ-0001', text: 'A线早班 128O件' } });
++  const sealed = await seal(key, b, 'pc', plain);
++  const res = await put(b, 'pc', 'REQ-0001', sealed);
++  assert.equal(res.status, 200);
++  const { seq, pc: online } = await res.json();
++  assert.ok(seq > 0 && online === true);
++  const pushed = await pc.next((m) => m.t === 'msg');
++  assert.deepEqual([pushed.item.seq, pushed.item.mid, pushed.item.to, pushed.item.size], [seq, 'REQ-0001', 'pc', sealed.length]);
++  assert.equal(await open(key, b, 'pc', unb64(pushed.item.data)), plain);   // 小信跟着推送走，拆得开
++  const stored = new Uint8Array(await (await get(b, `msg/${seq}`)).arrayBuffer());
++  assert.deepEqual(stored, sealed);                                   // 站里存的就是密文，一个字节不差
++  assert.ok(!Buffer.from(stored).toString('latin1').includes('128O'));
++  assert.ok(!Buffer.from(stored).toString('utf8').includes('A线早班'));
++  await assert.rejects(open(key, b, 'phone', stored));                // 方向对不上拆不开（不能拿去冒充另一头）
++  const again = await (await put(b, 'pc', 'REQ-0001', sealed)).json();
++  assert.deepEqual([again.seq, again.again], [seq, true]);           // 手机重传同一封：不存第二份
++  assert.equal((await (await get(b, 'msgs?for=pc')).json()).length, 1);
++  pc.send(JSON.stringify({ t: 'ack', seq }));                         // 大管家理完了：删
++  const gone = await phone.next((m) => m.t === 'gone');
++  assert.deepEqual([gone.seq, gone.mid, gone.to], [seq, 'REQ-0001', 'pc']);
++  assert.equal((await get(b, `msg/${seq}`)).status, 404);
++  assert.deepEqual(await (await get(b, 'msgs?for=pc')).json(), []);
++  const t0 = Date.now();
++  pc.close();
++  const off = await phone.next((m) => m.t === 'pc' && m.on === false);
++  assert.ok(off.seen >= t0 - 1000);                                   // 掌机断了：手机马上知道，带着「上次在线」
++  const st = await (await get(b, 'state')).json();
++  assert.equal(st.pc, false);
++  assert.ok(st.pcSeen >= t0 - 1000);
++  phone.close();
++});
++
++test('butler → phone: mail waits while the phone is closed, comes all at once when it opens', async () => {
++  const b = newBox();
++  const sizes = [900, 60_000, 1200];                                  // 中间那封超过 48KB：不跟着 hello 走，要来取
++  const seqs = [];
++  for (let i = 0; i < 3; i++) {
++    const r = await put(b, 'phone', `RES-000${i}`, bytes(sizes[i], i + 3));
++    assert.equal(r.status, 200);
++    const j = await r.json();
++    assert.equal(j.pc, false);
++    seqs.push(j.seq);
++  }
++  assert.deepEqual((await (await get(b, 'state')).json()).pending, { pc: 0, phone: 3 });
++  const phone = await ws(b, 'phone');
++  const hello = await phone.next((m) => m.t === 'hello');
++  assert.deepEqual(hello.items.map((x) => x.mid), ['RES-0000', 'RES-0001', 'RES-0002']);
++  assert.deepEqual(hello.items.map((x) => x.size), sizes);
++  assert.deepEqual(unb64(hello.items[0].data), bytes(900, 3));
++  assert.equal(hello.items[1].data, undefined);
++  assert.deepEqual(new Uint8Array(await (await get(b, `msg/${seqs[1]}`)).arrayBuffer()), bytes(60_000, 4));
++  assert.equal(hello.pc, false);
++  assert.equal(hello.pcSeen, null);                                   // 掌机从没来过
++  for (const s of seqs) assert.equal((await del(b, s)).status, 200);
++  assert.deepEqual(await (await get(b, 'msgs?for=phone')).json(), []);
++  const pc = await ws(b, 'pc');
++  const on = await phone.next((m) => m.t === 'pc' && m.on === true);
++  assert.ok(on.seen > 0);
++  pc.close(); phone.close();
++});
++
++test('a 5 MB mp3 is stored in 3 pieces and comes back byte for byte', async () => {
++  const b = newBox();
++  const pc = await ws(b, 'pc');
++  const big = bytes(5_000_000, 11);
++  const r = await put(b, 'pc', 'BIG-MP3-1', big);
++  assert.equal(r.status, 200);
++  const j = await r.json();
++  assert.equal(j.parts, 3);
++  const pushed = await pc.next((m) => m.t === 'msg');
++  assert.equal(pushed.item.size, 5_000_000);
++  assert.equal(pushed.item.data, undefined);                          // 大的只推「来了」，自己来取
++  const back = new Uint8Array(await (await get(b, `msg/${j.seq}`)).arrayBuffer());
++  assert.equal(back.length, big.length);
++  assert.equal(await sha(back), await sha(big));
++  pc.send(JSON.stringify({ t: 'ack', seq: j.seq }));
++  await pc.next((m) => m.t === 'gone');
++  pc.close();
++});
++
++test('caps: one letter too big, too many letters, too many bytes waiting', async () => {
++  assert.equal((await put(newBox(), 'pc', 'TOO-BIG-1', bytes(8_000_001))).status, 413);
++  const b1 = newBox();
++  for (let i = 0; i < 5; i++) assert.equal((await put(b1, 'pc', `MANY-${i}xx`, bytes(10))).status, 200);
++  const full = await put(b1, 'phone', 'MANY-6xx', bytes(10));
++  assert.equal(full.status, 429);
++  assert.match((await full.json()).error, /满了/);
++  const b2 = newBox();
++  assert.equal((await put(b2, 'phone', 'HEAVY-1', bytes(5_000_000))).status, 200);
++  assert.equal((await put(b2, 'phone', 'HEAVY-2', bytes(5_000_000))).status, 429);
++  assert.equal((await put(b2, 'phone', 'LIGHT-3', bytes(1000))).status, 200);   // 没超的照收
++});
++
++test('withdraw: the phone takes back a request the butler has not taken', async () => {
++  const b = newBox();
++  const pc = await ws(b, 'pc');
++  const { seq } = await (await put(b, 'pc', 'DUB-REQ-1', bytes(100))).json();
++  await pc.next((m) => m.t === 'msg');
++  assert.equal((await del(b, seq)).status, 200);
++  const gone = await pc.next((m) => m.t === 'gone');
++  assert.equal(gone.mid, 'DUB-REQ-1');
++  assert.deepEqual(await (await get(b, 'msgs?for=pc')).json(), []);
++  assert.deepEqual(await (await del(b, seq)).json(), { ok: true, had: false });
++  pc.close();
++});
++
++test('over the socket: ping gets pong without waking anything, state on request', async () => {
++  const b = newBox();
++  const phone = await ws(b, 'phone');
++  await phone.next((m) => m.t === 'hello');
++  phone.send('ping');
++  await phone.next((m) => m.t === 'pong');
++  phone.send(JSON.stringify({ t: 'state' }));
++  const st = await phone.next((m) => m.t === 'state');
++  assert.deepEqual([st.pc, st.phone, st.pending], [false, true, { pc: 0, phone: 0 }]);
++  phone.send('not json');                                             // 乱发的不理，也不断
++  phone.send(JSON.stringify({ t: 'state' }));
++  await phone.next((m) => m.t === 'state' && m !== st);
++  phone.close();
++});
++
++test('guards: no Origin is let in only here; other websites out; bad box, role, id, empty', async () => {
++  const b = newBox();
++  assert.equal((await fetch(`${BASE}/r/room_${'x'.repeat(20)}/items`)).status, 403);          // 录入僧照旧只认网页
++  assert.equal((await fetch(`${BASE}/count`, { method: 'POST', body: '/9j/' + 'A'.repeat(5000) })).status, 403);   // 点钞机也是
++  assert.equal((await get(b, 'state')).status, 200);
++  assert.equal((await get(b, 'state', { Origin: 'https://evil.example' })).status, 403);
++  const mine = await get(b, 'state', { Origin: 'https://qianshoulab.github.io' });
++  assert.equal(mine.status, 200);
++  assert.equal(mine.headers.get('access-control-allow-origin'), 'https://qianshoulab.github.io');
++  assert.equal((await get(b, 'state', { Origin: BASE })).status, 200);                     // 跟站同一个 Origin（有的 WebSocket 库会带）
++  assert.equal((await put(b, 'pc', 'EVIL-0001', bytes(10), { Origin: 'https://evil.example' })).status, 403);
++  assert.equal((await fetch(`${BASE}/dgj/short/state`)).status, 404);
++  assert.equal((await fetch(`${BASE}/dgj/${b.toUpperCase()}/state`)).status, 404);
++  assert.equal((await fetch(`${BASE}/dgj/${b}/nope`)).status, 404);
++  assert.equal((await put(b, 'boss', 'ROLE-0001', bytes(10))).status, 400);
++  assert.equal((await put(b, 'pc', 'a', bytes(10))).status, 400);
++  assert.equal((await put(b, 'pc', 'EMPTY-001', new Uint8Array(0))).status, 400);
++  assert.equal((await get(b, 'msg/abc')).status, 400);
++  assert.equal((await get(b, 'msgs?for=boss')).status, 400);
++  assert.equal((await get(b, 'ws')).status, 426);
++  const pre = await fetch(`${BASE}/dgj/${b}/msg`, { method: 'OPTIONS', headers: { Origin: 'https://qianshoulab.github.io', 'Access-Control-Request-Method': 'PUT' } });
++  assert.equal(pre.status, 204);
++  assert.match(pre.headers.get('access-control-allow-methods'), /PUT/);
++  assert.deepEqual((await (await get(b, 'state')).json()).pending, { pc: 0, phone: 0 });    // 上面挡掉的一封都没进来
++});
+diff --git a/wrangler.jsonc b/wrangler.jsonc
+index 3965baa..3bf12be 100644
+--- a/wrangler.jsonc
++++ b/wrangler.jsonc
+@@ -4,8 +4,9 @@
+   "name": "luruseng-relay",
+   "main": "src/index.js",
+   "compatibility_date": "2026-10-01",
+-  "durable_objects": { "bindings": [{ "name": "ROOM", "class_name": "Room" }, { "name": "QUOTA", "class_name": "Quota" }] },
+-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }, { "tag": "v2", "new_sqlite_classes": ["Quota"] }],
++  // BOX：一叶笺 ⇄ 大管家 信箱（/dgj，065）
++  "durable_objects": { "bindings": [{ "name": "ROOM", "class_name": "Room" }, { "name": "QUOTA", "class_name": "Quota" }, { "name": "BOX", "class_name": "Box" }] },
++  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }, { "tag": "v2", "new_sqlite_classes": ["Quota"] }, { "tag": "v3", "new_sqlite_classes": ["Box"] }],
+   "vars": { "ALLOW_ORIGINS": "https://qianshoulab.github.io", "COUNT_IP_MAX": "60", "COUNT_ALL_MAX": "600" },   // 铁件点钞机免钥匙额度（按请求算，一张照片两次：数一遍 + 复查一遍）：每个 IP 每天 60 次，所有人每天 600 次
+   // 谷歌钥匙是 Secret：GEMINI_KEY（备胎 GEMINI_KEY2），在 Cloudflare 后台 Settings → Variables and Secrets 里加，不写在这里
+   "workers_dev": true,                  // 地址：https://luruseng-relay.lunzigeju.workers.dev
+-- 
+2.43.0
+
