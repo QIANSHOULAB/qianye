@@ -105,6 +105,11 @@ struct ListScreen: View {
                             .listRowSeparator(.hidden)
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) { app.delete(n) } label: { Label(t.t("note.delete"), systemImage: "trash") }
+                                // 删除旁边一个小耳机：点了才进听力（Song 11-21：没点的不要进去）
+                                Button { app.toggleListen(n) } label: {
+                                    Label(n.inListen ? t.t("listen.remove") : t.t("listen.add"), systemImage: n.inListen ? "minus.circle" : "headphones")
+                                }
+                                .tint(n.inListen ? Color(Ink.text3) : Color(Ink.accent))
                             }
                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                 Button { togglePin(n) } label: { Label(n.pinned ? t.t("note.unpin") : t.t("note.pin"), systemImage: n.pinned ? "pin.slash" : "pin") }
@@ -116,6 +121,9 @@ struct ListScreen: View {
                                     Button(t.t("list.all")) { move(n, to: nil) }
                                     ForEach(folders) { f in Button(f.name) { move(n, to: f) } }
                                 } label: { Label(t.t("note.move"), systemImage: "folder") }
+                                Button { app.toggleListen(n) } label: {
+                                    Label(n.inListen ? t.t("listen.remove") : t.t("listen.add"), systemImage: "headphones")
+                                }
                                 Button(role: .destructive) { app.delete(n) } label: { Label(t.t("note.delete"), systemImage: "trash") }
                             }
                     }
@@ -202,6 +210,7 @@ struct NoteStrip: View {
                 HStack(spacing: 8) {
                     if note.kind == "photo" { Image(systemName: "camera").font(.system(size: 11)) }
                     if !note.audioPaths.isEmpty { Image(systemName: "waveform").font(.system(size: 11)) }
+                    if note.inListen { Image(systemName: "headphones").font(.system(size: 11)).foregroundStyle(Color(Ink.accent)) }
                     if !note.originalPaths.isEmpty || !Markdown5.imagePaths(note.markdown).isEmpty { Image(systemName: "photo").font(.system(size: 11)) }
                     ButlerMark(note: note)
                     Spacer(minLength: 0)

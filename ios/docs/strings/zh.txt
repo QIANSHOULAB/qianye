@@ -66,7 +66,7 @@ listen.add	放进听力
 listen.added	放进听力了
 listen.addedPhone	放进听力了。大管家没连上，先用手机的声音念。
 listen.always	一直
-listen.arrived	大管家送来一篇：%@
+listen.arrived	大管家送来一篇：%@。想听就左滑点小耳机。
 listen.close	关
 listen.dub	交大管家配音
 listen.dubEmpty	这条没字，配不了音。
@@ -75,7 +75,7 @@ listen.dubFailedWhy	大管家没配成：%@
 listen.dubQueued	排上了，大管家连上就配。
 listen.dubSent	交给大管家了，配好音自己回到这条。
 listen.dubbed	大管家配好音了：%@
-listen.empty	还没有听力稿。在写字页右上角「⋯」里点「听力 › 放进听力」，或者等大管家送来。
+listen.empty	还没有听力稿。列表里左滑一条点小耳机，就放进来了。
 listen.loopOne	单句循环
 listen.next	下一篇
 listen.nextSentence	下一句

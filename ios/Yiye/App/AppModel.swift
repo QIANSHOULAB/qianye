@@ -352,7 +352,7 @@ final class AppModel {
         }
     }
 
-    /// 大管家送来一篇（配好音的听力稿）：变成一条笔记，进「英语」文件夹、进听力。
+    /// 大管家送来一篇（配好音的听力稿）：变成一条笔记，进「英语」文件夹。进不进听力 Song 自己点耳机。
     /// 回「配音」请求的（带 note）：录音挂到那条笔记上，换掉手机念的
     func addDelivery(_ d: ButlerDelivery, audio: Data?) {
         guard !settings.deliveredIDs.contains(d.id) else { return }
@@ -386,7 +386,7 @@ final class AppModel {
         n.id = id
         n.kind = d.kind.isEmpty ? "listen" : d.kind
         n.markdown = d.text
-        n.inListen = true
+        // 不自己进听力：Song 点了耳机才进（11-21）
         if let at = d.at.flatMap({ ISOTime.date($0) }) { n.createdAt = at; n.modifiedAt = at }
         n.folder = folderNamed(d.folder ?? "英语")
         context.insert(n)

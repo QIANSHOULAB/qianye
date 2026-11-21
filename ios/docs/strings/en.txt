@@ -66,7 +66,7 @@ listen.add	Add to Listening
 listen.added	Added to Listening
 listen.addedPhone	Added. The butler’s offline, so your phone reads it for now.
 listen.always	Loop
-listen.arrived	New from the butler: %@
+listen.arrived	New from the butler: %@. Swipe left and tap the headphones to listen.
 listen.close	Close
 listen.dub	Have the butler voice it
 listen.dubEmpty	This note is empty. Nothing to voice.
@@ -75,7 +75,7 @@ listen.dubFailedWhy	The butler couldn’t voice it: %@
 listen.dubQueued	Queued. The butler will voice it once it’s connected.
 listen.dubSent	Sent to the butler. The voice lands back in this note.
 listen.dubbed	The butler voiced “%@”
-listen.empty	Nothing here yet. In a note, tap ⋯ › Listening › Add to Listening, or wait for the butler to send some.
+listen.empty	Nothing here yet. Swipe left on a note and tap the headphones to add it.
 listen.loopOne	Loop sentence
 listen.next	Next
 listen.nextSentence	Next sentence
