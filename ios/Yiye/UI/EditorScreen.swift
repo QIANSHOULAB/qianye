@@ -16,6 +16,8 @@ struct EditorScreen: View {
     /// 相册里挑的：插进正文的图 / 要认字的图
     @State private var insertItem: PhotosPickerItem?
     @State private var ocrItem: PhotosPickerItem?
+    /// 相册认字：菜单里放 PhotosPicker 点了没反应（Song 11-22），菜单里放普通按钮，再从这儿打开相册
+    @State private var showOCRAlbum = false
     @State private var saveTask: Task<Void, Never>?
     @State private var loaded = false
 
@@ -65,7 +67,9 @@ struct EditorScreen: View {
 
             MarkdownBar(focused: focused, apply: { controller.apply($0) },
                         insertItem: $insertItem,
-                        ocrItem: $ocrItem,
+                        gap: app.settings.imageGap,
+                        toggleGap: toggleGap,
+                        album: { flush(); showOCRAlbum = true },
                         camera: { flush(); showCamera = true },
                         voice: { flush(); if let note { app.startVoice(.into(note.id, controller.caretInMarkdown() ?? note.markdown.u16)) } },
                         done: { controller.endEditing() })
@@ -85,6 +89,7 @@ struct EditorScreen: View {
             insertItem = nil
             app.loadPicked(item) { img in handlePicked(img, mode: .insert) }
         }
+        .photosPicker(isPresented: $showOCRAlbum, selection: $ocrItem, matching: .images)
         .onChange(of: ocrItem) { _, item in
             guard let item else { return }
             ocrItem = nil
@@ -128,7 +133,7 @@ struct EditorScreen: View {
                     Button { flush(); app.dub(note) } label: { Label(t.t("listen.dub"), systemImage: "waveform.badge.mic") }
                     Button { flush(); app.speak(note) } label: { Label(t.t("listen.speak"), systemImage: "speaker.wave.2") }
                 } label: { Label(t.t("listen.title"), systemImage: "headphones") }
-                PhotosPicker(selection: $ocrItem, matching: .images) {
+                Button { flush(); showOCRAlbum = true } label: {
                     Label(t.t("capture.libraryInto"), systemImage: "text.viewfinder")
                 }
                 Button { togglePin() } label: { Label(note.pinned ? t.t("note.unpin") : t.t("note.pin"), systemImage: "pin") }
@@ -207,12 +212,21 @@ struct EditorScreen: View {
         case .insert:
             guard let data = AttachmentStore.jpeg(Capture.upright(img)),
                   let rel = try? app.attachments.save(data, name: AttachmentStore.newName(for: note.id)) else { return }
-            controller.insertImage(path: rel)
+            controller.insertImage(path: rel, gap: app.settings.imageGap)
             flush()
         case .ocr:
             flush()
             app.recognize(img, into: note, at: controller.caretInMarkdown())
         }
+    }
+
+    /// 图片间距键：空一格 ⇄ 靠拢。这条笔记里的图当场重排，以后插的图也照这个
+    private func toggleGap() {
+        app.settings.imageGap.toggle()
+        let gap = app.settings.imageGap
+        controller.respaceImages(gap: gap)
+        flush()
+        app.show(gap ? t.t("md.spacingGap") : t.t("md.spacingSnug"), seconds: 2)
     }
 
     private func setPaper(_ p: PaperTint) {
@@ -268,7 +282,10 @@ struct MarkdownBar: View {
     let focused: Bool
     let apply: (MDCommand) -> Void
     @Binding var insertItem: PhotosPickerItem?
-    @Binding var ocrItem: PhotosPickerItem?
+    /// 图片间距：true 空一格，false 靠拢
+    let gap: Bool
+    let toggleGap: () -> Void
+    let album: () -> Void
     let camera: () -> Void
     let voice: () -> Void
     let done: () -> Void
@@ -285,11 +302,13 @@ struct MarkdownBar: View {
             PhotosPicker(selection: $insertItem, matching: .images) { keyFace(symbol: "photo") }
                 .buttonStyle(KeyStyle())
                 .accessibilityLabel(app.lang.t("md.image"))
+            Button(action: toggleGap) { spacingFace }
+                .buttonStyle(KeyStyle())
+                .accessibilityLabel(app.lang.t("md.spacing"))
+                .accessibilityValue(gap ? app.lang.t("md.spacingGap") : app.lang.t("md.spacingSnug"))
             Menu {
                 Button { camera() } label: { Label(app.lang.t("capture.shootPage"), systemImage: "camera") }
-                PhotosPicker(selection: $ocrItem, matching: .images) {
-                    Label(app.lang.t("capture.fromAlbum"), systemImage: "photo.on.rectangle")
-                }
+                Button { album() } label: { Label(app.lang.t("capture.fromAlbum"), systemImage: "photo.on.rectangle") }
             } label: {
                 keyFace(symbol: "camera")
             }
@@ -311,6 +330,18 @@ struct MarkdownBar: View {
             }
             .ignoresSafeArea(edges: .bottom)
         }
+    }
+
+    /// 图片间距键：两张小图，空一格时中间隔开，靠拢时挨着
+    private var spacingFace: some View {
+        VStack(spacing: gap ? 5 : 1.5) {
+            RoundedRectangle(cornerRadius: 2).stroke(lineWidth: 1.5).frame(width: 18, height: 7)
+            RoundedRectangle(cornerRadius: 2).stroke(lineWidth: 1.5).frame(width: 18, height: 7)
+        }
+        .foregroundStyle(Color(Ink.text2))
+        .animation(.easeOut(duration: 0.2), value: gap)
+        .frame(maxWidth: .infinity, minHeight: 44)
+        .contentShape(Rectangle())
     }
 
     /// 只有图标的键面（相册、拍照那两个不是普通按钮，用同一个样子）

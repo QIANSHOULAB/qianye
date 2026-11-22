@@ -11,6 +11,8 @@ struct ListScreen: View {
     @State private var query = ""
     @State private var showFolders = false
     @State private var pickedItem: PhotosPickerItem?
+    /// 相册认字：菜单里放 PhotosPicker 点了没反应（Song 11-22），菜单里放普通按钮，再从这儿打开相册
+    @State private var showAlbum = false
     @State private var showCamera = false
     @State private var showMirrorPicker = false
 
@@ -57,9 +59,7 @@ struct ListScreen: View {
                     .accessibilityLabel(t.t("voice.title"))
                 Menu {
                     Button { startCamera() } label: { Label(t.t("capture.shootPage"), systemImage: "camera") }
-                    PhotosPicker(selection: $pickedItem, matching: .images) {
-                        Label(t.t("capture.fromAlbum"), systemImage: "photo.on.rectangle")
-                    }
+                    Button { showAlbum = true } label: { Label(t.t("capture.fromAlbum"), systemImage: "photo.on.rectangle") }
                 } label: {
                     Image(systemName: "camera")
                 }
@@ -70,9 +70,7 @@ struct ListScreen: View {
                     Button { app.newNote() } label: { Label(t.t("list.new"), systemImage: "square.and.pencil") }
                     Button { app.startVoice() } label: { Label(t.t("voice.title"), systemImage: "mic") }
                     Button { startCamera() } label: { Label(t.t("capture.camera"), systemImage: "camera") }
-                    PhotosPicker(selection: $pickedItem, matching: .images) {
-                        Label(t.t("capture.library"), systemImage: "photo.on.rectangle")
-                    }
+                    Button { showAlbum = true } label: { Label(t.t("capture.library"), systemImage: "photo.on.rectangle") }
                 } label: {
                     Image(systemName: "plus")
                 } primaryAction: {
@@ -137,6 +135,7 @@ struct ListScreen: View {
         .background(DeskBackground())
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showFolders) { FolderSheet().presentationDetents([.medium, .large]) }
+        .photosPicker(isPresented: $showAlbum, selection: $pickedItem, matching: .images)
         .onChange(of: pickedItem) { _, item in
             guard let item else { return }
             pickedItem = nil

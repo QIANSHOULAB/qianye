@@ -27,6 +27,8 @@ final class Settings {
     var deliveredIDs: [String] { didSet { save("yiye.delivered", deliveredIDs) } }
     /// 文档相机上次没正常关（多半是闪退了）：以后换成自己做的相机
     var useFallbackCamera: Bool { didSet { save("yiye.fallbackCam", useFallbackCamera) } }
+    /// 插图上下空一格（默认），还是靠拢（Song 11-22）
+    var imageGap: Bool { didSet { save("yiye.imageGap", imageGap) } }
 
     init(persist: Bool) {
         self.persist = persist
@@ -41,6 +43,7 @@ final class Settings {
         listenRate = persist ? (d.object(forKey: "yiye.listenRate") as? Double ?? 1) : 1
         deliveredIDs = persist ? (d.stringArray(forKey: "yiye.delivered") ?? []) : []
         useFallbackCamera = persist ? d.bool(forKey: "yiye.fallbackCam") : false
+        imageGap = persist ? (d.object(forKey: "yiye.imageGap") as? Bool ?? true) : true
     }
 
     private func save(_ key: String, _ v: Any) {

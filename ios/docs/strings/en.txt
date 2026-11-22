@@ -109,6 +109,9 @@ md.heading	Heading
 md.image	Insert photo
 md.list	List
 md.quote	Quote
+md.spacing	Photo spacing
+md.spacingGap	A blank line around photos
+md.spacingSnug	Photos close together
 mirror.ask	Keep a copy of every note in iCloud Drive. Survives new phones, and the butler works from there.
 mirror.choose	Choose folder
 mirror.failed	Can’t use that folder: %@

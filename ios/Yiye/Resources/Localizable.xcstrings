@@ -1786,6 +1786,57 @@
         }
       }
     },
+    "md.spacing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo spacing"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图片间距"
+          }
+        }
+      }
+    },
+    "md.spacingGap": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A blank line around photos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图片上下空一格"
+          }
+        }
+      }
+    },
+    "md.spacingSnug": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos close together"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图片靠拢"
+          }
+        }
+      }
+    },
     "mirror.ask": {
       "extractionState": "manual",
       "localizations": {

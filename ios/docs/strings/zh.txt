@@ -109,6 +109,9 @@ md.heading	标题
 md.image	插图片
 md.list	列表
 md.quote	引用
+md.spacing	图片间距
+md.spacingGap	图片上下空一格
+md.spacingSnug	图片靠拢
 mirror.ask	每条笔记在 iCloud 云盘也存一份：换手机不丢，大管家也从那儿拿活。
 mirror.choose	选文件夹
 mirror.failed	这个文件夹用不了：%@

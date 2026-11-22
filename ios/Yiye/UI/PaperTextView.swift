@@ -297,18 +297,34 @@ final class EditorController: NSObject, UITextViewDelegate {
         }
     }
 
-    /// 插一张图：独占一行，插完光标落在图下面
-    func insertImage(path: String) {
+    /// 插一张图：独占一行，插完光标落在图下面。gap（默认）：跟上下的字、图都隔一个空行，一个字没有时上面也空一行（Song 11-22）
+    func insertImage(path: String, gap: Bool) {
         guard let tv else { return }
         let att = attachment(path)
         let sel = tv.selectedRange
         let ns = tv.textStorage.string as NSString
+        let plan = ImageSpacing.insertion(before: ns.substring(to: sel.location), after: ns.substring(from: sel.location + sel.length), gap: gap)
         let s = NSMutableAttributedString()
-        if sel.location > 0 && ns.character(at: sel.location - 1) != 10 { s.append(NSAttributedString(string: "\n")) }
+        if plan.prefix > 0 { s.append(NSAttributedString(string: String(repeating: "\n", count: plan.prefix))) }
         s.append(NSAttributedString(attachment: att))
-        s.append(NSAttributedString(string: "\n"))
+        if plan.suffix > 0 { s.append(NSAttributedString(string: String(repeating: "\n", count: plan.suffix))) }
         tv.textStorage.replaceCharacters(in: sel, with: s)
-        tv.selectedRange = NSRange(location: sel.location + s.length, length: 0)
+        tv.selectedRange = NSRange(location: min(sel.location + plan.caret, tv.textStorage.length), length: 0)
+        restyle()
+        onChange?()
+    }
+
+    /// 整条的图重排：上下各空一格，或者全靠拢。只增删图旁边的空行（能撤销），图、字、黄底都不动
+    func respaceImages(gap: Bool) {
+        guard let tv, tv.markedTextRange == nil else { return }
+        let old = tv.textStorage.string
+        let new = ImageSpacing.respace(old, gap: gap)
+        guard new != old, ImageSpacing.onlyBlanksDiffer(old, new) else { return }
+        let caret = ImageSpacing.caret(tv.selectedRange.location, from: old, to: new)
+        programmatic = true
+        applyMinimal(NSRange(location: 0, length: (old as NSString).length), new)
+        tv.selectedRange = NSRange(location: min(caret, tv.textStorage.length), length: 0)
+        programmatic = false
         restyle()
         onChange?()
     }
