@@ -25,6 +25,15 @@
       ],
       "versions": [
         {
+          "version": "0.6.0",
+          "buildVersion": "9",
+          "date": "2026-11-23",
+          "localizedDescription": "0.6.0：笔记里选中一个词，菜单最前面多两项「会了」「不会」。点一下大管家就去改词表：会了的简讯不再讲，不会的接着讲；大管家关着也不怕，信在信箱里等它。大管家送来的每日简讯直接进听力，不用再点小耳机；以前送来没进去的，这次开 app 一起放进去。听力按日期分组：今天、昨天，再早的写日期和星期，新的在上面，一天放完接着放前一天的。",
+          "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.6.0/Yiye-0.6.0.ipa",
+          "size": 1813834,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.5.1",
           "buildVersion": "8",
           "date": "2026-11-22",
@@ -106,11 +115,11 @@
           "NSSpeechRecognitionUsageDescription": "Turns your voice into text right on your phone."
         }
       },
-      "version": "0.5.1",
-      "versionDate": "2026-11-22",
-      "versionDescription": "0.5.1：拍照钮里的「从相册选」（还有加号、写字页 ⋯ 里的相册认字）点了没反应，修好了。插图默认上下空一格：一个字没打时图上面也空一行，好写标题；图跟图之间隔一行。写字页底下插图钮旁边多了个间距键：点一下这条笔记里的图全靠拢，再点一下又空一格，以后插的图也照这个。",
-      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.5.1/Yiye-0.5.1.ipa",
-      "size": 1765041
+      "version": "0.6.0",
+      "versionDate": "2026-11-23",
+      "versionDescription": "0.6.0：笔记里选中一个词，菜单最前面多两项「会了」「不会」。点一下大管家就去改词表：会了的简讯不再讲，不会的接着讲；大管家关着也不怕，信在信箱里等它。大管家送来的每日简讯直接进听力，不用再点小耳机；以前送来没进去的，这次开 app 一起放进去。听力按日期分组：今天、昨天，再早的写日期和星期，新的在上面，一天放完接着放前一天的。",
+      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.6.0/Yiye-0.6.0.ipa",
+      "size": 1813834
     }
   ],
   "news": []
