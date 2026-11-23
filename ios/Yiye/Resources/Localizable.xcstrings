@@ -1112,13 +1112,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "New from the butler: %@. Swipe left and tap the headphones to listen."
+            "value": "Fresh from the butler: %@. It’s waiting in Listening."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "大管家送来一篇：%@。想听就左滑点小耳机。"
+            "value": "大管家送来一篇：%@。听力里排好了。"
           }
         }
       }
@@ -1629,6 +1629,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "听力"
+          }
+        }
+      }
+    },
+    "listen.today": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今天"
           }
         }
       }
@@ -3091,6 +3108,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "录一段"
+          }
+        }
+      }
+    },
+    "word.known": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” graduated. No more lectures."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「%@」毕业，简讯不再讲"
+          }
+        }
+      }
+    },
+    "word.learning": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” stays in class. More examples coming."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「%@」留级，简讯接着讲"
+          }
+        }
+      }
+    },
+    "word.markKnown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Got it"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "会了"
+          }
+        }
+      }
+    },
+    "word.markLearning": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not yet"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不会"
           }
         }
       }

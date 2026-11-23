@@ -89,6 +89,7 @@ final class AppModel {
             mirror.restore()
             showMirrorPrompt = !settings.mirrorAsked && !mirror.isOn
             purgeTrashed()
+            backfillListen()
         }
         butler.start()
     }
@@ -352,7 +353,28 @@ final class AppModel {
         }
     }
 
-    /// 大管家送来一篇（配好音的听力稿）：变成一条笔记，进「英语」文件夹。进不进听力 Song 自己点耳机。
+    /// 088 装新版第一次开：手机里已经有的、大管家送来的（kind=listen）、有听力录音、不在听力里的，放进听力。只跑一次
+    func backfillListen() {
+        guard !settings.listenBackfilled else { return }
+        var n = 0
+        for note in allNotes() where !note.trashed && note.kind == "listen" && note.listenPath != nil && !note.inListen {
+            note.inListen = true
+            mirror.saveSoon(note, attachments: attachments)
+            n += 1
+        }
+        if n > 0 { try? context.save() }
+        settings.listenBackfilled = true
+    }
+
+    // ---------------------------------------------------------------- 会了 / 不会（088）
+    /// 写字页选中一个词点「会了」「不会」：交给大管家改词表，马上一行小提示，不问
+    func markWord(_ selected: String, _ mark: WordMark, note: UUID) {
+        guard let w = WordMark.clean(selected) else { return }
+        butler.markWord(w, mark, note: note)
+        show(mark == .known ? t.f("word.known", w) : t.f("word.learning", w), seconds: 3)
+    }
+
+    /// 大管家送来一篇（配好音的听力稿）：变成一条笔记，进「英语」文件夹，直接进听力（088）。
     /// 回「配音」请求的（带 note）：录音挂到那条笔记上，换掉手机念的
     func addDelivery(_ d: ButlerDelivery, audio: Data?) {
         guard !settings.deliveredIDs.contains(d.id) else { return }
@@ -386,7 +408,8 @@ final class AppModel {
         n.id = id
         n.kind = d.kind.isEmpty ? "listen" : d.kind
         n.markdown = d.text
-        // 不自己进听力：Song 点了耳机才进（11-21）
+        // 直接进听力，听力页按日期分组（Song 11-23 15:05，推翻 11-21「点了耳机才进」）；文件夹照旧
+        n.inListen = true
         if let at = d.at.flatMap({ ISOTime.date($0) }) { n.createdAt = at; n.modifiedAt = at }
         n.folder = folderNamed(d.folder ?? "英语")
         context.insert(n)

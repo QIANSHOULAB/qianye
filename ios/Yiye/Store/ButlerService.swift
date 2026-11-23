@@ -28,6 +28,10 @@ final class ButlerService {
     static let appVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "0.1.0"
     static let pairingAccount = "dgj-pairing"
     static let seqsKey = "yiye.mailSeqs"
+    static let wordsKey = "yiye.wordQueue"
+    /// 「会了 / 不会」排着队的（088）：大管家回 ok 才出队
+    @ObservationIgnored private var words = WordQueue.decode(UserDefaults.standard.data(forKey: ButlerService.wordsKey))
+    @ObservationIgnored private var wordSending: Set<String> = []
 
     func start() {
         guard timer == nil else { return }
@@ -85,6 +89,7 @@ final class ButlerService {
             relaySeen = seen
             refreshPresence()
             for it in items { take(it) }
+            flushWords()
         case .msg(let it):
             take(it)
         case .pc(let on, let seen):
@@ -130,7 +135,7 @@ final class ButlerService {
             if s.phase == .waiting, let rid = s.requestID { waiting[rid] = n.id }
             if let rid = n.dubRequest { dubbing[rid] = n.id }
         }
-        var action = MailAction.decide(env, waiting: waiting, dubbing: dubbing)
+        var action = MailAction.decide(env, waiting: waiting, dubbing: dubbing, words: words.requestIDs)
         if action == .later, let ch = app.mirror.channel, let a = env.delivery?.audio {
             // 信里没带录音：去 iCloud 镜像里找（后台读，占位的要等它下载）
             let data: Data? = await withCheckedContinuation { c in
@@ -144,6 +149,10 @@ final class ButlerService {
             return true
         case .dubFailed(let r, let nid):
             if let n = app.note(nid) { app.dubFailed(n, error: r.error) }
+            return true
+        case .word(let r):
+            words.answered(r.id, ok: r.ok)
+            saveWords()
             return true
         case .deliver(let d, let audio):
             app.addDelivery(d, audio: audio)
@@ -322,11 +331,48 @@ final class ButlerService {
         if let app, let channel = app.mirror.channel { app.mirror.afterPendingWrites { channel.withdraw(rid) } }
     }
 
+    // ---------------------------------------------------------------- 会了 / 不会（088）
+    /// 点了一下：排进队，马上寄。大管家关着也行：信在信箱里等它；寄不出去（没配对、断网）就排着，连上了再寄
+    func markWord(_ word: String, _ mark: WordMark, note: UUID) {
+        words.add(word, mark, note: note.uuidString, at: ISOTime.string(Date()))
+        saveWords()
+        flushWords()
+    }
+
+    /// 该寄的寄出去（只走信箱：电脑上没有 iCloud，掌机老版本也不认）
+    func flushWords() {
+        guard let mail, app?.demo == nil else { return }
+        for p in words.due() where !wordSending.contains(WordMark.key(p.word)) {
+            let id = UUID().uuidString
+            let key = WordMark.key(p.word)
+            words.sending(p.word, id: id)
+            wordSending.insert(key)
+            let req = ButlerRequest.wordMark(id: id, word: p.word.trimmed, mark: p.mark, note: p.note, at: p.at, app: ButlerService.appVersion)
+            Task {
+                defer { self.wordSending.remove(key) }
+                do {
+                    _ = try await mail.send(.request(req))
+                    self.words.sent(id)
+                } catch {
+                    self.words.notSent(id)
+                }
+                self.saveWords()
+            }
+        }
+        saveWords()
+    }
+
+    private func saveWords() {
+        guard app?.demo == nil else { return }
+        UserDefaults.standard.set(words.encoded(), forKey: ButlerService.wordsKey)
+    }
+
     // ---------------------------------------------------------------- iCloud（v1 备胎）
     /// 看一眼：配对、心跳、在等的结果、送来的
     func look() {
         guard let app else { return }
         checkPairing()
+        if !words.items.isEmpty { flushWords() }
         guard !looking, let channel = app.mirror.channel else {
             if !app.mirror.isOn {
                 heartbeat = .never

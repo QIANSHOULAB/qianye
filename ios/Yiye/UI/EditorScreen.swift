@@ -161,6 +161,9 @@ struct EditorScreen: View {
         controller.load(markdown: n.markdown, unsure: n.unsureRanges)
         controller.onChange = { scheduleSave() }
         controller.onFocus = { f in withAnimation(.easeOut(duration: 0.2)) { focused = f } }
+        controller.wordTitles = (app.t.t("word.markKnown"), app.t.t("word.markLearning"))
+        let nid = n.id
+        controller.onWord = { w, m in app.markWord(w, m, note: nid) }
         if app.freshNoteID == n.id {
             Task { @MainActor in
                 try? await Task.sleep(nanoseconds: 350_000_000)

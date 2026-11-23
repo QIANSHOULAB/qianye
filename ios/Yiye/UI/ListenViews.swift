@@ -3,7 +3,8 @@ import SwiftUI
 import YiyeKit
 
 /// 听力：一张播放列表，跟音乐 app 一样一行一篇，默认只有声音。
-/// 只放 Song 点了「放进听力」的（大管家照每日简讯送来的自己进）。还没声音的也列着，写明在等大管家配音。
+/// 大管家送来的每日简讯直接进（088，Song 11-23 15:05），Song 自己点小耳机放进来的也在。还没声音的也列着，写明在等大管家配音。
+/// 按日期分组（088）：一天一个小标题，新的一天在上面，组里新的在上面（简讯 1→6）；放完一篇接下一篇，一天放完接着放前一天的。
 /// 每篇放几遍（1/2/3/5/一直），放够了自动下一篇；想看字点那一行后面的「文」
 struct PlaylistScreen: View {
     let open: ListenOpen
@@ -15,8 +16,14 @@ struct PlaylistScreen: View {
     private var player: AudioPlayback { AudioPlayback.shared }
     private var t: Lang { app.lang }
 
-    /// 能放的（有录音的那些）
-    private var tracks: [Track] { notes.compactMap { app.track($0) } }
+    /// 按天分好的（笔记 createdAt，手机的时区）
+    private var days: [ListenDay<UUID>] { ListenDays.group(notes.map { (id: $0.id, at: $0.createdAt) }) }
+
+    /// 能放的（有录音的那些），照分组从上到下的顺序
+    private var tracks: [Track] {
+        let byID = Dictionary(notes.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        return ListenDays.flat(days).compactMap { id in byID[id].flatMap { n in app.track(n) } }
+    }
 
     var body: some View {
         let tracks = self.tracks
@@ -44,17 +51,24 @@ struct PlaylistScreen: View {
                 }
                 .frame(maxWidth: .infinity)
             } else {
+                let byID = Dictionary(notes.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
                 ScrollView {
-                    LazyVStack(spacing: 8) {
-                        ForEach(notes) { n in
-                            if let i = tracks.firstIndex(where: { $0.note == n.id }) {
-                                row(i, tracks)
-                            } else {
-                                waitingRow(n)
+                    LazyVStack(alignment: .leading, spacing: 8) {
+                        ForEach(days, id: \.start) { day in
+                            DayHeader(text: dayTitle(day.start))
+                            ForEach(day.ids, id: \.self) { id in
+                                if let n = byID[id] {
+                                    if let i = tracks.firstIndex(where: { $0.note == n.id }) {
+                                        row(i, tracks)
+                                    } else {
+                                        waitingRow(n)
+                                    }
+                                }
                             }
                         }
                     }
-                    .padding(12)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 12)
                 }
                 PlayerBar(tracks: tracks)
             }
@@ -162,10 +176,37 @@ struct PlaylistScreen: View {
             .accessibilityLabel(t.t("listen.showText"))
     }
 
+    /// 组的小标题：今天、昨天，再早的写日期加星期（不是今年的带年份）
+    private func dayTitle(_ start: Date) -> String {
+        switch ListenDays.label(start) {
+        case .today: return t.t("listen.today")
+        case .yesterday: return t.t("time.yesterday")
+        case .date(let d, let withYear):
+            let f = DateFormatter()
+            f.locale = t.locale
+            f.setLocalizedDateFormatFromTemplate(withYear ? (t.isZh ? "yMMMdEEE" : "EEEMMMdy") : (t.isZh ? "MMMdEEE" : "EEEMMMd"))
+            return f.string(from: d)
+        }
+    }
+
     private func passLine(_ total: TimeInterval) -> String {
         let n = player.passes + 1
         let of = player.repeatTarget == 0 ? "∞" : "\(player.repeatTarget)"
         return "\(VoiceText.clock(player.position)) / \(VoiceText.clock(total))  ·  " + t.f("listen.pass", n) + " / \(of)"
+    }
+}
+
+/// 一天的小标题：13 号字、灰，跟 iOS 设置的分组标题一个意思（不全大写）
+private struct DayHeader: View {
+    let text: String
+    var body: some View {
+        Text(text)
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(Color(Ink.text2))
+            .padding(.leading, 4)
+            .padding(.top, 16)
+            .padding(.bottom, 0)
+            .accessibilityAddTraits(.isHeader)
     }
 }
 

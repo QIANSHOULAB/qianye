@@ -18,8 +18,11 @@ public struct ButlerRequest: Codable, Equatable, Sendable {
     public var ask: String = "fix"
     public var at: String
     public var app: String
+    /// ask=word（088）：选中的词、会了 known / 不会 learning。别的请求没有这两个字段
+    public var word: String?
+    public var mark: String?
 
-    /// ask：fix = 理顺（结果回 已理顺/）；speak = 配音（0.4.0 起，结果走 送来/，带 note）
+    /// ask：fix = 理顺（结果回 已理顺/）；speak = 配音（0.4.0 起，结果走 送来/，带 note）；word = 会了 / 不会（088，见 WordMark.swift）
     public init(id: String, note: String, kind: ButlerKind, text: String, images: [String]?, unsure: [String]?, ask: String = "fix", at: String, app: String) {
         self.id = id; self.note = note; self.kind = kind; self.text = text; self.ask = ask
         self.images = (images?.isEmpty ?? true) ? nil : images

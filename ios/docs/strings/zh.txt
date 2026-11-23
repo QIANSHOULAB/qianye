@@ -69,7 +69,7 @@ listen.add	放进听力
 listen.added	放进听力了
 listen.addedPhone	放进听力了。大管家没连上，先用手机的声音念。
 listen.always	一直
-listen.arrived	大管家送来一篇：%@。想听就左滑点小耳机。
+listen.arrived	大管家送来一篇：%@。听力里排好了。
 listen.close	关
 listen.dub	交大管家配音
 listen.dubEmpty	这条没字，配不了音。
@@ -100,6 +100,7 @@ listen.times2	2 遍
 listen.times3	3 遍
 listen.times5	5 遍
 listen.title	听力
+listen.today	今天
 listen.waitDub	等大管家配音 · 交出去 %@
 listen.waitDubAway	等大管家配音 · 大管家还没连上
 md.bold	粗体
@@ -186,3 +187,7 @@ voice.play	播放
 voice.preparing	话筒准备中…
 voice.saving	收个尾…
 voice.title	录一段
+word.known	「%@」毕业，简讯不再讲
+word.learning	「%@」留级，简讯接着讲
+word.markKnown	会了
+word.markLearning	不会

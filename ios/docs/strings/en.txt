@@ -69,7 +69,7 @@ listen.add	Add to Listening
 listen.added	Added to Listening
 listen.addedPhone	Added. The butler’s offline, so your phone reads it for now.
 listen.always	Loop
-listen.arrived	New from the butler: %@. Swipe left and tap the headphones to listen.
+listen.arrived	Fresh from the butler: %@. It’s waiting in Listening.
 listen.close	Close
 listen.dub	Have the butler voice it
 listen.dubEmpty	This note is empty. Nothing to voice.
@@ -100,6 +100,7 @@ listen.times2	2×
 listen.times3	3×
 listen.times5	5×
 listen.title	Listening
+listen.today	Today
 listen.waitDub	Waiting for the butler · sent %@
 listen.waitDubAway	Waiting for the butler · not connected yet
 md.bold	Bold
@@ -186,3 +187,7 @@ voice.play	Play
 voice.preparing	Warming up the mic…
 voice.saving	Wrapping up…
 voice.title	Voice note
+word.known	“%@” graduated. No more lectures.
+word.learning	“%@” stays in class. More examples coming.
+word.markKnown	Got it
+word.markLearning	Not yet

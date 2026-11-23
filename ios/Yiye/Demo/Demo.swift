@@ -113,7 +113,8 @@ enum Demo {
         var vst = ButlerNoteState()
         vst.submitted(id: UUID().uuidString, text: voice.markdown, at: now.addingTimeInterval(-60 * 4))
         voice.butlerState = vst
-        // 听力：三篇英语新闻（大管家配好音送来的样子），每篇一段没声音的录音 + 每句表
+        // 听力：三篇英语新闻（大管家配好音送来的样子），每篇一段没声音的录音 + 每句表。
+        // 088 跨两天：今天两篇、昨天一篇，时间照每日简讯（那天 08:00 减第几篇的秒数）
         let english = Folder(name: zh ? "英语" : "English", order: 2)
         ctx.insert(english)
         let stories = [
@@ -124,7 +125,9 @@ enum Demo {
         var listenFirst: UUID?
         for (k, text) in stories.enumerated() {
             let n = add(text, ago: Double(60 * (20 + k * 30)), folder: english, kind: "listen")
-            n.createdAt = now.addingTimeInterval(-Double(60 * (20 + k * 30)))
+            let eight = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: now) ?? now
+            n.createdAt = k < 2 ? eight.addingTimeInterval(-Double(k + 1)) : eight.addingTimeInterval(-86_400 - 1)
+            n.modifiedAt = n.createdAt
             let sentences = Listen.sentences(text)
             let marks = sentences.enumerated().map { ListenMark(t: Double($0.offset) * 4.5, s: $0.element) }
             if let rel = Demo.silence(app.attachments, name: Listen.deliveryName(note: n.id, ext: "m4a"), seconds: Double(sentences.count) * 4.5) {

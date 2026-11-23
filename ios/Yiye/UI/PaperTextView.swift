@@ -170,6 +170,10 @@ final class EditorController: NSObject, UITextViewDelegate {
     var metrics = EditorMetrics.of(1)
     var onChange: (() -> Void)?
     var onFocus: ((Bool) -> Void)?
+    /// 088：选中一个词点了「会了」「不会」
+    var onWord: ((String, WordMark) -> Void)?
+    /// 那两项菜单上的字（跟着语言走，写字页给）
+    var wordTitles = (known: "Got it", learning: "Not yet")
     private var programmatic = false
 
     var styler: MarkdownStyler { MarkdownStyler(m: metrics) }
@@ -426,6 +430,15 @@ final class EditorController: NSObject, UITextViewDelegate {
             textView.selectedRange = eff
             programmatic = false
         }
+    }
+
+    /// 088：选中的是一个词或词组，系统菜单最前面多「会了」「不会」两项；选中一整段、没有字母的照系统原样
+    func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
+        guard range.length > 0, let onWord, range.location + range.length <= textView.textStorage.length,
+              let w = WordMark.clean(textView.textStorage.string.sub16(range)) else { return nil }
+        let known = UIAction(title: wordTitles.known, image: UIImage(systemName: "checkmark")) { _ in onWord(w, .known) }
+        let learning = UIAction(title: wordTitles.learning, image: UIImage(systemName: "arrow.counterclockwise")) { _ in onWord(w, .learning) }
+        return UIMenu(children: [UIMenu(options: .displayInline, children: [known, learning])] + suggestedActions)
     }
 
     func textViewDidBeginEditing(_ textView: UITextView) { onFocus?(true) }
