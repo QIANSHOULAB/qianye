@@ -25,6 +25,15 @@
       ],
       "versions": [
         {
+          "version": "0.7.14",
+          "buildVersion": "24",
+          "date": "2026-11-24",
+          "localizedDescription": "0.7.14：便签又点得开、滑得动了。列表里点一条就进去，右滑扔、左滑置顶照常；长按一条进批量选，手指不抬往下划还是一串都选上。",
+          "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.14/Yiye-0.7.14.ipa",
+          "size": 2964995,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.7.13",
           "buildVersion": "23",
           "date": "2026-11-24",
@@ -232,11 +241,11 @@
           "NSSpeechRecognitionUsageDescription": "Turns your voice into text right on your phone."
         }
       },
-      "version": "0.7.13",
+      "version": "0.7.14",
       "versionDate": "2026-11-24",
-      "versionDescription": "0.7.13：陪玩会抢答了。大管家边想边说，第一句一出来就念，后面的边念边到；它说着你直接插嘴，它就闭嘴听你的。喊「二档」「三档」「四档」想得更深，「回一档」回来。陪玩开着就一直记着前面聊了啥；「记住……」进记事本，「翻一下记事本」才去翻；「派个活：……」它复述一遍，你说「对」就派出去。话筒被电话、Siri、换耳机打断了自己接回来。手机自己念的话也换成了晓晓，不再两个人轮流说。",
-      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.13/Yiye-0.7.13.ipa",
-      "size": 2985253
+      "versionDescription": "0.7.14：便签又点得开、滑得动了。列表里点一条就进去，右滑扔、左滑置顶照常；长按一条进批量选，手指不抬往下划还是一串都选上。",
+      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.14/Yiye-0.7.14.ipa",
+      "size": 2964995
     }
   ],
   "news": []
