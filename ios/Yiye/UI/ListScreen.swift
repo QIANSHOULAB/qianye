@@ -42,6 +42,7 @@ struct ListScreen: View {
                 Button { app.listening = ListenOpen() } label: { Image(systemName: "headphones") }
                     .buttonStyle(SmartButtonStyle())
                     .accessibilityLabel(t.t("listen.title"))
+                CompanionButton()
             } center: {
                 Button { showFolders = true } label: {
                     HStack(spacing: 5) {
@@ -82,11 +83,6 @@ struct ListScreen: View {
             }
 
             SearchField(text: $query, placeholder: t.t("list.search"))
-
-            if app.settings.companionOn {
-                CompanionBar()
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
 
             if app.showMirrorPrompt {
                 MirrorPrompt(choose: { showMirrorPicker = true }, skip: {

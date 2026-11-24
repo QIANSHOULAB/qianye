@@ -7,14 +7,14 @@ import YiyeKit
 
 /// 陪玩模式（pc-butler 施工单 100，Song 11-24 10:07）：
 /// 「像游戏陪玩那样，打开以后它能实时读我的屏幕，然后可以实时问它问题，它可以实时做出反馈」「主要是一些英文内容，我不太看得懂」。
-/// - 设置里开「陪玩模式」，列表上多一条：点「开始直播」选一叶笺（苹果规定这一下要人点）。之后全自动。
+/// - 104（Song 11-24）：没有「陪玩模式」开关了。工具栏耳机右边一个小图标，点一下弹苹果的直播面板选一叶笺（苹果规定这一下要人点）；开了直播就算开，停了直播就算关。之后全自动。
 /// - 直播开着就在后台听（后台音频）：本机判断开口、说完（停 0.8 秒），苹果本机听写成字（不上传），
 ///   去直播扩展取问的那一刻的一帧，走信箱（两头加密）交给大管家；大管家看图答话、配好音回来，直接放（别的 App 的声音压低）。
 /// - 两台大管家都不在：用苹果的中文嗓子念「大管家不在」。关掉陪玩、停了直播：马上停听、停截。
 /// - 截到的屏幕只在开口那一刻取一帧，只交自己的大管家，不存。
 @MainActor @Observable
 final class Companion {
-    enum Phase: Equatable { case off, waitLive, listening, hearing, asking, speaking, failed(String) }
+    enum Phase: Equatable { case off, listening, hearing, asking, speaking, failed(String) }
 
     private(set) var phase: Phase = .off
     /// 直播扩展在跑（回环口子能连上）
@@ -43,30 +43,11 @@ final class Companion {
 
     func setUp() {
         bell.onRing = { [weak self] name in self?.ring(name) }
-        guard app?.settings.companionOn == true else { return }
-        phase = .waitLive
-        Task { await probe() }
-    }
-
-    /// 设置里的开关
-    func setOn(_ on: Bool) {
-        if on {
-            if phase == .off { phase = .waitLive }
-            Task { await probe() }
-        } else {
-            stopListening()
-            LiveBell.post(LiveWire.finish)
-            live = false
-            phase = .off
-        }
+        Task { await probe() }          // 开 app 时直播要是已经在跑，接着听
     }
 
     // ---------------------------------------------------------------- 直播在不在
     private func ring(_ name: String) {
-        guard app?.settings.companionOn == true else {
-            if name == LiveWire.started { LiveBell.post(LiveWire.finish) }   // 陪玩关着就别截
-            return
-        }
         if name == LiveWire.started {
             live = true
             Task {
@@ -79,7 +60,6 @@ final class Companion {
     }
 
     private func probe() async {
-        guard app?.settings.companionOn == true else { return }
         let r = await LiveLink.fetch("hello")
         if case .down = r {
             if live || ear != nil { liveGone() }
@@ -92,19 +72,19 @@ final class Companion {
     private func liveGone() {
         live = false
         stopListening()
-        if app?.settings.companionOn == true { phase = .waitLive }
+        phase = .off
     }
 
     // ---------------------------------------------------------------- 听
     private func startListening() {
-        guard ear == nil, let app, app.settings.companionOn, app.demo == nil else { return }
+        guard ear == nil, let app, app.demo == nil else { return }
         Task {
             guard await AVAudioApplication.requestRecordPermission() else { return self.fail(app.lang.t("companion.noMic")) }
             let auth = await withCheckedContinuation { (c: CheckedContinuation<SFSpeechRecognizerAuthorizationStatus, Never>) in
                 SFSpeechRecognizer.requestAuthorization { c.resume(returning: $0) }
             }
             guard auth == .authorized else { return self.fail(app.lang.t("companion.noMic")) }
-            guard self.ear == nil, self.live, app.settings.companionOn else { return }
+            guard self.ear == nil, self.live else { return }
             let ear = Ear(locale: "zh-CN")
             ear.onStart = { [weak self] in Task { @MainActor in self?.heardStart() } }
             ear.onHeard = { [weak self] text, end in Task { @MainActor in self?.heard(text, spokeEnd: end) } }
@@ -143,6 +123,7 @@ final class Companion {
     private func fail(_ why: String) {
         stopListening()
         phase = .failed(why)
+        if let app { app.show(app.lang.f("companion.failed", why), seconds: 6) }    // 出错弹一次，不留条
     }
 
     private func heardStart() {

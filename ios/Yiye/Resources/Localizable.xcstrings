@@ -647,23 +647,6 @@
         }
       }
     },
-    "companion.asking": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Asking the butler…"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "问大管家去了…"
-          }
-        }
-      }
-    },
     "companion.failed": {
       "extractionState": "manual",
       "localizations": {
@@ -681,53 +664,19 @@
         }
       }
     },
-    "companion.hearing": {
+    "companion.icon": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Go on, I’m listening…"
+            "value": "Buddy broadcast"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "你说，我听着…"
-          }
-        }
-      }
-    },
-    "companion.last": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Last answer in %@ s"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上一句 %@ 秒出声"
-          }
-        }
-      }
-    },
-    "companion.listening": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listening. Just ask."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在听，开口就问"
+            "value": "陪玩直播"
           }
         }
       }
@@ -749,70 +698,19 @@
         }
       }
     },
-    "companion.speaking": {
+    "companion.noPanel": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The butler’s talking"
+            "value": "Couldn’t open the broadcast panel"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "大管家在说"
-          }
-        }
-      }
-    },
-    "companion.start": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Start Broadcast"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "开始直播"
-          }
-        }
-      }
-    },
-    "companion.stop": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stop"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "停直播"
-          }
-        }
-      }
-    },
-    "companion.waitLive": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tap Start Broadcast, pick Yiye"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "点「开始直播」，选一叶笺"
+            "value": "直播面板叫不出来"
           }
         }
       }
@@ -2489,30 +2387,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Turn it on, tap Start Broadcast on the bar above your notes, pick Yiye. Then use your phone as usual and just ask out loud: Yiye grabs the screen at that moment, hands it to your own butler, and the answer comes back as a voice. The red and orange dots up top are Apple’s broadcast and mic lights. Normal."
+            "value": "Tap the little broadcast icon next to the headphones, pick Yiye, start. Then use your phone as usual and just ask out loud: Yiye grabs the screen at that moment, hands it to your own butler, and the answer comes back as a voice. Gray icon: not broadcasting. Green: listening. Orange: the butler’s on it. The red and orange dots up top are Apple’s broadcast and mic lights. Normal."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "开了以后便签列表顶上多一条：点「开始直播」，选一叶笺。之后手机随便用，开口就问：它截你问的那一刻的屏幕，交给自己的大管家，用声音答你。屏幕上方的红点、橙点是苹果的直播和麦克风提示，正常。"
-          }
-        }
-      }
-    },
-    "settings.companionOn": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buddy mode"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "陪玩模式"
+            "value": "耳机右边那个小图标，点一下弹苹果的直播面板，选一叶笺，点开始。之后手机随便用，开口就问：它截你问的那一刻的屏幕，交给自己的大管家，用声音答你。图标灰是没在直播，绿是在听，橙是大管家在忙。屏幕上方的红点、橙点是苹果的直播和麦克风提示，正常。"
           }
         }
       }
