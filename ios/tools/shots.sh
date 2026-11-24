@@ -13,7 +13,6 @@ xcrun simctl status_bar "$SIM" override --time "9:41" --dataNetwork wifi --wifiM
 
 # ---- UI 测试（133）：截图之前先在这台模拟器上真点、真滑、真长按一遍（ios/YiyeUITests）。
 # 不过就停在这儿：不截图、这一步失败、不发版。结果写进 $OUT/uitest/（结果.txt + 出错那一刻的截图），CI 照样提交回仓库。
-UITEST_ONLY=1   # 133 复现用：只跑 UI 测试、记下红绿、不算失败；修好那一版删掉这行
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DD="${APP%%/Build/Products/*}"
 UIT="$OUT/uitest"
@@ -34,7 +33,7 @@ for p in "$UIT"/*.png; do
   sips --resampleWidth 600 -s format jpeg -s formatOptions 80 "$p" --out "${p%.png}.jpg" >/dev/null && rm "$p"
 done
 {
-  if [ "$urc" = 0 ]; then echo "# UI 测试：全绿"; else echo "# UI 测试：有红的（xcodebuild 退出码 $urc）"; fi
+  if [ "$urc" = 0 ]; then echo "# UI 测试：全绿"; else echo "# UI 测试：有红的（xcodebuild 退出码 ${urc}）"; fi
   echo
   grep -E "Test [Cc]ase .*(passed|failed)" "$DD/uitest.log" | sed -E "s/^.*Test [Cc]ase '//" || true
   echo

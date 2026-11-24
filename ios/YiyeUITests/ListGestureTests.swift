@@ -74,8 +74,8 @@ final class ListGestureTests: XCTestCase {
 
     func testTapOpensNote() {
         launch()
-        row("Team lunch Friday").tap()
-        assertEditor("Noodle House", "01-点一条没进写字页")
+        row("Tomorrow").tap()
+        assertEditor("room two", "01-点一条没进写字页")
     }
 
     func testSearchThenTapOpensNote() {
@@ -92,7 +92,7 @@ final class ListGestureTests: XCTestCase {
 
     func testSwipeRightTrashesAndUndo() {
         launch()
-        let r = row("Team lunch Friday")
+        let r = row("Tomorrow")
         r.swipeRight()
         // 没整条滑过去：露出「Trash」再点
         let trash = app.buttons["Trash"]
@@ -101,18 +101,18 @@ final class ListGestureTests: XCTestCase {
         let undo = app.buttons["Undo"]
         check(undo.waitForExistence(timeout: 3), "03-没有撤销", "扔了以后底下没出「Undo」")
         undo.tap()
-        check(row("Team lunch Friday").waitForExistence(timeout: 4), "03-撤销没拿回来", "点了 Undo 这条没回来")
+        check(row("Tomorrow").waitForExistence(timeout: 4), "03-撤销没拿回来", "点了 Undo 这条没回来")
     }
 
     func testSwipeLeftPins() {
         launch()
-        row("Team lunch Friday").swipeLeft()
+        row("Tomorrow").swipeLeft()
         let pin = app.buttons["Pin"]
         check(pin.waitForExistence(timeout: 3), "04-左滑没露出置顶", "左滑以后没有「Pin」")
         check(app.buttons["Add to Listening"].exists, "04-左滑没有小耳机", "左滑以后没有「Add to Listening」")
         pin.tap()
         // 置顶了：再左滑一次，按钮变成「Unpin」
-        row("Team lunch Friday").swipeLeft()
+        row("Tomorrow").swipeLeft()
         check(app.buttons["Unpin"].waitForExistence(timeout: 3), "04-置顶没生效", "再左滑没变成「Unpin」")
     }
 
@@ -120,14 +120,14 @@ final class ListGestureTests: XCTestCase {
 
     func testLongPressSelectsAndTapToggles() {
         launch()
-        row("Team lunch Friday").press(forDuration: 1.0)
+        row("Tomorrow").press(forDuration: 1.0)
         waitSelected(1, "05-长按没进批量选")
         check(!editorText.exists, "05-长按松手打开了便签", "长按松手不该进写字页")
         row("Weekly sync").tap()
         waitSelected(2, "05-批量选里点一条没选上")
         row("Weekly sync").tap()
         waitSelected(1, "05-批量选里再点没取消")
-        row("Team lunch Friday").tap()
+        row("Tomorrow").tap()
         waitSelected(0, "05-批量选里点按下那条没取消")
         app.buttons["Cancel"].tap()
         // 退出批量选，点一条照样进写字页
