@@ -266,7 +266,7 @@ struct FolderMenu: View {
             Button { move(nil) } label: {
                 if note.folder == nil { Label(app.lang.t("list.all"), systemImage: "checkmark") } else { Text(app.lang.t("list.all")) }
             }
-            ForEach(folders) { f in
+            ForEach(folders.filter { !$0.isListenOnly }) { f in
                 Button { move(f) } label: {
                     if note.folder?.id == f.id { Label(f.name, systemImage: "checkmark") } else { Text(f.name) }
                 }

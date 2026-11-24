@@ -1,15 +1,17 @@
 import SwiftData
 import SwiftUI
+import UIKit
 import YiyeKit
 
 /// 听力：一张播放列表，跟音乐 app 一样一行一篇，默认只有声音。
+/// 听力（kind == listen）只住这儿，便签那边一条都不出现（112）；这里收全：不管哪条路进来、有没有声音都列；听完满 7 天自己进废纸篓，听完的淡一点。
 /// 大管家送来的每日简讯直接进（088，Song 11-23 15:05），Song 自己点小耳机放进来的也在。还没声音的也列着，写明在等大管家配音。
 /// 按日期分组（088）：一天一个小标题，新的一天在上面，组里新的在上面（简讯 1→6）；放完一篇接下一篇，一天放完接着放前一天的。
 /// 每篇放几遍（1/2/3/5/一直），放够了自动下一篇；想看字点那一行后面的「文」
 struct PlaylistScreen: View {
     let open: ListenOpen
     @Environment(AppModel.self) private var app
-    @Query(filter: #Predicate<Note> { $0.trashed == false && $0.inListen == true }, sort: \Note.createdAt, order: .reverse)
+    @Query(filter: #Predicate<Note> { $0.trashed == false && ($0.inListen == true || $0.kind == "listen") }, sort: \Note.createdAt, order: .reverse)
     private var notes: [Note]
     @State private var textFor: Track?
     @State private var began = false
@@ -59,7 +61,7 @@ struct PlaylistScreen: View {
                             ForEach(day.ids, id: \.self) { id in
                                 if let n = byID[id] {
                                     if let i = tracks.firstIndex(where: { $0.note == n.id }) {
-                                        row(i, tracks)
+                                        row(i, tracks, heard: n.heardAt != nil)
                                     } else {
                                         waitingRow(n)
                                     }
@@ -85,6 +87,7 @@ struct PlaylistScreen: View {
         began = true
         player.repeatTarget = app.settings.listenRepeat
         player.rate = Float(app.settings.listenRate)
+        player.loopAll = app.settings.listenLoopAll
         let tracks = self.tracks
         guard let id = open.startNote, let i = tracks.firstIndex(where: { $0.note == id }) else { return }
         // 从写字页进来的：直接放这篇
@@ -92,7 +95,7 @@ struct PlaylistScreen: View {
         if open.showText { textFor = tracks[i] }
     }
 
-    private func row(_ i: Int, _ tracks: [Track]) -> some View {
+    private func row(_ i: Int, _ tracks: [Track], heard: Bool) -> some View {
         let tr = tracks[i]
         let on = player.playlist && player.track?.note == tr.note
         let total = player.duration(tr.path, store: app.attachments)
@@ -126,6 +129,7 @@ struct PlaylistScreen: View {
             textButton(tr)
         }
         .modifier(PlaylistCard())
+        .opacity(heard && !on ? 0.55 : 1)          // 听完的淡一点，不加字
     }
 
     /// 还没声音的一行：在等大管家配音（几点交的、大管家在不在），或者点一下让手机先念
@@ -165,6 +169,11 @@ struct PlaylistScreen: View {
             }
             .buttonStyle(.plain)
 
+            // 没在等配音、也没有声音：挂「重配」，走现有的 requestDub（112：不许有哪条听力两边都看不到）
+            if !waiting {
+                Button(t.t("listen.redub")) { app.dub(n) }
+                    .buttonStyle(SmartButtonStyle())
+            }
             textButton(Track(note: n.id, path: "", title: title, marks: []))
         }
         .modifier(PlaylistCard())
@@ -265,8 +274,25 @@ struct PlayerBar: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(Color(Ink.text2))
-            Segmented(items: [(1, t.t("listen.times1")), (2, t.t("listen.times2")), (3, t.t("listen.times3")), (5, t.t("listen.times5")), (0, t.t("listen.always"))],
-                      selection: Binding(get: { settings.listenRepeat }, set: { settings.listenRepeat = $0; player.repeatTarget = $0 }))
+            HStack(spacing: 8) {
+                Segmented(items: [(1, t.t("listen.times1")), (2, t.t("listen.times2")), (3, t.t("listen.times3")), (5, t.t("listen.times5")), (0, t.t("listen.always"))],
+                          selection: Binding(get: { settings.listenRepeat }, set: { settings.listenRepeat = $0; player.repeatTarget = $0 }))
+                // 整串循环（112）：最后一条放完回到第一条。一个图标，开着高亮，不加字
+                Button {
+                    settings.listenLoopAll.toggle()
+                    player.loopAll = settings.listenLoopAll
+                } label: {
+                    Image(systemName: "repeat")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(settings.listenLoopAll ? Color.white : Color(Ink.text2))
+                        .frame(width: 44, height: 40)
+                        .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(settings.listenLoopAll ? Color(Ink.accent) : Color(Ink.text3).opacity(0.14)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(t.t("listen.loopAll"))
+                .accessibilityAddTraits(settings.listenLoopAll ? .isSelected : [])
+            }
             Segmented(items: [(0.75, "0.75×"), (1.0, "1×"), (1.25, "1.25×")],
                       selection: Binding(get: { settings.listenRate }, set: { settings.listenRate = $0; player.rate = Float($0) }))
         }
@@ -310,16 +336,15 @@ struct TextSheet: View {
                     VStack(alignment: .leading, spacing: 6) {
                         ForEach(lines.indices, id: \.self) { i in
                             let now = mine && player.sentence == i
-                            Text(lines[i])
-                                .font(.system(size: 18))
-                                .lineSpacing(5)
-                                .foregroundStyle(now ? Color(Ink.text) : Color(Ink.text2))
+                            // 112：一句一个能选词的文字视图。选中一个词，系统菜单最前面多「已掌握」「难词」；点一下跳到这句
+                            SentenceText(text: lines[i], color: now ? Ink.text : Ink.text2,
+                                         titles: (t.t("word.markKnown"), t.t("word.markLearning")),
+                                         onWord: { w, m in app.markWord(w, m, note: track.note) },
+                                         onTap: { tap(i) })
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.vertical, 6)
                                 .padding(.horizontal, 10)
                                 .background(RoundedRectangle(cornerRadius: 6).fill(now ? Color(Ink.accent).opacity(0.13) : .clear))
-                                .contentShape(Rectangle())
-                                .onTapGesture { tap(i) }
                                 .id(i)
                         }
                         if track.marks.isEmpty && !track.path.isEmpty {
@@ -365,4 +390,72 @@ struct TextSheet: View {
 
 extension Track: Identifiable {
     var id: String { "\(note.uuidString)|\(path)" }
+}
+
+/// 一句话的文字：只读、能选词。选中一个词或词组，系统菜单最前面多「已掌握」「难词」（走 AppModel.markWord，大管家那头已经通了）；点一下回调 onTap（跳到这句）
+struct SentenceText: UIViewRepresentable {
+    let text: String
+    let color: UIColor
+    let titles: (known: String, learning: String)
+    let onWord: (String, WordMark) -> Void
+    let onTap: () -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIView(context: Context) -> UITextView {
+        let tv = UITextView()
+        tv.isEditable = false
+        tv.isSelectable = true
+        tv.isScrollEnabled = false
+        tv.backgroundColor = .clear
+        tv.textContainerInset = .zero
+        tv.textContainer.lineFragmentPadding = 0
+        tv.delegate = context.coordinator
+        let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.tapped))
+        tap.delegate = context.coordinator
+        tv.addGestureRecognizer(tap)
+        context.coordinator.tv = tv
+        return tv
+    }
+
+    func updateUIView(_ tv: UITextView, context: Context) {
+        let c = context.coordinator
+        c.parent = self
+        // 放音时整张表每秒刷新好几回：字和颜色没变就别重设，免得选中的词被清掉
+        guard c.lastText != text || c.lastColor != color else { return }
+        c.lastText = text
+        c.lastColor = color
+        let para = NSMutableParagraphStyle()
+        para.lineSpacing = 5
+        tv.attributedText = NSAttributedString(string: text, attributes: [
+            .font: UIFont.systemFont(ofSize: 18), .foregroundColor: color, .paragraphStyle: para,
+        ])
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
+        let w = proposal.width ?? 320
+        let s = uiView.sizeThatFits(CGSize(width: w, height: .greatestFiniteMagnitude))
+        return CGSize(width: w, height: ceil(s.height))
+    }
+
+    final class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {
+        var parent: SentenceText?
+        weak var tv: UITextView?
+        var lastText = ""
+        var lastColor: UIColor?
+
+        @objc func tapped() { parent?.onTap() }
+
+        // 点的时候已经有选中的词：这一下只是收掉选中和菜单，不跳句
+        func gestureRecognizerShouldBegin(_ g: UIGestureRecognizer) -> Bool { (tv?.selectedRange.length ?? 0) == 0 }
+        func gestureRecognizer(_ g: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
+
+        func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
+            guard let p = parent, range.length > 0, range.location + range.length <= textView.textStorage.length,
+                  let w = WordMark.clean(textView.textStorage.string.sub16(range)) else { return nil }
+            let known = UIAction(title: p.titles.known, image: UIImage(systemName: "checkmark")) { _ in p.onWord(w, .known) }
+            let learning = UIAction(title: p.titles.learning, image: UIImage(systemName: "arrow.counterclockwise")) { _ in p.onWord(w, .learning) }
+            return UIMenu(children: [UIMenu(options: .displayInline, children: [known, learning])] + suggestedActions)
+        }
+    }
 }

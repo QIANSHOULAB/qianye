@@ -93,6 +93,7 @@ listen.dubQueued	排上了，大管家一上线就开嗓。
 listen.dubSent	交给大管家了，配完音自己回到这条。
 listen.dubbed	大管家配好音了：%@
 listen.empty	听力还是空的。列表里左滑一条、点小耳机，就塞进来了。
+listen.loopAll	整串循环
 listen.loopOne	单句循环
 listen.next	下一篇
 listen.nextSentence	下一句
@@ -101,6 +102,7 @@ listen.noTiming	这篇没标句子时间，点哪句都跳不过去。
 listen.pass	第 %lld 遍
 listen.prev	上一篇
 listen.prevSentence	上一句
+listen.redub	重配
 listen.remove	从听力拿掉
 listen.removed	从听力拿掉了，笔记还在
 listen.showText	看原文
@@ -217,5 +219,5 @@ voice.saving	收个尾…
 voice.title	录一段
 word.known	「%@」毕业，简讯不再讲
 word.learning	「%@」留级，简讯接着补课
-word.markKnown	会了
-word.markLearning	不会
+word.markKnown	已掌握
+word.markLearning	难词

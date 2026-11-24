@@ -95,9 +95,12 @@ final class AppModel {
             mirror.restore()
             showMirrorPrompt = !settings.mirrorAsked && !mirror.isOn
             purgeTrashed()
+            cleanHeard()
             migrateDeskFolders()
             backfillListen()
         }
+        AudioPlayback.shared.loopAll = settings.listenLoopAll
+        AudioPlayback.shared.onHeard = { [weak self] id in self?.heard(id) }
         butler.start()
         if demo == nil { companion.setUp() }
     }
@@ -105,7 +108,7 @@ final class AppModel {
     func scenePhase(_ p: ScenePhase) {
         switch p {
         case .active:
-            if demo == nil { purgeTrashed() }
+            if demo == nil { purgeTrashed(); cleanHeard() }
             butler.start()
         case .background:
             try? context.save()
@@ -213,7 +216,7 @@ final class AppModel {
     /// 删 = 进废纸篓，留 3 天（111）。右滑、批量选、写字页的删都走这儿；底下 5 秒给「撤销」
     func delete(_ n: Note) { deleteMany([n]) }
 
-    func deleteMany(_ notes: [Note]) {
+    func deleteMany(_ notes: [Note], quiet: Bool = false) {
         guard !notes.isEmpty else { return }
         let now = Date()
         for n in notes {
@@ -222,6 +225,7 @@ final class AppModel {
             mirror.trash(n.id)
         }
         try? context.save()
+        if quiet { return }
         let ids = notes.map(\.id)
         let text: String
         if notes.count == 1 {
@@ -243,6 +247,7 @@ final class AppModel {
             guard let n = note(id) else { continue }
             n.trashed = false
             n.trashedAt = nil
+            n.heardAt = ListenRule.heardAtAfterPutBack(n.heardAt, now: Date())      // 112：听完的，从放回这天重新算 7 天
             mirror.restoreFromTrash(id)
         }
         try? context.save()
@@ -269,6 +274,20 @@ final class AppModel {
         }
         try? context.save()
         for id in gone { mirror.purge(id) }
+    }
+
+    /// 112：听完满 7 天的听力，自己进废纸篓（留 3 天能放回）。没听完的、普通便签一条都不动。打开 app、回到前台跑，不加后台任务
+    func cleanHeard() {
+        let now = Date()
+        let old = allNotes().filter { !$0.trashed && ListenRule.shouldClean(kind: $0.kind, heardAt: $0.heardAt, now: now) }
+        deleteMany(old, quiet: true)
+    }
+
+    /// 112：一篇第一次完整放完（听力列表里、写字页里放完都算）
+    func heard(_ id: UUID) {
+        guard let n = note(id), n.heardAt == nil else { return }
+        n.heardAt = ListenRule.firstHeard(current: n.heardAt, now: Date())
+        try? context.save()
     }
 
     /// 111 装新版第一次开：名字叫「思想排泄物」的夹子打开「抄一份到电脑」。只跑一次（以后他自己关了就不再替他开）
@@ -332,7 +351,7 @@ final class AppModel {
     // ---------------------------------------------------------------- 听力
     /// 播放列表里的：放进了听力的笔记，新的在前（还没录音的也列出来，显示在等配音）
     func listenNotes() -> [Note] {
-        allNotes().filter { !$0.trashed && $0.inListen }.sorted { $0.createdAt > $1.createdAt }
+        allNotes().filter { ListenRule.inPlaylist(kind: $0.kind, inListen: $0.inListen, trashed: $0.trashed) }.sorted { $0.createdAt > $1.createdAt }
     }
 
     /// 能放的那些

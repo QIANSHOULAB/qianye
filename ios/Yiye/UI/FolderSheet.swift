@@ -7,7 +7,7 @@ struct FolderSheet: View {
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Folder.order) private var folders: [Folder]
-    @Query(filter: #Predicate<Note> { $0.trashed == false }) private var notes: [Note]
+    @Query(filter: #Predicate<Note> { $0.trashed == false && $0.kind != "listen" }) private var notes: [Note]
     @Query(filter: #Predicate<Note> { $0.trashed == true }) private var trashed: [Note]
     @State private var showTrash = false
     @State private var newName = ""
@@ -32,7 +32,7 @@ struct FolderSheet: View {
                     row(name: t.t("list.all"), count: notes.count, on: settings.folderID.isEmpty) {
                         settings.folderID = ""; dismiss()
                     }
-                    ForEach(folders) { f in
+                    ForEach(folders.filter { !$0.isListenOnly }) { f in
                         row(name: f.name, count: notes.filter { $0.folder?.id == f.id }.count, on: settings.folderID == f.id.uuidString) {
                             settings.folderID = f.id.uuidString; dismiss()
                         }

@@ -140,14 +140,19 @@ enum Demo {
                 app.setMarks(n, path: rel, marks: marks)
             }
             n.inListen = true
+            if k == 2 { n.heardAt = Date().addingTimeInterval(-2 * 86_400) }       // 听完的那篇淡一点（112）
             if k == 0 { listenFirst = n.id }
         }
         // 刚放进听力、交给大管家配音还没回来的一篇
         let waiting = add("# Oil prices climb again\nOil prices rose 3 percent on Tuesday. Winter is coming, and people need more fuel to heat their homes.",
-                          ago: 60 * 8, folder: english, kind: "text")
+                          ago: 60 * 8, folder: english, kind: "listen")
         waiting.createdAt = now.addingTimeInterval(-60 * 8)
         waiting.inListen = true
         waiting.dub = "\(UUID().uuidString)|\(ISOTime.string(now.addingTimeInterval(-60 * 6)))"
+        // 没配上音、也没在等配音的一篇（112）：inListen 是 false 也要在听力里，挂「重配」
+        let nodub = add("# Gold hits a record high\nGold rose to a record on Tuesday as buyers looked for a safe place for their money.",
+                        ago: 60 * 75, folder: english, kind: "listen")
+        nodub.createdAt = now.addingTimeInterval(-60 * 75)
         // 思想排泄物（抄一份到电脑，开着）：两条
         let thoughts = Folder(name: "思想排泄物", order: 3)
         ctx.insert(thoughts)
@@ -175,6 +180,9 @@ enum Demo {
         case "settings": app.path = [.settings]
         case "voice": app.voiceTarget = .new
         case "listen": app.listening = ListenOpen(startNote: listenFirst)
+        case "listen-loop":
+            app.settings.listenLoopAll = true
+            app.listening = ListenOpen(startNote: listenFirst)
         case "listen-text": app.listening = ListenOpen(startNote: listenFirst, showText: true)
         case "voice-note": app.path = [.editor(voice.id)]
         case "ocr":

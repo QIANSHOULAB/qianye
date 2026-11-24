@@ -59,6 +59,7 @@ extension AppModel {
             n.pinned = it.meta.pinned
             n.paper = it.meta.color
             n.kind = it.meta.kind
+            n.inListen = ListenRule.isListen(kind: it.meta.kind)
             n.folder = folderNamed(it.meta.folder)
             n.originalPaths = it.meta.kind == "photo" ? originalsFor(it.meta.id) : []
             n.audioPaths = Listen.importPaths(note: it.meta.id) { attachments.exists($0) }

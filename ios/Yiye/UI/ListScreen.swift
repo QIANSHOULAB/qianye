@@ -8,7 +8,7 @@ import YiyeKit
 /// 右滑扔进废纸篓（留 3 天，底下给撤销）；左滑置顶、小耳机；长按一条进批量选，手指不抬往上往下划，划过的都选上。
 struct ListScreen: View {
     @Environment(AppModel.self) private var app
-    @Query(filter: #Predicate<Note> { $0.trashed == false }, sort: \Note.modifiedAt, order: .reverse) private var notes: [Note]
+    @Query(filter: #Predicate<Note> { $0.trashed == false && $0.kind != "listen" }, sort: \Note.modifiedAt, order: .reverse) private var notes: [Note]
     @Query(sort: \Folder.order) private var folders: [Folder]
     @State private var query = ""
     @State private var showFolders = false
@@ -37,7 +37,7 @@ struct ListScreen: View {
 
     private var t: Lang { app.lang }
 
-    private var currentFolder: Folder? { folders.first { $0.id.uuidString == app.settings.folderID } }
+    private var currentFolder: Folder? { folders.first { $0.id.uuidString == app.settings.folderID && !$0.isListenOnly } }
 
     private var shown: [Note] {
         var xs = notes
@@ -290,13 +290,8 @@ struct ListScreen: View {
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
-    /// 挪到…里不列只装听力的夹子（里面的便签全在听力里）
-    private var movableFolders: [Folder] {
-        folders.filter { f in
-            let inside = notes.filter { $0.folder?.id == f.id }
-            return inside.isEmpty || inside.contains { !$0.inListen }
-        }
-    }
+    /// 挪到…里不列只装听力的夹子（112：里面有便签、而且每一条都是听力）
+    private var movableFolders: [Folder] { folders.filter { !$0.isListenOnly } }
 
     private func haptic() { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
 

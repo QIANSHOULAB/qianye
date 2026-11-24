@@ -33,6 +33,8 @@ final class Settings {
     var listenBackfilled: Bool { didSet { save("yiye.listenBackfill088", listenBackfilled) } }
     /// 111：老的「思想排泄物」夹子打开「抄一份到电脑」，跑过了
     var deskMigrated: Bool { didSet { save("yiye.deskMigrated111", deskMigrated) } }
+    /// 112：整串循环（最后一条放完回到第一条）。默认关，记住
+    var listenLoopAll: Bool { didSet { save("yiye.listenLoopAll", listenLoopAll) } }
 
     init(persist: Bool) {
         self.persist = persist
@@ -50,6 +52,7 @@ final class Settings {
         imageGap = persist ? (d.object(forKey: "yiye.imageGap") as? Bool ?? true) : true
         listenBackfilled = persist ? d.bool(forKey: "yiye.listenBackfill088") : true
         deskMigrated = persist ? d.bool(forKey: "yiye.deskMigrated111") : true
+        listenLoopAll = persist ? d.bool(forKey: "yiye.listenLoopAll") : false
     }
 
     private func save(_ key: String, _ v: Any) {

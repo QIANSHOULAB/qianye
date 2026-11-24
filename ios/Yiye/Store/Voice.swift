@@ -270,6 +270,10 @@ final class AudioPlayback {
     var playlist = false
     /// 单句循环：锁在哪一句（nil = 不锁）
     var locked: Int?
+    /// 整串循环（112）：最后一条放完回到第一条
+    var loopAll = false
+    /// 一篇第一次完整放完一遍（112：记 heardAt）
+    @ObservationIgnored var onHeard: ((UUID) -> Void)?
 
     var track: Track? { queue.indices.contains(index) ? queue[index] : nil }
     var marks: [ListenMark] { track?.marks ?? [] }
@@ -422,6 +426,7 @@ final class AudioPlayback {
     private func finishedOnce() {
         guard let store, let p = player else { return }
         passes += 1
+        if passes == 1, let t = track { onHeard?(t.note) }
         if playlist, repeatTarget == 0 || passes < repeatTarget {
             p.currentTime = 0
             position = 0
@@ -429,8 +434,8 @@ final class AudioPlayback {
             nowPlaying()
             return
         }
-        if playlist, index + 1 < queue.count {
-            index += 1
+        if playlist, let next = ListenRule.nextIndex(after: index, count: queue.count, loopAll: loopAll) {
+            index = next
             load(store: store, at: 0, play: true)
             return
         }

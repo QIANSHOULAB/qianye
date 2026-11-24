@@ -1514,6 +1514,23 @@
         }
       }
     },
+    "listen.loopAll": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loop the whole list"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "整串循环"
+          }
+        }
+      }
+    },
     "listen.loopOne": {
       "extractionState": "manual",
       "localizations": {
@@ -1646,6 +1663,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "上一句"
+          }
+        }
+      }
+    },
+    "listen.redub": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Re-dub"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重配"
           }
         }
       }
@@ -3628,13 +3662,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Got it"
+            "value": "Known"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "会了"
+            "value": "已掌握"
           }
         }
       }
@@ -3645,13 +3679,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Not yet"
+            "value": "Hard word"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "不会"
+            "value": "难词"
           }
         }
       }

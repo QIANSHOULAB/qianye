@@ -37,6 +37,8 @@ final class Note {
     var trashedAt: Date?
     /// 电脑确认收到的那版 modifiedAt（111）：跟 modifiedAt 不一样就该再寄给电脑
     var deskAt: Date?
+    /// 听力第一次完整放完一遍的时间（112）：听完满 7 天自己进废纸篓。只记第一次
+    var heardAt: Date?
     var folder: Folder?
 
     init() {}
@@ -101,5 +103,12 @@ final class Folder {
         self.name = name
         self.order = order
         self.toDesk = KeepPlan.isDeskFolderName(name)
+    }
+}
+
+extension Folder {
+    /// 只装听力的文件夹（112）：里面有便签、而且每一条都是听力。便签这边的文件夹面板、「挪到」菜单都不列它
+    var isListenOnly: Bool {
+        ListenRule.isListenOnlyFolder(kinds: (notes ?? []).filter { !$0.trashed }.map(\.kind))
     }
 }
