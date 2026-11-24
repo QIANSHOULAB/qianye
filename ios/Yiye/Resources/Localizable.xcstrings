@@ -35,6 +35,57 @@
         }
       }
     },
+    "appearance.dark": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dark"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "深色"
+          }
+        }
+      }
+    },
+    "appearance.paper": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paper"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "纸"
+          }
+        }
+      }
+    },
+    "appearance.system": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跟随系统"
+          }
+        }
+      }
+    },
     "busy.album": {
       "extractionState": "manual",
       "localizations": {
@@ -2326,6 +2377,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "米黄"
+          }
+        }
+      }
+    },
+    "settings.appearance": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "外观"
           }
         }
       }

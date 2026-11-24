@@ -12,8 +12,8 @@ struct YiyeApp: App {
                 .environment(app)
                 .modelContainer(app.container)
                 .environment(\.locale, app.lang.locale)
-                .preferredColorScheme(app.demo?.scheme)
-                .onChange(of: phase) { _, p in app.scenePhase(p) }
+                .preferredColorScheme(app.demo?.forcedScheme ?? app.appearance.scheme)
+                .onChange(of: phase) { _, p in app.scenePhase(p); if p == .active { app.appearance.apply() } }
         }
     }
 }

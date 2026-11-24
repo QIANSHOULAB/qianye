@@ -9,6 +9,10 @@ struct DemoConfig {
     var screen: String
     var lang: String
     var scheme: ColorScheme
+    /// 截图用：-YiyeAppearancePref paper|dark，模拟用户在设置里选了外观（有它就不强压 scheme，让设置说了算）
+    var appearancePref: String?
+
+    var forcedScheme: ColorScheme? { appearancePref == nil ? scheme : nil }
 
     var shareTheme: String? {
         switch screen {
@@ -23,7 +27,8 @@ struct DemoConfig {
         guard d.bool(forKey: "YiyeDemo") else { return nil }
         return DemoConfig(screen: d.string(forKey: "YiyeScreen") ?? "list",
                           lang: d.string(forKey: "YiyeLang") ?? "en",
-                          scheme: d.string(forKey: "YiyeAppearance") == "dark" ? .dark : .light)
+                          scheme: d.string(forKey: "YiyeAppearance") == "dark" ? .dark : .light,
+                          appearancePref: d.string(forKey: "YiyeAppearancePref"))
     }
 }
 

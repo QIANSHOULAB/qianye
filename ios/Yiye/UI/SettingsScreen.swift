@@ -111,6 +111,11 @@ struct SettingsScreen: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
+                    section(t.t("settings.appearance")) {
+                        Segmented(items: [("system", t.t("appearance.system")), ("paper", t.t("appearance.paper")), ("dark", t.t("appearance.dark"))],
+                                  selection: Binding(get: { app.appearance.choice }, set: { app.appearance.set($0) }))
+                    }
+
                     section(t.t("settings.language")) {
                         Segmented(items: [("system", t.t("lang.system")), ("zh-Hans", "中文"), ("en", "English")],
                                   selection: Binding(get: { app.lang.choice }, set: { app.lang.set($0) }))

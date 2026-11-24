@@ -37,4 +37,28 @@ for lang in zh-Hans en; do
   done
 done
 ls -R "$OUT" | head -60
+# 外观设置：系统深色 + 选「纸」、系统浅色 + 选「深色」（109）
+for lang in zh-Hans en; do
+  short=$([ "$lang" = zh-Hans ] && echo zh || echo en)
+  locale=$([ "$lang" = zh-Hans ] && echo zh_CN || echo en_US)
+  for combo in "dark paper" "light dark"; do
+    set -- $combo; sys=$1; pref=$2
+    xcrun simctl ui "$SIM" appearance "$sys"
+    dir="$OUT/$short-sys$sys-$pref"
+    rm -rf "$dir"; mkdir -p "$dir"
+    i=1
+    for s in list settings toolbox; do
+      xcrun simctl terminate "$SIM" "$BID" >/dev/null 2>&1 || true
+      SIMCTL_CHILD_TZ=Asia/Singapore xcrun simctl launch "$SIM" "$BID" -YiyeDemo YES -YiyeScreen "$s" -YiyeLang "$lang" -YiyeAppearancePref "$pref"         -AppleLanguages "($lang)" -AppleLocale "$locale" >/dev/null
+      sleep 5
+      png="$dir/$(printf %02d $i)-$s.png"
+      if xcrun simctl io "$SIM" screenshot --type=png "$png" >/dev/null 2>&1; then
+        sips --resampleWidth 804 -s format jpeg -s formatOptions 84 "$png" --out "${png%.png}.jpg" >/dev/null && rm "$png"
+      else
+        echo "截图失败：$s $lang $sys+$pref"; fail=1
+      fi
+      i=$((i+1))
+    done
+  done
+done
 exit $fail

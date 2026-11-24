@@ -42,6 +42,7 @@ final class AppModel {
     let container: ModelContainer
     let settings: Settings
     let lang: Lang
+    let appearance: Appearance
     let attachments: AttachmentStore
     let mirror: MirrorService
     let butler: ButlerService
@@ -75,6 +76,7 @@ final class AppModel {
             ?? (try! ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)]))
         settings = Settings(persist: demo == nil)
         lang = Lang(forced: demo?.lang)
+        appearance = Appearance(persist: demo == nil, forced: demo?.appearancePref)
         attachments = AttachmentStore(demo: demo != nil)
         mirror = MirrorService(demo: demo != nil)
         butler = ButlerService()
