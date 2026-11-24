@@ -1,14 +1,20 @@
-# UI 测试：全绿
+# UI 测试：有红的（xcodebuild 退出码 65）
 
--[YiyeUITests.ListGestureTests testListeningOpensText]' passed (27.686 seconds).
--[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (32.288 seconds).
--[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (19.387 seconds).
--[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (40.224 seconds).
--[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (21.106 seconds).
--[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (21.746 seconds).
--[YiyeUITests.ListGestureTests testTapOpensNote]' passed (11.153 seconds).
+-[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting]' passed (47.497 seconds).
+-[YiyeUITests.ListGestureTests testListeningOpensText]' passed (14.273 seconds).
+-[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (31.276 seconds).
+-[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (15.106 seconds).
+-[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (22.499 seconds).
+-[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects]' failed (38.523 seconds).
+-[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange]' failed (32.416 seconds).
+-[YiyeUITests.ListGestureTests testSweepMiddleScrollsNotSelects]' passed (25.017 seconds).
+-[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (19.224 seconds).
+-[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (18.999 seconds).
+-[YiyeUITests.ListGestureTests testTapOpensNote]' passed (10.001 seconds).
 
+ListGestureTests.swift:173: error: -[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange] : XCTAssertTrue failed - 08-左边那一条从第 1 条划到第 4 条没选上 4 条：顶上该是「4 selected」，实际：5 selected
+ListGestureTests.swift:181: error: -[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects] : XCTAssertTrue failed - 09-先划选 4 条没成：顶上该是「4 selected」，实际：5 selected
 
-	 Executed 7 tests, with 0 failures (0 unexpected) in 173.590 (173.596) seconds
-	 Executed 7 tests, with 0 failures (0 unexpected) in 173.590 (173.599) seconds
-** TEST SUCCEEDED **
+	 Executed 11 tests, with 2 failures (0 unexpected) in 274.831 (274.843) seconds
+	 Executed 11 tests, with 2 failures (0 unexpected) in 274.831 (274.850) seconds
+** TEST FAILED **
