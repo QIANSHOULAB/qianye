@@ -43,7 +43,6 @@ common.cancel	Cancel
 common.close	Close
 common.done	Done
 companion.failed	Buddy mode didn’t start: %@
-companion.icon	Buddy broadcast
 companion.noMic	Mic or speech recognition is off. Turn them on in Settings > Yiye.
 companion.noPanel	Couldn’t open the broadcast panel
 editor.back	Notes
@@ -144,7 +143,7 @@ settings.butler	Butler
 settings.butlerAuto	Auto-send scans and voice notes
 settings.butlerNote	The butler on your PC checks scans against the photo and sends back a clean copy. It goes through an encrypted mailbox in seconds, and falls back to the mirror folder. No AI keys on this phone.
 settings.companion	Buddy
-settings.companionNote	Tap the little broadcast icon next to the headphones, pick Yiye, start. Then use your phone as usual and just ask out loud: Yiye grabs the screen at that moment, hands it to your own butler, and the answer comes back as a voice. Gray icon: not broadcasting. Green: listening. Orange: the butler’s on it. The red and orange dots up top are Apple’s broadcast and mic lights. Normal.
+settings.companionNote	Open the toolbox at the top left, tap Buddy, pick Yiye, start. Then use your phone as usual and just ask out loud: Yiye grabs the screen at that moment, hands it to your own butler, and the answer comes back as a voice. While broadcasting, the toolbox gets a dot: green is listening, orange is the butler on it, red is an error. The red and orange dots up top are Apple’s broadcast and mic lights. Normal.
 settings.fontSize	Text size
 settings.import	Import from folder
 settings.language	Language
@@ -175,6 +174,7 @@ theme.white	Plain
 time.yesterday	Yesterday
 toast.deleted	Deleted “%@”
 toast.undo	Undo
+tools.title	Toolbox
 voice.cancel	Discard
 voice.denied	Yiye can’t use the mic. Turn it on in Settings.
 voice.done	Done

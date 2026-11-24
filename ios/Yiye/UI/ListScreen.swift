@@ -15,6 +15,9 @@ struct ListScreen: View {
     @State private var showAlbum = false
     @State private var showCamera = false
     @State private var showMirrorPicker = false
+    /// 工具箱面板开着
+    @State private var showTools = false
+    @State private var broadcast = BroadcastTrigger()
 
     private var t: Lang { app.lang }
 
@@ -36,13 +39,9 @@ struct ListScreen: View {
     var body: some View {
         VStack(spacing: 0) {
             SmartBar {
-                Button { app.path.append(.settings) } label: { Image(systemName: "gearshape") }
-                    .buttonStyle(SmartButtonStyle())
-                    .accessibilityLabel(t.t("settings.title"))
-                Button { app.listening = ListenOpen() } label: { Image(systemName: "headphones") }
-                    .buttonStyle(SmartButtonStyle())
-                    .accessibilityLabel(t.t("listen.title"))
-                CompanionButton()
+                ToolboxButton(trigger: broadcast) {
+                    withAnimation(.easeOut(duration: 0.2)) { showTools.toggle() }
+                }
             } center: {
                 Button { showFolders = true } label: {
                     HStack(spacing: 5) {
@@ -134,6 +133,12 @@ struct ListScreen: View {
             }
         }
         .background(DeskBackground())
+        .task { if app.demo?.screen == "toolbox" { showTools = true } }      // 截图用：直接开着工具箱
+        .overlay {
+            if showTools {
+                ToolboxPanel(pick: openTool, dismiss: closeTools)
+            }
+        }
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showFolders) { FolderSheet().presentationDetents([.medium, .large]) }
         .photosPicker(isPresented: $showAlbum, selection: $pickedItem, matching: .images)
@@ -168,6 +173,21 @@ struct ListScreen: View {
     }
 
     private func startCamera() { showCamera = true }
+
+    private func closeTools() {
+        withAnimation(.easeOut(duration: 0.2)) { showTools = false }
+    }
+
+    /// 工具箱里点一格：先收面板，再打开它
+    private func openTool(_ tool: Tool) {
+        closeTools()
+        switch tool {
+        case .listen: app.listening = ListenOpen()
+        case .settings: app.path.append(.settings)
+        case .companion:
+            if !broadcast.fire() { app.show(t.t("companion.noPanel")) }
+        }
+    }
 
     private func togglePin(_ n: Note) {
         withAnimation(.easeOut(duration: 0.24)) { n.pinned.toggle() }

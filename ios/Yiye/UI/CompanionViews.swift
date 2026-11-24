@@ -2,40 +2,13 @@ import ReplayKit
 import SwiftUI
 import YiyeKit
 
-/// 工具栏上的陪玩小图标（104，Song 11-24：「直接把它弄个小图标放在我画小圈圈那个地方」）。
-/// 没直播：跟旁边按钮一样的灰；直播中：在听 = 绿，问大管家 / 大管家在说 = 主题橙，出错 = 红（另外弹一次 toast，在 Companion.fail 里）。
-/// 点一下弹苹果的直播面板（一叶笺已经选好）；直播中再点也是这个面板，里面点停止。
-struct CompanionButton: View {
-    @Environment(AppModel.self) private var app
-    @State private var trigger = BroadcastTrigger()
-    private var t: Lang { app.lang }
-
-    var body: some View {
-        Button {
-            if !trigger.fire() { app.show(t.t("companion.noPanel")) }
-        } label: {
-            Image(systemName: "dot.radiowaves.left.and.right")
-                .foregroundStyle(Color(tint(app.companion.phase)))
-        }
-        .buttonStyle(SmartButtonStyle())
-        .background {
-            // 苹果的选择器留在视图层级里（有尺寸、不隐藏、不全透明），点自己的按钮时由 trigger 去按它里面那颗
-            BroadcastPicker(trigger: trigger)
-                .frame(width: 44, height: 44)
-                .opacity(0.01)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-        }
-        .accessibilityLabel(t.t("companion.icon"))
-    }
-
-    private func tint(_ p: Companion.Phase) -> UIColor {
-        switch p {
-        case .listening, .hearing: return .dyn(0x34C759, 0x30D158)
-        case .asking, .speaking: return Ink.accent
-        case .failed: return Ink.danger
-        case .off: return Ink.text2
-        }
+/// 陪玩现在在干嘛的颜色（104 定的，105 起用在工具箱的小圆点和「陪玩」那一格上）：在听绿，问和说橙，出错红；没直播回 nil
+func companionColor(_ p: Companion.Phase) -> UIColor? {
+    switch p {
+    case .listening, .hearing: return .dyn(0x34C759, 0x30D158)
+    case .asking, .speaking: return Ink.accent
+    case .failed: return Ink.danger
+    case .off: return nil
     }
 }
 

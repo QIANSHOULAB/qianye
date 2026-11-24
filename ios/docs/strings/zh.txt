@@ -43,7 +43,6 @@ common.cancel	取消
 common.close	关
 common.done	好了
 companion.failed	陪玩没开起来：%@
-companion.icon	陪玩直播
 companion.noMic	麦克风或语音识别没开：iPhone 设置 › 一叶笺 里打开
 companion.noPanel	直播面板叫不出来
 editor.back	便签
@@ -144,7 +143,7 @@ settings.butler	大管家
 settings.butlerAuto	拍照、录音的自动交给大管家
 settings.butlerNote	手写认不准的字，掌机上的大管家对着原图理顺再送回来。走 Cloudflare 信箱，几秒就到，信两头加密；信箱连不上才走镜像文件夹。手机上不存任何 AI 钥匙。
 settings.companion	陪玩
-settings.companionNote	耳机右边那个小图标，点一下弹苹果的直播面板，选一叶笺，点开始。之后手机随便用，开口就问：它截你问的那一刻的屏幕，交给自己的大管家，用声音答你。图标灰是没在直播，绿是在听，橙是大管家在忙。屏幕上方的红点、橙点是苹果的直播和麦克风提示，正常。
+settings.companionNote	左上角工具箱里点「陪玩」，弹苹果的直播面板，选一叶笺，点开始。之后手机随便用，开口就问：它截你问的那一刻的屏幕，交给自己的大管家，用声音答你。直播中工具箱右上角有个小圆点：绿是在听，橙是大管家在忙，红是出错了。屏幕上方的红点、橙点是苹果的直播和麦克风提示，正常。
 settings.fontSize	字号
 settings.import	从文件夹导入
 settings.language	语言
@@ -175,6 +174,7 @@ theme.white	白纸
 time.yesterday	昨天
 toast.deleted	删了「%@」
 toast.undo	撤销
+tools.title	工具箱
 voice.cancel	不要了
 voice.denied	一叶笺用不了话筒。去设置里给它开一下。
 voice.done	说完了
