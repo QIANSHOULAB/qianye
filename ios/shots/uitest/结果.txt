@@ -1,14 +1,16 @@
-# UI 测试：全绿
+# UI 测试：有红的（xcodebuild 退出码 65）
 
--[YiyeUITests.ListGestureTests testListeningOpensText]' passed (26.125 seconds).
--[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (27.669 seconds).
--[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (48.048 seconds).
--[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (80.612 seconds).
--[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (32.207 seconds).
--[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (25.832 seconds).
--[YiyeUITests.ListGestureTests testTapOpensNote]' passed (12.903 seconds).
+-[YiyeUITests.ListGestureTests testListeningOpensText]' failed (79.178 seconds).
+-[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (49.828 seconds).
+-[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (24.456 seconds).
+-[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (15.625 seconds).
+-[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (17.757 seconds).
+-[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (18.426 seconds).
+-[YiyeUITests.ListGestureTests testTapOpensNote]' passed (10.480 seconds).
 
+2026-11-24 14:33:45.552 xcodebuild[11722:49464]  IDELaunchReport: 381b56ce45eea0c0:381b56ce45eea540:Launch Yiye Finished with error: Failed to send signal 19 to process 16574: 3
+ListGestureTests.swift:17: error: -[YiyeUITests.ListGestureTests testListeningOpensText] : Failed to launch <XCUIApplicationImpl: 0x104c5d380 lab.qianshou.yiye at /Users/runner/work/qianye/qianye/build/Build/Products/Debug-iphonesimulator/Yiye.app> via Xcode: Timed out while launching application via Xcode.
 
-	 Executed 7 tests, with 0 failures (0 unexpected) in 253.395 (253.410) seconds
-	 Executed 7 tests, with 0 failures (0 unexpected) in 253.395 (253.411) seconds
-** TEST SUCCEEDED **
+	 Executed 7 tests, with 1 failure (0 unexpected) in 215.750 (215.765) seconds
+	 Executed 7 tests, with 1 failure (0 unexpected) in 215.750 (215.767) seconds
+** TEST FAILED **
