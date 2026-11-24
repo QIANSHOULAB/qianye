@@ -1,14 +1,14 @@
 # UI 测试：全绿
 
--[YiyeUITests.ListGestureTests testListeningOpensText]' passed (26.378 seconds).
--[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (104.138 seconds).
--[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (17.074 seconds).
--[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (27.238 seconds).
--[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (20.103 seconds).
--[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (24.291 seconds).
--[YiyeUITests.ListGestureTests testTapOpensNote]' passed (10.866 seconds).
+-[YiyeUITests.ListGestureTests testListeningOpensText]' passed (27.686 seconds).
+-[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (32.288 seconds).
+-[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (19.387 seconds).
+-[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (40.224 seconds).
+-[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (21.106 seconds).
+-[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (21.746 seconds).
+-[YiyeUITests.ListGestureTests testTapOpensNote]' passed (11.153 seconds).
 
 
-	 Executed 7 tests, with 0 failures (0 unexpected) in 230.088 (230.103) seconds
-	 Executed 7 tests, with 0 failures (0 unexpected) in 230.088 (230.112) seconds
+	 Executed 7 tests, with 0 failures (0 unexpected) in 173.590 (173.596) seconds
+	 Executed 7 tests, with 0 failures (0 unexpected) in 173.590 (173.599) seconds
 ** TEST SUCCEEDED **
