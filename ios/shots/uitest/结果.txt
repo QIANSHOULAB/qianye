@@ -1,20 +1,19 @@
 # UI 测试：有红的（xcodebuild 退出码 65）
 
--[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting]' passed (47.497 seconds).
--[YiyeUITests.ListGestureTests testListeningOpensText]' passed (14.273 seconds).
--[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (31.276 seconds).
--[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (15.106 seconds).
--[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (22.499 seconds).
--[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects]' failed (38.523 seconds).
--[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange]' failed (32.416 seconds).
--[YiyeUITests.ListGestureTests testSweepMiddleScrollsNotSelects]' passed (25.017 seconds).
--[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (19.224 seconds).
--[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (18.999 seconds).
--[YiyeUITests.ListGestureTests testTapOpensNote]' passed (10.001 seconds).
+-[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting]' failed (64.978 seconds).
+-[YiyeUITests.ListGestureTests testListeningOpensText]' passed (15.477 seconds).
+-[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (40.347 seconds).
+-[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (16.214 seconds).
+-[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (38.693 seconds).
+-[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects]' passed (32.150 seconds).
+-[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange]' passed (22.838 seconds).
+-[YiyeUITests.ListGestureTests testSweepMiddleScrollsNotSelects]' passed (40.214 seconds).
+-[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (21.151 seconds).
+-[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (19.609 seconds).
+-[YiyeUITests.ListGestureTests testTapOpensNote]' passed (10.267 seconds).
 
-ListGestureTests.swift:173: error: -[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange] : XCTAssertTrue failed - 08-左边那一条从第 1 条划到第 4 条没选上 4 条：顶上该是「4 selected」，实际：5 selected
-ListGestureTests.swift:181: error: -[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects] : XCTAssertTrue failed - 09-先划选 4 条没成：顶上该是「4 selected」，实际：5 selected
+ListGestureTests.swift:207: error: -[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting] : XCTAssertTrue failed - 11-没有撤销：扔了以后底下没出「Undo」
 
-	 Executed 11 tests, with 2 failures (0 unexpected) in 274.831 (274.843) seconds
-	 Executed 11 tests, with 2 failures (0 unexpected) in 274.831 (274.850) seconds
+	 Executed 11 tests, with 1 failure (0 unexpected) in 321.939 (321.951) seconds
+	 Executed 11 tests, with 1 failure (0 unexpected) in 321.939 (321.953) seconds
 ** TEST FAILED **
