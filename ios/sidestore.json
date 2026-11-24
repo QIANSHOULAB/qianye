@@ -25,6 +25,15 @@
       ],
       "versions": [
         {
+          "version": "0.7.1",
+          "buildVersion": "11",
+          "date": "2026-11-24",
+          "localizedDescription": "0.7.1：陪玩改成工具栏耳机右边一个小图标，设置里的开关去掉了：点图标弹苹果的直播面板，开了直播就算开，停了就算关；图标灰、绿、橙、红看它在干嘛。顺手修了「开始直播」点了没反应。",
+          "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.1/Yiye-0.7.1.ipa",
+          "size": 2318425,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.7.0",
           "buildVersion": "10",
           "date": "2026-11-24",
@@ -124,11 +133,11 @@
           "NSSpeechRecognitionUsageDescription": "Turns your voice into text right on your phone."
         }
       },
-      "version": "0.7.0",
+      "version": "0.7.1",
       "versionDate": "2026-11-24",
-      "versionDescription": "0.7.0：陪玩模式。设置里打开，便签列表顶上多一条，点「开始直播」选一叶笺；之后手机随便用，开口就问，比如「这个英文什么意思」：它截下你问的那一刻的屏幕，交给自己的大管家，大管家看着屏幕用中文语音答你，别的 App 的声音先让一让。截图只取开口那一帧，只交自己的大管家，用完就扔。两台大管家都关着，它会说一句「大管家不在」。关掉陪玩或者停了直播，马上不听不截。",
-      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.0/Yiye-0.7.0.ipa",
-      "size": 2327355
+      "versionDescription": "0.7.1：陪玩改成工具栏耳机右边一个小图标，设置里的开关去掉了：点图标弹苹果的直播面板，开了直播就算开，停了就算关；图标灰、绿、橙、红看它在干嘛。顺手修了「开始直播」点了没反应。",
+      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.1/Yiye-0.7.1.ipa",
+      "size": 2318425
     }
   ],
   "news": []
