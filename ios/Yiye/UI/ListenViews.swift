@@ -378,7 +378,7 @@ struct TextSheet: View {
                 .padding(.vertical, 10)
             }
         }
-        .background(PaperBackground(tint: .white).ignoresSafeArea())
+        .background(PaperBackground().ignoresSafeArea())
     }
 
     private func tap(_ i: Int) {

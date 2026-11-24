@@ -59,6 +59,7 @@ S = {
  "paper.green": ("豆青", "Sage"),
  "paper.blue": ("天青", "Sky"),
  "paper.pink": ("藕粉", "Blush"),
+ "paper.follow": ("跟整体", "Follow the app"),
  "md.heading": ("标题", "Heading"),
  "md.list": ("列表", "List"),
  "md.bold": ("粗体", "Bold"),
@@ -257,6 +258,7 @@ S = {
  "appearance.paper": ("纸", "Paper"),
  "appearance.system": ("跟随系统", "System"),
  "settings.appearance": ("外观", "Appearance"),
+ "settings.theme": ("配色", "Color"),
 }
 
 INFO = {
@@ -287,7 +289,7 @@ root = pathlib.Path(__file__).resolve().parents[1]
 used = set()
 for f in (root / "Yiye").rglob("*.swift"):
     used |= set(re.findall(r'\.(?:t|f)\("([a-zA-Z][a-zA-Z0-9_.]+)"', f.read_text(encoding="utf-8")))
-used |= {"voice.intent", "voice.intentDesc"} | {f"paper.{p}" for p in ["white", "yellow", "green", "blue", "pink"]} | {"theme.note", "theme.white"}
+used |= {"voice.intent", "voice.intentDesc"} | {f"paper.{p}" for p in ["white", "yellow", "green", "blue", "pink", "follow"]} | {"theme.note", "theme.white"}
 missing = sorted(used - set(S))
 bad = [k for k, (zh, en) in S.items() if sorted(re.findall(r"%(?:lld|@)", zh)) != sorted(re.findall(r"%(?:lld|@)", en))]
 if missing or bad:

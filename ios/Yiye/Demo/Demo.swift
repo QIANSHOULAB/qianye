@@ -11,6 +11,8 @@ struct DemoConfig {
     var scheme: ColorScheme
     /// 截图用：-YiyeAppearancePref paper|dark，模拟用户在设置里选了外观（有它就不强压 scheme，让设置说了算）
     var appearancePref: String?
+    /// 截图用：-YiyeTheme white|yellow|green|blue|pink，指定整体配色（132）
+    var themePref: String?
 
     var forcedScheme: ColorScheme? { appearancePref == nil ? scheme : nil }
 
@@ -28,7 +30,8 @@ struct DemoConfig {
         return DemoConfig(screen: d.string(forKey: "YiyeScreen") ?? "list",
                           lang: d.string(forKey: "YiyeLang") ?? "en",
                           scheme: d.string(forKey: "YiyeAppearance") == "dark" ? .dark : .light,
-                          appearancePref: d.string(forKey: "YiyeAppearancePref"))
+                          appearancePref: d.string(forKey: "YiyeAppearancePref"),
+                          themePref: d.string(forKey: "YiyeTheme"))
     }
 }
 
@@ -199,7 +202,7 @@ enum Demo {
         case "editor": app.path = [.editor(plain.id)]
         case "markdown": app.path = [.editor(mdNote.id)]
         case "share-note", "share-white", "butler": app.path = [.editor(photo.id)]
-        case "settings": app.path = [.settings]
+        case "settings", "settings-theme": app.path = [.settings]
         case "voice": app.voiceTarget = .new
         case "listen": app.listening = ListenOpen(startNote: listenFirst)
         case "listen-loop":

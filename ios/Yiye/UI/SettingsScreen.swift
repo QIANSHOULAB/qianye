@@ -129,6 +129,10 @@ struct SettingsScreen: View {
                                   selection: Binding(get: { app.appearance.choice }, set: { app.appearance.set($0) }))
                     }
 
+                    section(t.t("settings.theme")) {
+                        ThemeSwatches()
+                    }
+
                     section(t.t("settings.language")) {
                         Segmented(items: [("system", t.t("lang.system")), ("zh-Hans", "中文"), ("en", "English")],
                                   selection: Binding(get: { app.lang.choice }, set: { app.lang.set($0) }))
@@ -147,6 +151,7 @@ struct SettingsScreen: View {
                 }
                 .padding(.vertical, 8)
             }
+            .defaultScrollAnchor(app.demo?.screen == "settings-theme" ? .bottom : .top)      // 截图用：拉到最底，看得到配色那一排
         }
         .background(PaperBackground().ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)

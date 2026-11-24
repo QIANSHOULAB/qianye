@@ -2874,6 +2874,23 @@
         }
       }
     },
+    "paper.follow": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow the app"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跟整体"
+          }
+        }
+      }
+    },
     "paper.green": {
       "extractionState": "manual",
       "localizations": {
@@ -3363,6 +3380,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "扫码配对"
+          }
+        }
+      }
+    },
+    "settings.theme": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Color"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配色"
           }
         }
       }

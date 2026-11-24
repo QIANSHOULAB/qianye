@@ -98,4 +98,26 @@ for lang in zh-Hans en; do
     done
   done
 done
+# 整体配色（132）：四种新配色 × 浅深，列表、写字页、文件夹面板、设置（中文一套；素白就是默认，主套图里已有）
+xcrun simctl status_bar "$SIM" override --time "9:41" >/dev/null 2>&1 || true
+for tid in yellow green blue pink; do
+  for ap in light dark; do
+    xcrun simctl ui "$SIM" appearance "$ap"
+    dir="$OUT/zh-theme-$tid-$ap"
+    rm -rf "$dir"; mkdir -p "$dir"
+    i=1
+    for s in list editor folders settings-theme; do
+      xcrun simctl terminate "$SIM" "$BID" >/dev/null 2>&1 || true
+      SIMCTL_CHILD_TZ=Asia/Singapore xcrun simctl launch "$SIM" "$BID" -YiyeDemo YES -YiyeScreen "$s" -YiyeLang zh-Hans -YiyeAppearance "$ap" -YiyeTheme "$tid"         -AppleLanguages "(zh-Hans)" -AppleLocale "zh_CN" >/dev/null
+      sleep 5
+      png="$dir/$(printf %02d $i)-$s.png"
+      if xcrun simctl io "$SIM" screenshot --type=png "$png" >/dev/null 2>&1; then
+        sips --resampleWidth 804 -s format jpeg -s formatOptions 84 "$png" --out "${png%.png}.jpg" >/dev/null && rm "$png"
+      else
+        echo "截图失败：$s $tid $ap"; fail=1
+      fi
+      i=$((i+1))
+    done
+  done
+done
 exit $fail

@@ -13,7 +13,7 @@ final class Note {
     var createdAt: Date = Date()
     var modifiedAt: Date = Date()
     var pinned: Bool = false
-    /// 纸色：white / yellow / green / blue / pink
+    /// 纸色：white = 跟整体配色；yellow / green / blue / pink / white-pin = 手动换的，钉住（见 PaperMark）
     var paper: String = "white"
     /// 怎么进来的：text / photo / voice
     var kind: String = "text"
@@ -78,7 +78,8 @@ final class Note {
         set { unsure = RangeCodec.encode(newValue) }
     }
 
-    var tint: PaperTint { PaperTint(rawValue: paper) ?? .white }
+    /// 手动钉住的纸色；nil = 跟整体配色（132）。老便签的 "white" 一律算跟整体
+    var pinnedTint: PaperTint? { PaperMark.pinned(paper).flatMap(PaperTint.init(rawValue:)) }
 
     /// 听力用的录音（念的、大管家配的）
     var listenPath: String? { audioPaths.first(where: { Listen.isListenAudio($0) }) }

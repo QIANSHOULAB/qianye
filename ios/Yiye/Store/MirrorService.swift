@@ -161,7 +161,7 @@ final class MirrorService {
 
     static func snapshot(_ n: Note) -> NoteSnapshot {
         NoteSnapshot(meta: MirrorMeta(id: n.id, created: n.createdAt, modified: n.modifiedAt, folder: n.folder?.name ?? "",
-                                      pinned: n.pinned, color: n.paper, kind: n.kind),
+                                      pinned: n.pinned, color: PaperMark.toMirror(n.paper), kind: n.kind),
                      markdown: n.markdown,
                      attachments: Markdown5.imagePaths(n.markdown) + n.originalPaths + n.audioPaths + n.audioPaths.map(Listen.sidecar))
     }

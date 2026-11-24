@@ -75,8 +75,8 @@ struct EditorScreen: View {
 
                 NoteTextEditor(controller: controller)
             }
-            .background(PaperBackground(tint: note?.tint ?? .white))
-            .lightIf(note?.tint.keepsLight == true)
+            .background(PaperBackground(tint: note?.pinnedTint))
+            .lightIf(note?.pinnedTint?.keepsLight == true)
 
             if let note, note.kind == "article" { ArticleBar(note: note) }
 
@@ -89,7 +89,7 @@ struct EditorScreen: View {
                         voice: { flush(); if let note { app.startVoice(.into(note.id, controller.caretInMarkdown() ?? note.markdown.u16)) } },
                         done: { controller.endEditing() })
         }
-        .background(PaperBackground(tint: note?.tint ?? .white).lightIf(note?.tint.keepsLight == true).ignoresSafeArea())
+        .background(PaperBackground(tint: note?.pinnedTint).lightIf(note?.pinnedTint?.keepsLight == true).ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
         .animation(.easeOut(duration: 0.24), value: note?.butlerState.phase)
         .onAppear(perform: setUp)
@@ -128,9 +128,12 @@ struct EditorScreen: View {
         Menu {
             if let note {
                 Menu {
+                    Button { setPaper(nil) } label: {
+                        if note.pinnedTint == nil { Label(t.t("paper.follow"), systemImage: "checkmark") } else { Text(t.t("paper.follow")) }
+                    }
                     ForEach(PaperTint.allCases) { p in
                         Button { setPaper(p) } label: {
-                            if note.tint == p { Label(t.t(p.key), systemImage: "checkmark") } else { Text(t.t(p.key)) }
+                            if note.pinnedTint == p { Label(t.t(p.key), systemImage: "checkmark") } else { Text(t.t(p.key)) }
                         }
                     }
                 } label: { Label(t.t("editor.paper"), systemImage: "paintpalette") }
@@ -166,7 +169,7 @@ struct EditorScreen: View {
         controller.store = app.attachments
         controller.setMetrics(EditorMetrics.of(app.settings.fontSize))
         _ = controller.makeView()
-        controller.setForceLight(n.tint.keepsLight)
+        controller.setForceLight(n.pinnedTint?.keepsLight == true)
         controller.load(markdown: n.markdown, unsure: n.unsureRanges)
         controller.onChange = { scheduleSave() }
         controller.onFocus = { f in withAnimation(.easeOut(duration: 0.2)) { focused = f } }
@@ -254,10 +257,11 @@ struct EditorScreen: View {
         app.show(gap ? t.t("md.spacingGap") : t.t("md.spacingSnug"), seconds: 2)
     }
 
-    private func setPaper(_ p: PaperTint) {
+    /// p == nil：解开，回到整体配色；点了颜色（白也算）= 钉住这一张
+    private func setPaper(_ p: PaperTint?) {
         guard let note else { return }
-        withAnimation(.easeOut(duration: 0.24)) { note.paper = p.rawValue }
-        controller.setForceLight(p.keepsLight)
+        withAnimation(.easeOut(duration: 0.24)) { note.paper = p.map { PaperMark.store(pick: $0.rawValue) } ?? PaperMark.follow }
+        controller.setForceLight(p?.keepsLight == true)
         app.changed(note)
     }
 

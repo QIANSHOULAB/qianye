@@ -173,6 +173,7 @@ pair.done	Linked. The butler's now seconds away.
 pair.noCamera	No camera access. Turn it on for 一叶笺 in Settings.
 pair.scanTitle	Point at the code on the PC’s screen
 paper.blue	Sky
+paper.follow	Follow the app
 paper.green	Sage
 paper.pink	Blush
 paper.white	White
@@ -202,6 +203,7 @@ settings.pairOff	Not connected yet. It links itself once the butler's set up —
 settings.pairOn	Connected. Stuff reaches the butler in seconds, encrypted the whole way.
 settings.pairPaste	Paste code
 settings.pairScan	Scan to pair
+settings.theme	Color
 settings.title	Settings
 settings.version	Version
 settings.voice	Voice notes

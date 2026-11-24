@@ -173,6 +173,7 @@ pair.done	接上头了，大管家以后几秒就到。
 pair.noCamera	相机没给：设置里给一叶笺开一下。
 pair.scanTitle	对准掌机屏幕上的码
 paper.blue	天青
+paper.follow	跟整体
 paper.green	豆青
 paper.pink	藕粉
 paper.white	素白
@@ -202,6 +203,7 @@ settings.pairOff	还没接上头。大管家那边配好会自己连；等不及
 settings.pairOn	接上头了：交给大管家的东西几秒就到，路上全程加密。
 settings.pairPaste	粘贴配对码
 settings.pairScan	扫码配对
+settings.theme	配色
 settings.title	设置
 settings.version	版本
 settings.voice	录一段

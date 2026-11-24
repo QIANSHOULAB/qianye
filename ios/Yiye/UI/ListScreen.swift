@@ -561,13 +561,13 @@ struct NoteStrip: View {
         .padding(.vertical, 12)
         .background {
             ZStack(alignment: .bottom) {
-                PaperBackground(tint: note.tint)
+                PaperBackground(tint: note.pinnedTint)
                 Rectangle().fill(Color(Ink.paperEdge)).frame(height: 1)
             }
             .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
             .shadow(color: Color(red: 0.27, green: 0.16, blue: 0.06).opacity(0.22), radius: 2.5, x: 0, y: 1.5)
         }
-        .lightIf(note.tint.keepsLight)
+        .lightIf(note.pinnedTint?.keepsLight == true)
     }
 }
 

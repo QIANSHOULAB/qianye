@@ -77,6 +77,7 @@ final class AppModel {
         settings = Settings(persist: demo == nil)
         lang = Lang(forced: demo?.lang)
         appearance = Appearance(persist: demo == nil, forced: demo?.appearancePref)
+        Theme.shared.start(persist: demo == nil, forced: demo?.themePref)
         attachments = AttachmentStore(demo: demo != nil)
         mirror = MirrorService(demo: demo != nil)
         butler = ButlerService()

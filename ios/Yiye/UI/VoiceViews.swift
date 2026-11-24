@@ -41,7 +41,7 @@ struct RecorderScreen: View {
                 bottom
             }
         }
-        .background(PaperBackground(tint: .white).ignoresSafeArea())
+        .background(PaperBackground().ignoresSafeArea())
         .task { await begin() }
     }
 

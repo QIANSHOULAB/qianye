@@ -109,3 +109,28 @@ document.querySelectorAll("nav button").forEach(b => b.addEventListener("click",
 """
 (shots / "index.html").write_text(page, encoding="utf-8")
 print(f"ios/shots/index.html：{version}，{count} 张")
+
+# 132 整体配色：五种配色 × 浅深，列表、写字页、文件夹面板、设置，一张页看完（theme.html）
+tn = {"white": "素白（默认）", "yellow": "米黄", "green": "豆青", "blue": "天青", "pink": "藕粉"}
+sn = {"list": "列表", "editor": "写字页", "folders": "文件夹面板", "settings": "设置", "settings-theme": "设置（拉到底）"}
+rows = []
+for tid in ["white", "yellow", "green", "blue", "pink"]:
+    for look, lk in [("light", "浅色"), ("dark", "深色")]:
+        d = f"zh-theme-{tid}-{look}" if tid != "white" else None
+        figs = []
+        if d and (shots / d).is_dir():
+            for f in sorted(p.name for p in (shots / d).glob("*.jpg")):
+                key = re.sub(r"^\d+-", "", f[:-4])
+                figs.append(f'<figure><img src="{d}/{f}?v={html.escape(sha)}" loading="lazy" width="201" height="437"><figcaption>{sn.get(key, key)}</figcaption></figure>')
+        elif tid == "white":
+            for i, key in [(1, "list"), (2, "editor"), (7, "settings")]:
+                f = f"zh-{look}/{i:02d}-{key}.jpg"
+                if (shots / f).exists():
+                    figs.append(f'<figure><img src="{f}?v={html.escape(sha)}" loading="lazy" width="201" height="437"><figcaption>{sn.get(key, key)}</figcaption></figure>')
+        if figs:
+            rows.append(f'<h2>{tn[tid]} · {lk}</h2><div class="row">' + "".join(figs) + "</div>")
+tpage = ('<!doctype html><html lang="zh-Hans"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+         '<title>整体配色截图</title><style>body{margin:0;padding:16px;font:15px/1.5 -apple-system,"PingFang SC",sans-serif;background:#faf7f0;color:#4a3f36}'
+         'h2{font-size:17px;margin:20px 0 8px}.row{display:flex;gap:10px;overflow-x:auto}figure{margin:0;flex:none;text-align:center;font-size:12px}'
+         'img{border-radius:12px;border:1px solid #0002}</style></head><body><h1 style="font-size:20px">整体配色（132）</h1>' + "".join(rows) + "</body></html>")
+(shots / "theme.html").write_text(tpage, encoding="utf-8")

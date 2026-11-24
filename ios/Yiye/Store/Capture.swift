@@ -44,7 +44,7 @@ extension AppModel {
                     n.markdown = it.body
                     n.modifiedAt = it.meta.modified
                     n.pinned = it.meta.pinned
-                    n.paper = it.meta.color
+                    n.paper = PaperMark.fromMirror(it.meta.color)
                     n.folder = folderNamed(it.meta.folder)
                     if n.audioPaths.isEmpty { n.audioPaths = Listen.importPaths(note: n.id) { attachments.exists($0) }; loadMarks(n) }
                     updated += 1
@@ -57,7 +57,7 @@ extension AppModel {
             n.createdAt = it.meta.created
             n.modifiedAt = it.meta.modified
             n.pinned = it.meta.pinned
-            n.paper = it.meta.color
+            n.paper = PaperMark.fromMirror(it.meta.color)
             n.kind = it.meta.kind
             n.inListen = ListenRule.isListen(kind: it.meta.kind)
             n.folder = folderNamed(it.meta.folder)
