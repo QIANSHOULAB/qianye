@@ -68,8 +68,9 @@ struct FolderSheet: View {
                         .padding(.horizontal, 16)
                         .padding(.top, 24)
                         .padding(.bottom, 8)
-                    Segmented(items: [(SortMode.modifiedNew, t.t("sort.new")), (SortMode.modifiedOld, t.t("sort.old")), (SortMode.created, t.t("sort.created"))],
-                              selection: $settings.sort)
+                    IconSegmented(items: [(SortMode.modifiedNew, t.t("sort.new"), AnyView(LeafIcon(young: true))),
+                                          (SortMode.modifiedOld, t.t("sort.old"), AnyView(LeafIcon(young: false)))],
+                                  selection: $settings.sort)
                         .padding(.horizontal, 16)
                 }
                 .padding(.bottom, 24)

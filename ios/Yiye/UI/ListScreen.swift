@@ -31,7 +31,6 @@ struct ListScreen: View {
         switch app.settings.sort {
         case .modifiedNew: xs.sort { $0.modifiedAt > $1.modifiedAt }
         case .modifiedOld: xs.sort { $0.modifiedAt < $1.modifiedAt }
-        case .created: xs.sort { $0.createdAt > $1.createdAt }
         }
         return xs.filter(\.pinned) + xs.filter { !$0.pinned }
     }
@@ -133,6 +132,7 @@ struct ListScreen: View {
             }
         }
         .background(DeskBackground())
+        .task { if app.demo?.screen == "folders" { showFolders = true } }      // 截图用：直接开着文件夹面板（排序那排叶子）
         .task { if app.demo?.screen == "toolbox" { showTools = true } }      // 截图用：直接开着工具箱
         .overlay {
             if showTools {
@@ -202,7 +202,7 @@ struct ListScreen: View {
     }
 }
 
-/// 纸条：灰白纸、左边一枚回形针、底下一道浅影
+/// 纸条：灰白纸、左边一颗小木钉、底下一道浅影
 struct NoteStrip: View {
     let note: Note
     @Environment(AppModel.self) private var app
@@ -211,7 +211,7 @@ struct NoteStrip: View {
         let title = note.title
         let summary = note.summary
         HStack(alignment: .top, spacing: 10) {
-            PaperClip().padding(.top, -6)
+            WoodPeg().padding(.top, -4)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     if note.pinned {

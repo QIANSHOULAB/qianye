@@ -40,8 +40,16 @@ enum Ink {
     static let accent = UIColor.dyn(0xC2410C, 0xF0915E)
     static let doubt = UIColor.dyn(0xFFCC00, 0xFFCC00, 0.34, 0.30)
     static let danger = UIColor.dyn(0xC0392B, 0xE36A5A)
-    static let clip = UIColor.dyn(0x9A9EA3, 0x8C9096)
-    static let clipShine = UIColor.dyn(0xE4E7EA, 0xB9BDC2)
+    // 小木钉：米色外观是米色木头，深色外观是近黑的木头
+    static let peg = UIColor.dyn(0xD2B386, 0x2E2924)
+    static let pegHi = UIColor.dyn(0xEBD6AE, 0x4A433B)
+    static let pegEdge = UIColor.dyn(0xA88A5E, 0x0F0D0B)
+    static let pegShadow = UIColor.dyn(0x6B5638, 0x000000)
+    // 排序的两片叶子：深色里压暗，别发荧光
+    static let leafYoung = UIColor.dyn(0x8CC152, 0x6E9A45)
+    static let leafYoungEdge = UIColor.dyn(0x5E8E2E, 0x47692B)
+    static let leafOld = UIColor.dyn(0xC49A3C, 0x93732F)
+    static let leafOldEdge = UIColor.dyn(0x8E6A1F, 0x6A4F1C)
 }
 
 /// 每条笔记能换的纸色
@@ -166,23 +174,73 @@ struct PaperBackground: View {
     }
 }
 
-/// 回形针（纸条左上角那个）：自己画的两道弯
-struct PaperClip: View {
+/// 小木钉（纸条左上角那颗）：自己画的圆钉帽 + 一点木纹 + 落在纸上的小影子；颜色跟外观走（米色 / 深色）
+struct WoodPeg: View {
+    var body: some View {
+        Canvas { ctx, size in
+            let w = size.width
+            let c = CGPoint(x: w * 0.5, y: w * 0.46)
+            let r = w * 0.40
+            // 纸被钉住的地方：几道浅浅的拉扯褶
+            for dx in [-1.0, 1.0] {
+                var f = Path()
+                f.move(to: CGPoint(x: c.x + dx * r * 0.95, y: c.y + r * 0.9))
+                f.addQuadCurve(to: CGPoint(x: c.x + dx * r * 1.55, y: c.y + r * 1.7), control: CGPoint(x: c.x + dx * r * 1.4, y: c.y + r * 1.1))
+                ctx.stroke(f, with: .color(Color(Ink.pegShadow).opacity(0.5)), style: StrokeStyle(lineWidth: 0.6, lineCap: .round))
+            }
+            // 影子：钉帽底下偏右下一道
+            let sh = CGRect(x: c.x - r * 0.9, y: c.y + r * 0.45, width: r * 2.1, height: r * 1.2)
+            ctx.fill(Path(ellipseIn: sh), with: .color(Color(Ink.pegShadow).opacity(0.38)))
+            // 钉帽：略斜着看，所以是压扁的圆
+            let cap = CGRect(x: c.x - r, y: c.y - r * 0.92, width: r * 2, height: r * 1.84)
+            ctx.fill(Path(ellipseIn: cap), with: .radialGradient(
+                Gradient(colors: [Color(Ink.pegHi), Color(Ink.peg)]),
+                center: CGPoint(x: c.x - r * 0.35, y: c.y - r * 0.4), startRadius: 0, endRadius: r * 1.5))
+            ctx.stroke(Path(ellipseIn: cap), with: .color(Color(Ink.pegEdge)), lineWidth: 0.7)
+            // 一点木纹意思
+            var g = Path()
+            g.move(to: CGPoint(x: c.x - r * 0.55, y: c.y + r * 0.1))
+            g.addQuadCurve(to: CGPoint(x: c.x + r * 0.5, y: c.y - r * 0.05), control: CGPoint(x: c.x, y: c.y - r * 0.25))
+            ctx.stroke(g, with: .color(Color(Ink.pegEdge).opacity(0.45)), style: StrokeStyle(lineWidth: 0.6, lineCap: .round))
+        }
+        .frame(width: 22, height: 26)
+    }
+}
+
+/// 排序用的叶子：新改的在前 = 刚冒出来的嫩芽小叶，老的在前 = 枯黄的老叶
+struct LeafIcon: View {
+    let young: Bool
     var body: some View {
         Canvas { ctx, size in
             let w = size.width, h = size.height
             var p = Path()
-            // 外圈
-            p.move(to: CGPoint(x: w * 0.30, y: h * 0.92))
-            p.addLine(to: CGPoint(x: w * 0.30, y: h * 0.18))
-            p.addArc(center: CGPoint(x: w * 0.5, y: h * 0.18), radius: w * 0.20, startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
-            p.addLine(to: CGPoint(x: w * 0.70, y: h * 0.80))
-            p.addArc(center: CGPoint(x: w * 0.55, y: h * 0.80), radius: w * 0.15, startAngle: .degrees(0), endAngle: .degrees(180), clockwise: false)
-            p.addLine(to: CGPoint(x: w * 0.40, y: h * 0.30))
-            ctx.stroke(p, with: .color(Color(Ink.clip)), style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
-            ctx.stroke(p, with: .color(Color(Ink.clipShine).opacity(0.7)), style: StrokeStyle(lineWidth: 0.8, lineCap: .round, lineJoin: .round))
+            if young {
+                // 嫩芽：小而圆，尖尖微卷
+                p.move(to: CGPoint(x: w * 0.18, y: h * 0.88))
+                p.addCurve(to: CGPoint(x: w * 0.82, y: h * 0.14), control1: CGPoint(x: w * 0.02, y: h * 0.40), control2: CGPoint(x: w * 0.42, y: h * 0.06))
+                p.addCurve(to: CGPoint(x: w * 0.18, y: h * 0.88), control1: CGPoint(x: w * 0.98, y: h * 0.50), control2: CGPoint(x: w * 0.60, y: h * 0.90))
+            } else {
+                // 老叶：长，边上有点卷，尖朝下
+                p.move(to: CGPoint(x: w * 0.12, y: h * 0.12))
+                p.addCurve(to: CGPoint(x: w * 0.90, y: h * 0.90), control1: CGPoint(x: w * 0.60, y: h * 0.00), control2: CGPoint(x: w * 1.02, y: h * 0.50))
+                p.addCurve(to: CGPoint(x: w * 0.12, y: h * 0.12), control1: CGPoint(x: w * 0.55, y: h * 1.04), control2: CGPoint(x: w * 0.02, y: h * 0.55))
+            }
+            ctx.fill(p, with: .color(Color(young ? Ink.leafYoung : Ink.leafOld)))
+            ctx.stroke(p, with: .color(Color(young ? Ink.leafYoungEdge : Ink.leafOldEdge)), lineWidth: 0.8)
+            // 叶脉：老叶更明显
+            var v = Path()
+            if young {
+                v.move(to: CGPoint(x: w * 0.20, y: h * 0.86)); v.addLine(to: CGPoint(x: w * 0.66, y: h * 0.34))
+            } else {
+                v.move(to: CGPoint(x: w * 0.16, y: h * 0.16)); v.addLine(to: CGPoint(x: w * 0.86, y: h * 0.86))
+                for t in [0.3, 0.5, 0.7] {
+                    let x = w * (0.16 + 0.70 * t), y = h * (0.16 + 0.70 * t)
+                    v.move(to: CGPoint(x: x, y: y)); v.addLine(to: CGPoint(x: x + w * 0.16, y: y - h * 0.10))
+                    v.move(to: CGPoint(x: x, y: y)); v.addLine(to: CGPoint(x: x - w * 0.10, y: y + h * 0.16))
+                }
+            }
+            ctx.stroke(v, with: .color(Color(young ? Ink.leafYoungEdge : Ink.leafOldEdge).opacity(young ? 0.7 : 0.9)), style: StrokeStyle(lineWidth: young ? 0.8 : 0.9, lineCap: .round))
         }
-        .frame(width: 14, height: 34)
-        .shadow(color: .black.opacity(0.18), radius: 0.6, x: 0.5, y: 0.8)
+        .frame(width: 22, height: 22)
     }
 }

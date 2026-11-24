@@ -160,13 +160,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Butler not connected yet. It connects once the PC has iCloud, signed in with this Apple ID."
+            "value": "The butler hasn't clocked in. Get iCloud on the PC with this Apple ID and it'll show up."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "大管家还没连上：掌机装好 iCloud、登录同一个 Apple ID 就连上了"
+            "value": "大管家还没到岗：电脑上装好 iCloud、登同一个 Apple ID，它就来了。"
           }
         }
       }
@@ -194,13 +194,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Butler offline, last online %@"
+            "value": "The butler's gone AWOL. Last seen %@"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "大管家不在线，上次在线 %@"
+            "value": "大管家开小差了，上次露面 %@"
           }
         }
       }
@@ -211,13 +211,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The butler hasn’t connected yet. It will once the PC is on."
+            "value": "The butler hasn't reported in. Turn on the PC and the butler, and it will."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "大管家还没连上信箱：掌机开着、大管家开着就连上了"
+            "value": "大管家还没来报到：电脑开着、大管家开着，它就来了。"
           }
         }
       }
@@ -262,13 +262,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pair with the butler in Settings (scan the code on the PC), or pick a mirror folder first."
+            "value": "Leave the butler a way in first: scan to pair in Settings, or pick a mirror folder."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "先在设置里配上大管家的信箱（扫掌机屏幕上的码），或者选一个镜像文件夹。"
+            "value": "先给大管家留个门：设置里扫码配信箱，或者选个镜像文件夹。"
           }
         }
       }
@@ -313,13 +313,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Butler’s copy is ready. Tap to swap it in."
+            "value": "The butler's clean copy is ready. Tap to swap it in."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "大管家理好了，点一下换上"
+            "value": "大管家誊好了，点一下换上。"
           }
         }
       }
@@ -381,13 +381,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Queued for the butler (last online %@)"
+            "value": "In line for the butler (last seen %@)"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "排着队，等大管家（上次在线 %@）"
+            "value": "排队等大管家（上次露面 %@）"
           }
         }
       }
@@ -432,13 +432,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Butler last seen %lld min ago"
+            "value": "The butler swung by %lld min ago"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "大管家 %lld 分钟前来过"
+            "value": "大管家 %lld 分钟前来巡过"
           }
         }
       }
@@ -738,13 +738,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The mic is off. Turn it on in Settings > Yiye."
+            "value": "一叶笺 can't borrow the mic. Allow it in Settings › 一叶笺."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "麦克风没开：iPhone 设置 › 一叶笺 里打开"
+            "value": "一叶笺借不到话筒：设置 › 一叶笺 里打开。"
           }
         }
       }
@@ -925,13 +925,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Deleted “%@”. Its notes are back in All Notes."
+            "value": "Folder “%@” is gone. Its notes went back to All Notes."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "文件夹「%@」删了，里面的笔记回到全部便签"
+            "value": "文件夹「%@」拆了，里面的笔记回到全部便签。"
           }
         }
       }
@@ -1061,13 +1061,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": " %lld still coming down from iCloud. Try again in a bit."
+            "value": "%lld still dawdling in iCloud. Try again in a bit."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "还有 %lld 条在 iCloud 里没下完，过会儿再导一次。"
+            "value": "还有 %lld 条在 iCloud 里磨蹭，过会儿再搬一次。"
           }
         }
       }
@@ -1112,13 +1112,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A blank desk. Write a note, scan a page, or just talk."
+            "value": "Not a single leaf yet. Write, snap or talk — feed it something."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "一张纸都还没有。写一条，拍一页，或者说一段。"
+            "value": "一片叶子都还没有。写一句、拍一页、说两句，随便喂它点什么。"
           }
         }
       }
@@ -1214,13 +1214,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Added. The butler’s offline, so your phone reads it for now."
+            "value": "Added. The butler's out, so your phone's voice fills in for now."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "放进听力了。大管家没连上，先用手机的声音念。"
+            "value": "进听力了。大管家不在，先拿手机的嗓子凑合念。"
           }
         }
       }
@@ -1248,13 +1248,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fresh from the butler: %@. It’s waiting in Listening."
+            "value": "Fresh from the butler: %@. Queued in Listening."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "大管家送来一篇：%@。听力里排好了。"
+            "value": "大管家送来一篇：%@。听力里排好队了。"
           }
         }
       }
@@ -1316,13 +1316,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The butler couldn’t voice it this time. Try again."
+            "value": "The butler choked on this one. Send it again."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "大管家这回没配成，可以再交一次。"
+            "value": "大管家这回嗓子卡了，再交一次试试。"
           }
         }
       }
@@ -1350,13 +1350,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Queued. The butler will voice it once it’s connected."
+            "value": "Queued. The butler voices it the moment it's back."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "排上了，大管家连上就配。"
+            "value": "排上了，大管家一上线就开嗓。"
           }
         }
       }
@@ -1367,13 +1367,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sent to the butler. The voice lands back in this note."
+            "value": "Sent to the butler. The audio lands back on this note."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "交给大管家了，配好音自己回到这条。"
+            "value": "交给大管家了，配完音自己回到这条。"
           }
         }
       }
@@ -1401,13 +1401,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nothing here yet. Swipe left on a note and tap the headphones to add it."
+            "value": "Nothing to listen to yet. Swipe left on a note, tap the headphones, done."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "还没有听力稿。列表里左滑一条点小耳机，就放进来了。"
+            "value": "听力还是空的。列表里左滑一条、点小耳机，就塞进来了。"
           }
         }
       }
@@ -1486,13 +1486,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No sentence timing for this one, so tapping a line won’t jump."
+            "value": "No sentence timing on this one, so tapping a line won't jump."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "这篇没有分句的时间，点句子跳不过去。"
+            "value": "这篇没标句子时间，点哪句都跳不过去。"
           }
         }
       }
@@ -1639,13 +1639,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Done. Tap play at the top to listen."
+            "value": "Done. Hit play up top."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "念好了，点上面的播放就能听。"
+            "value": "念好了，点上面的播放。"
           }
         }
       }
@@ -1656,13 +1656,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Done. For a more natural voice, download a Premium English voice in Settings > Accessibility > Spoken Content > Voices."
+            "value": "Done. Sounds like a robot? Settings › Accessibility › Spoken Content › Voices › English — grab a Premium one."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "念好了。想念得更像真人：iPhone 的 Settings > Accessibility > Spoken Content > Voices > English，下一个 Premium 的声音。"
+            "value": "念好了。嫌这嗓子像机器人？Settings › Accessibility › Spoken Content › Voices › English，下一个 Premium 的。"
           }
         }
       }
@@ -1792,13 +1792,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting for the butler · sent %@"
+            "value": "Waiting on the butler · sent %@"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "等大管家配音 · 交出去 %@"
+            "value": "等大管家开嗓 · 交出去 %@"
           }
         }
       }
@@ -1809,13 +1809,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Waiting for the butler · not connected yet"
+            "value": "Waiting on the butler · it's offline"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "等大管家配音 · 大管家还没连上"
+            "value": "等大管家开嗓 · 它还没上线"
           }
         }
       }
@@ -1996,13 +1996,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Keep a copy of every note in iCloud Drive. Survives new phones, and the butler works from there."
+            "value": "Keep a copy of every note in iCloud Drive: survives a new phone, and the butler picks up work there."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "每条笔记在 iCloud 云盘也存一份：换手机不丢，大管家也从那儿拿活。"
+            "value": "每条笔记在 iCloud 云盘也存一份：换手机不丢，大管家也从那儿领活。"
           }
         }
       }
@@ -2217,13 +2217,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No text in that one. Try a straighter, brighter shot."
+            "value": "Not a single word in that one. Straighter, brighter, again."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "这张图上没找到字。拍正一点、亮一点再来。"
+            "value": "这张图上一个字都没逮到。拍正点、亮点，再来。"
           }
         }
       }
@@ -2251,13 +2251,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Paired. Notes now reach the butler in seconds."
+            "value": "Linked. The butler's now seconds away."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "配好了：以后交给大管家几秒就到"
+            "value": "接上头了，大管家以后几秒就到。"
           }
         }
       }
@@ -2268,13 +2268,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Camera’s off for Yiye. Turn it on in Settings."
+            "value": "No camera access. Turn it on for 一叶笺 in Settings."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "相机用不了：设置里给一叶笺开一下相机"
+            "value": "相机没给：设置里给一叶笺开一下。"
           }
         }
       }
@@ -2438,13 +2438,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The butler on your PC checks scans against the photo and sends back a clean copy. It goes through an encrypted mailbox in seconds, and falls back to the mirror folder. No AI keys on this phone."
+            "value": "Scribbles the phone misreads go to your butler, who checks them against the photo and sends back a clean copy in seconds. Encrypted mailbox, locked at both ends; if it's down, the mirror folder takes over. Zero AI keys on this phone."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "手写认不准的字，掌机上的大管家对着原图理顺再送回来。走 Cloudflare 信箱，几秒就到，信两头加密；信箱连不上才走镜像文件夹。手机上不存任何 AI 钥匙。"
+            "value": "手写认歪的字，交给大管家对着原图理顺，几秒后送回一份干净的。走加密信箱，两头上锁；信箱断了就走镜像文件夹。手机里一把 AI 钥匙都不放。"
           }
         }
       }
@@ -2472,13 +2472,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open the toolbox at the top left, tap Buddy, pick Yiye, start. The ding means it’s listening: use your phone as usual and just ask out loud. Your words and the screen at that moment go to your own butler, which listens, looks, and answers out loud. The dot on the toolbox: green is listening, blinking means it hears you, orange is the butler on it, red is something broke (it’ll tell you what). Lock the phone with Buddy on, or tap Deep talk in the toolbox, for deep talk: no screen, start with “大管家”, it thinks for a few minutes and reads you the answer; the full text lands in the 深聊 folder. Say “大管家，结束” to stop. The red and orange dots up top are Apple’s broadcast and mic lights. Normal."
+            "value": "Toolbox, tap Buddy, Apple pops a broadcast panel, pick 一叶笺, start. A ding means it's listening: use your phone as usual and just ask out loud. It grabs the screen you asked about, hands it to your own butler, and answers out loud. Dots on the toolbox: green = listening, blinking = heard you, orange = butler's thinking, red = broke (it'll say what). Deep talk: lock the phone with Buddy on, or tap Deep talk in the toolbox. No screen, say “butler” first, it thinks a few minutes and reads you the answer; the full text lands in the 深聊 folder. Say “butler, done” to stop. The red and orange dots up top are Apple's broadcast lights. Relax."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "左上角工具箱里点「陪玩」，弹苹果的直播面板，选一叶笺，点开始。听到「叮」就是在听了：手机随便用，开口就问，它把你这句话和那一刻的屏幕交给自己的大管家，大管家听、看、用声音答你。工具箱右上角的小圆点：绿是在听，一闪一闪是听到你在说，橙是大管家在忙，红是哪儿坏了（它会念出来）。开着陪玩锁屏，或者点工具箱里的「深聊」，就转成深聊：不截屏，先叫「大管家」再问，它想几分钟再念给你，完整的存进「深聊」文件夹；说「大管家，结束」就收。屏幕上方的红点、橙点是苹果的直播和麦克风提示，正常。"
+            "value": "工具箱里点「陪玩」，苹果弹出直播面板，选一叶笺，开始。听到「叮」就是它在听了，手机该干嘛干嘛，开口就问：它截下你问的那一屏，交给自家大管家，再用嘴回你。工具箱上的小点：绿＝在听，绿闪＝听见你了，橙＝大管家在想，红＝坏了（它会说坏在哪）。想深聊：陪玩开着锁屏，或点工具箱里的「深聊」，不截屏了，叫一声「大管家」再问，它想几分钟念给你，全文存进「深聊」文件夹；说「大管家，结束」收工。屏幕顶上的红点橙点是苹果在报备，别慌。"
           }
         }
       }
@@ -2574,13 +2574,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Every save writes a .md file here. Photos go in 附件, deleted notes in 废纸篓. Switch to another build later and everything moves back from here."
+            "value": "The trunk: every save drops a .md here, photos go in 附件, deleted notes in 废纸篓. Switch builds someday and it all moves back from here, untouched."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "每存一次往里写一个 .md，图片进「附件」，删掉的进「废纸篓」。以后换正式版，从这儿一条不落搬回来。"
+            "value": "这是后备箱：每存一次落一个 .md，图片进「附件」，删掉的进「废纸篓」。哪天换版本，从这儿原封不动搬回来。"
           }
         }
       }
@@ -2591,13 +2591,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Not paired yet. It pairs itself once the PC is set up, or scan the code on the PC’s screen."
+            "value": "Not connected yet. It links itself once the butler's set up — or scan the code on its screen."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "信箱还没配：掌机配好会自己配上；等不及就扫掌机屏幕上的码。"
+            "value": "还没接上头。大管家那边配好会自己连；等不及就扫它屏幕上的码。"
           }
         }
       }
@@ -2608,13 +2608,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Paired. Notes reach the butler in seconds, encrypted end to end."
+            "value": "Connected. Stuff reaches the butler in seconds, encrypted the whole way."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "信箱配好了：交给大管家的几秒就到，信两头加密。"
+            "value": "接上头了：交给大管家的东西几秒就到，路上全程加密。"
           }
         }
       }
@@ -2710,13 +2710,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your voice turns into text on this phone. Nothing is uploaded. To record with the Action Button: Settings > Action Button > Shortcut > Yiye “Record a voice note”."
+            "value": "Speech turns into text right here on the phone. Nothing leaves. Side-button recording: Settings › Action Button › Shortcut › 一叶笺 › Record a voice note."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "说的话在手机上转成字，不上传。侧键一按就录：iPhone 的 Settings > Action Button > Shortcut，选一叶笺下面的「录一段」（手机是英文就叫 Record a voice note）。"
+            "value": "说的话就在手机里变成字，不出门。想按侧键就录：Settings › Action Button › Shortcut › 一叶笺 › 录一段（英文系统叫 Record a voice note）。"
           }
         }
       }
@@ -2744,13 +2744,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No access to Photos. Turn it on in Settings > Privacy & Security > Photos."
+            "value": "Can't save to Photos. Allow it in Settings › Privacy & Security › Photos."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "没有存照片的权限：设置 > 隐私与安全性 > 照片 里给一叶笺开一下。"
+            "value": "没给存照片的权限：Settings › Privacy & Security › Photos 里给一叶笺开一下。"
           }
         }
       }
@@ -2836,23 +2836,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "分享成图"
-          }
-        }
-      }
-    },
-    "sort.created": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Date created"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "按新建"
           }
         }
       }
@@ -3050,13 +3033,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Yiye can’t use the mic. Turn it on in Settings."
+            "value": "一叶笺 can't borrow the mic. Allow it in Settings."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "一叶笺用不了话筒。去设置里给它开一下。"
+            "value": "一叶笺借不到话筒，去设置里开一下。"
           }
         }
       }
@@ -3152,13 +3135,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "First time: fetching the speech model…"
+            "value": "First run: hauling in the speech model…"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "第一次用，在下语音模型，下完就好…"
+            "value": "第一次用，正在搬语音模型，搬完就好…"
           }
         }
       }
@@ -3169,13 +3152,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This phone can’t transcribe that language. Recording audio only."
+            "value": "This phone doesn't speak that language. Audio only this time."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "这台手机不认这个语言，这回只录音。"
+            "value": "这台手机听不懂这门语言，这回只录音。"
           }
         }
       }
@@ -3203,13 +3186,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Speech recognition is off, so audio only. You can turn it on in Settings."
+            "value": "Speech recognition's off, so audio only. Settings can fix that."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "没开语音识别权限，这回只录音。设置里能开。"
+            "value": "没给语音识别权限，这回只录音。设置里能开。"
           }
         }
       }
@@ -3220,13 +3203,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Audio saved. No words came through this time."
+            "value": "Audio saved. Not a single word came through."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "录音存好了，这回没转出字。"
+            "value": "录音存好了，这回一个字都没认出来。"
           }
         }
       }
@@ -3356,13 +3339,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "“%@” stays in class. More examples coming."
+            "value": "“%@” repeats a grade. More lessons in the brief."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "「%@」留级，简讯接着讲"
+            "value": "「%@」留级，简讯接着补课"
           }
         }
       }

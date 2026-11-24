@@ -47,7 +47,7 @@ for lang in zh-Hans en; do
     dir="$OUT/$short-sys$sys-$pref"
     rm -rf "$dir"; mkdir -p "$dir"
     i=1
-    for s in list settings toolbox; do
+    for s in list settings toolbox folders; do
       xcrun simctl terminate "$SIM" "$BID" >/dev/null 2>&1 || true
       SIMCTL_CHILD_TZ=Asia/Singapore xcrun simctl launch "$SIM" "$BID" -YiyeDemo YES -YiyeScreen "$s" -YiyeLang "$lang" -YiyeAppearancePref "$pref"         -AppleLanguages "($lang)" -AppleLocale "$locale" >/dev/null
       sleep 5

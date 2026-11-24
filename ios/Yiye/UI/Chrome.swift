@@ -142,6 +142,41 @@ struct BusyOverlay: View {
 }
 
 /// 分段选择（二选一、三选一），自己画
+/// 只放图标的分段控件（样子同 Segmented）；label 只给读屏用，屏幕上不显示
+struct IconSegmented<T: Hashable>: View {
+    let items: [(T, String, AnyView)]
+    @Binding var selection: T
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(items.indices, id: \.self) { i in
+                let it = items[i]
+                let on = it.0 == selection
+                Button { withAnimation(.easeOut(duration: 0.2)) { selection = it.0 } } label: {
+                    it.2
+                        .opacity(on ? 1 : 0.55)
+                        .frame(maxWidth: .infinity, minHeight: 32)
+                        .background {
+                            if on {
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .fill(LinearGradient(colors: [Color(Ink.btnTop), Color(Ink.btnBottom)], startPoint: .top, endPoint: .bottom))
+                                    .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Color(Ink.btnBorder), lineWidth: 0.75))
+                                    .shadow(color: .black.opacity(0.08), radius: 0.5, y: 0.75)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .frame(minHeight: 44)
+                .accessibilityLabel(it.1)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        .padding(3)
+        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Color(Ink.text3).opacity(0.18)))
+    }
+}
+
 struct Segmented<T: Hashable>: View {
     let items: [(T, String)]
     @Binding var selection: T

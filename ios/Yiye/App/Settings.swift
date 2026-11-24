@@ -2,7 +2,7 @@ import Foundation
 import Observation
 
 enum SortMode: String, CaseIterable {
-    case modifiedNew, modifiedOld, created
+    case modifiedNew, modifiedOld
 }
 
 /// 设置：字号、排序、当前文件夹、大管家自动交、第一次问过镜像没有
