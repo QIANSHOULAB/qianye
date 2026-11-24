@@ -10,6 +10,44 @@ xcrun simctl boot "$SIM" 2>/dev/null || true
 xcrun simctl bootstatus "$SIM" -b >/dev/null
 xcrun simctl status_bar "$SIM" override --time "9:41" --dataNetwork wifi --wifiMode active --wifiBars 3 \
   --cellularMode active --cellularBars 4 --batteryState charged --batteryLevel 100 || true
+
+# ---- UI 测试（133）：截图之前先在这台模拟器上真点、真滑、真长按一遍（ios/YiyeUITests）。
+# 不过就停在这儿：不截图、这一步失败、不发版。结果写进 $OUT/uitest/（结果.txt + 出错那一刻的截图），CI 照样提交回仓库。
+UITEST_ONLY=1   # 133 复现用：只跑 UI 测试、记下红绿、不算失败；修好那一版删掉这行
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+DD="${APP%%/Build/Products/*}"
+UIT="$OUT/uitest"
+rm -rf "$UIT" "$DD/uitest.xcresult" "$DD/uitest-att"; mkdir -p "$UIT"
+UIT_ABS="$(cd "$UIT" && pwd)"
+BEAUTY=cat; command -v xcbeautify >/dev/null && BEAUTY="xcbeautify --renderer github-actions"
+TEST_RUNNER_YIYE_UITEST_SHOTS="$UIT_ABS" xcodebuild test -project "$ROOT/Yiye.xcodeproj" -scheme Yiye \
+  -destination "id=$SIM" -derivedDataPath "$DD" -resultBundlePath "$DD/uitest.xcresult" \
+  -only-testing:YiyeUITests -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$DD/uitest.log" | $BEAUTY
+urc=${PIPESTATUS[0]}
+# 测试自己没存下图：从结果包里把挂的截图倒出来
+if ! ls "$UIT"/*.png >/dev/null 2>&1; then
+  xcrun xcresulttool export attachments --path "$DD/uitest.xcresult" --output-path "$DD/uitest-att" >/dev/null 2>&1 || true
+  find "$DD/uitest-att" -name "*.png" 2>/dev/null | head -20 | while read -r p; do cp "$p" "$UIT/"; done
+fi
+for p in "$UIT"/*.png; do
+  [ -e "$p" ] || continue
+  sips --resampleWidth 600 -s format jpeg -s formatOptions 80 "$p" --out "${p%.png}.jpg" >/dev/null && rm "$p"
+done
+{
+  if [ "$urc" = 0 ]; then echo "# UI 测试：全绿"; else echo "# UI 测试：有红的（xcodebuild 退出码 $urc）"; fi
+  echo
+  grep -E "Test [Cc]ase .*(passed|failed)" "$DD/uitest.log" | sed -E "s/^.*Test [Cc]ase '//" || true
+  echo
+  grep -E "error: |: error" "$DD/uitest.log" | sed -E "s#^.*/YiyeUITests/##" | sort -u | head -40 || true
+  echo
+  grep -E "Executed [0-9]+ test|\*\* TEST" "$DD/uitest.log" | tail -3 || true
+} > "$UIT/结果.txt"
+cat "$UIT/结果.txt"
+echo "::notice title=UI 测试（133）::$(awk 'BEGIN{ORS="%0A"}1' "$UIT/结果.txt")"
+ls "$UIT"
+if [ -n "${UITEST_ONLY:-}" ]; then echo "只跑 UI 测试（133 复现），不截图"; exit 0; fi
+if [ "$urc" != 0 ]; then echo "::error::UI 测试没过（ios/shots/uitest/结果.txt），不截图、不发版"; exit 1; fi
+
 xcrun simctl install "$SIM" "$APP"
 mkdir -p "$OUT"
 fail=0

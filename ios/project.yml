@@ -91,6 +91,22 @@ targets:
         SKIP_INSTALL: YES
         SUPPORTS_MACCATALYST: NO
         SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+  # 133：列表上真点、真滑、真长按的 UI 测试（shots.sh 截图前跑，不过不发版）
+  YiyeUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: YiyeUITests
+    dependencies:
+      - target: Yiye
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: lab.qianshou.yiye.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Yiye
+        TARGETED_DEVICE_FAMILY: "1"
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
 schemes:
   Yiye:
     build:
@@ -98,5 +114,9 @@ schemes:
         Yiye: all
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - YiyeUITests
     archive:
       config: Release
