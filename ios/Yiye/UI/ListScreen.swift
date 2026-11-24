@@ -83,6 +83,11 @@ struct ListScreen: View {
 
             SearchField(text: $query, placeholder: t.t("list.search"))
 
+            if app.settings.companionOn {
+                CompanionBar()
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+
             if app.showMirrorPrompt {
                 MirrorPrompt(choose: { showMirrorPicker = true }, skip: {
                     app.settings.mirrorAsked = true

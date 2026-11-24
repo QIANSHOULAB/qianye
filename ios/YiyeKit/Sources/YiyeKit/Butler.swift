@@ -21,6 +21,8 @@ public struct ButlerRequest: Codable, Equatable, Sendable {
     /// ask=word（088）：选中的词、会了 known / 不会 learning。别的请求没有这两个字段
     public var word: String?
     public var mark: String?
+    /// ask=look（陪玩，100）：上一问手机这头量的秒数（识别、取图、寄出、等回信……），大管家只记进日志
+    public var timing: [String: Double]?
 
     /// ask：fix = 理顺（结果回 已理顺/）；speak = 配音（0.4.0 起，结果走 送来/，带 note）；word = 会了 / 不会（088，见 WordMark.swift）
     public init(id: String, note: String, kind: ButlerKind, text: String, images: [String]?, unsure: [String]?, ask: String = "fix", at: String, app: String) {
@@ -41,8 +43,33 @@ public struct ButlerResult: Codable, Equatable, Sendable {
     public var error: String?
     public var model: String?
     public var at: String?
-    public init(v: Int = 1, id: String, note: String, ok: Bool, text: String?, changes: String?, error: String?, model: String? = nil, at: String? = nil) {
+    /// 陪玩的回信（100）：配好的音在信里哪个路径（files 的键）、大管家那头各段几秒（fetch / brain / voice）、哪台答的
+    public var audio: String?
+    public var timing: [String: Double]?
+    public var host: String?
+    public init(v: Int = 1, id: String, note: String, ok: Bool, text: String?, changes: String?, error: String?, model: String? = nil, at: String? = nil,
+                audio: String? = nil, timing: [String: Double]? = nil, host: String? = nil) {
         self.v = v; self.id = id; self.note = note; self.ok = ok; self.text = text; self.changes = changes; self.error = error; self.model = model; self.at = at
+        self.audio = audio; self.timing = timing; self.host = host
+    }
+
+    private enum CodingKeys: String, CodingKey { case v, id, note, ok, text, changes, error, model, at, audio, timing, host }
+
+    /// 新加的几个字段读不懂就当没有（timing 里混了不是数的，整封信不能因为它作废）
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        v = try c.decode(Int.self, forKey: .v)
+        id = try c.decode(String.self, forKey: .id)
+        note = try c.decodeIfPresent(String.self, forKey: .note) ?? ""
+        ok = try c.decode(Bool.self, forKey: .ok)
+        text = try c.decodeIfPresent(String.self, forKey: .text)
+        changes = try c.decodeIfPresent(String.self, forKey: .changes)
+        error = try c.decodeIfPresent(String.self, forKey: .error)
+        model = try? c.decodeIfPresent(String.self, forKey: .model)
+        at = try? c.decodeIfPresent(String.self, forKey: .at)
+        audio = try? c.decodeIfPresent(String.self, forKey: .audio)
+        timing = try? c.decodeIfPresent([String: Double].self, forKey: .timing)
+        host = try? c.decodeIfPresent(String.self, forKey: .host)
     }
 }
 

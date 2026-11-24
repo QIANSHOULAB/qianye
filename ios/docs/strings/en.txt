@@ -42,6 +42,16 @@ capture.shootPage	Take a photo
 common.cancel	Cancel
 common.close	Close
 common.done	Done
+companion.asking	Asking the butler…
+companion.failed	Buddy mode didn’t start: %@
+companion.hearing	Go on, I’m listening…
+companion.last	Last answer in %@ s
+companion.listening	Listening. Just ask.
+companion.noMic	Mic or speech recognition is off. Turn them on in Settings > Yiye.
+companion.speaking	The butler’s talking
+companion.start	Start Broadcast
+companion.stop	Stop
+companion.waitLive	Tap Start Broadcast, pick Yiye
 editor.back	Notes
 editor.more	More
 editor.original	Original photo
@@ -139,6 +149,9 @@ paper.yellow	Cream
 settings.butler	Butler
 settings.butlerAuto	Auto-send scans and voice notes
 settings.butlerNote	The butler on your PC checks scans against the photo and sends back a clean copy. It goes through an encrypted mailbox in seconds, and falls back to the mirror folder. No AI keys on this phone.
+settings.companion	Buddy
+settings.companionNote	Turn it on, tap Start Broadcast on the bar above your notes, pick Yiye. Then use your phone as usual and just ask out loud: Yiye grabs the screen at that moment, hands it to your own butler, and the answer comes back as a voice. The red and orange dots up top are Apple’s broadcast and mic lights. Normal.
+settings.companionOn	Buddy mode
 settings.fontSize	Text size
 settings.import	Import from folder
 settings.language	Language

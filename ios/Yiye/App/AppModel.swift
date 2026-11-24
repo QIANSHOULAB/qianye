@@ -45,6 +45,8 @@ final class AppModel {
     let attachments: AttachmentStore
     let mirror: MirrorService
     let butler: ButlerService
+    /// 陪玩模式（100）
+    let companion: Companion
 
     var path: [Route] = []
     var toast: Toast?
@@ -76,12 +78,14 @@ final class AppModel {
         attachments = AttachmentStore(demo: demo != nil)
         mirror = MirrorService(demo: demo != nil)
         butler = ButlerService()
+        companion = Companion()
     }
 
     func started() {
         guard !didStart else { return }
         didStart = true
         butler.app = self
+        companion.app = self
         if let demo {
             Demo.seed(self, demo)
         } else {
@@ -92,6 +96,7 @@ final class AppModel {
             backfillListen()
         }
         butler.start()
+        if demo == nil { companion.setUp() }
     }
 
     func scenePhase(_ p: ScenePhase) {
@@ -99,7 +104,7 @@ final class AppModel {
         case .active:
             butler.start()
         case .background:
-            butler.stop()
+            if !companion.holdsButler { butler.stop() }     // 陪玩在听：信箱不断（后台音频让 app 一直醒着）
             try? context.save()
         default: break
         }

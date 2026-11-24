@@ -31,6 +31,8 @@ final class Settings {
     var imageGap: Bool { didSet { save("yiye.imageGap", imageGap) } }
     /// 088：老的听力稿补进听力，跑过了
     var listenBackfilled: Bool { didSet { save("yiye.listenBackfill088", listenBackfilled) } }
+    /// 100：陪玩模式开着
+    var companionOn: Bool { didSet { save("yiye.companion", companionOn) } }
 
     init(persist: Bool) {
         self.persist = persist
@@ -47,6 +49,7 @@ final class Settings {
         useFallbackCamera = persist ? d.bool(forKey: "yiye.fallbackCam") : false
         imageGap = persist ? (d.object(forKey: "yiye.imageGap") as? Bool ?? true) : true
         listenBackfilled = persist ? d.bool(forKey: "yiye.listenBackfill088") : true
+        companionOn = persist ? d.bool(forKey: "yiye.companion") : false
     }
 
     private func save(_ key: String, _ v: Any) {

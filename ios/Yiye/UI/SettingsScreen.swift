@@ -104,6 +104,23 @@ struct SettingsScreen: View {
                         }
                     }
 
+                    section(t.t("settings.companion")) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Toggle(isOn: Binding(get: { settings.companionOn }, set: { on in
+                                withAnimation(.easeOut(duration: 0.24)) { settings.companionOn = on }
+                                app.companion.setOn(on)
+                            })) {
+                                Text(t.t("settings.companionOn")).font(.system(size: 16)).foregroundStyle(Color(Ink.text))
+                            }
+                            .tint(Color(Ink.accent))
+                            .frame(minHeight: 44)
+                            Text(t.t("settings.companionNote"))
+                                .font(.system(size: 13))
+                                .foregroundStyle(Color(Ink.text3))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
                     section(t.t("settings.language")) {
                         Segmented(items: [("system", t.t("lang.system")), ("zh-Hans", "中文"), ("en", "English")],
                                   selection: Binding(get: { app.lang.choice }, set: { app.lang.set($0) }))

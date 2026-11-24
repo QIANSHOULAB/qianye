@@ -304,6 +304,8 @@ public enum MailAction: Equatable, Sendable {
     case dubFailed(ButlerResult, note: UUID)
     /// 「会了 / 不会」的回信（088）：ok 就从队里拿掉，不 ok 过一会儿再寄
     case word(ButlerResult)
+    /// 陪玩的回答（100）：配好的音跟着信来，直接放；没配成音的，手机用自己的声音念 text
+    case look(ButlerResult, audio: Data?)
     /// 送来的听力稿 / 配好的音
     case deliver(ButlerDelivery, audio: Data?)
     /// 送来的录音信里没带、本地也没有：先别 ack，下回再拿
@@ -314,10 +316,11 @@ public enum MailAction: Equatable, Sendable {
     /// waiting：在等理顺结果的「请求 id → 笔记」；dubbing：在等配音的「请求 id → 笔记」；words：排着队的「会了 / 不会」的请求 id；
     /// localAudio：信里没带录音时去 iCloud 找
     public static func decide(_ env: MailEnvelope, waiting: [String: UUID], dubbing: [String: UUID], words: Set<String> = [],
-                              localAudio: (String) -> Data? = { _ in nil }) -> MailAction {
+                              looks: Set<String> = [], localAudio: (String) -> Data? = { _ in nil }) -> MailAction {
         switch env.kind {
         case .result:
             guard let r = env.result else { return .drop("result 没有 data") }
+            if looks.contains(r.id) { return .look(r, audio: r.audio.flatMap { env.files[$0] }) }
             if words.contains(r.id) { return .word(r) }
             if let n = waiting[r.id] { return .apply(r, note: n) }
             if !r.ok, let n = dubbing[r.id] { return .dubFailed(r, note: n) }

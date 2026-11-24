@@ -32,6 +32,10 @@ final class ButlerService {
     /// 「会了 / 不会」排着队的（088）：大管家回 ok 才出队
     @ObservationIgnored private var words = WordQueue.decode(UserDefaults.standard.data(forKey: ButlerService.wordsKey))
     @ObservationIgnored private var wordSending: Set<String> = []
+    /// 陪玩（100）：在等回答的请求 id
+    @ObservationIgnored private var looks: Set<String> = []
+
+    enum LookSent: Equatable { case sent(Bool), noPair, failed(String) }
 
     func start() {
         guard timer == nil else { return }
@@ -135,7 +139,7 @@ final class ButlerService {
             if s.phase == .waiting, let rid = s.requestID { waiting[rid] = n.id }
             if let rid = n.dubRequest { dubbing[rid] = n.id }
         }
-        var action = MailAction.decide(env, waiting: waiting, dubbing: dubbing, words: words.requestIDs)
+        var action = MailAction.decide(env, waiting: waiting, dubbing: dubbing, words: words.requestIDs, looks: looks)
         if action == .later, let ch = app.mirror.channel, let a = env.delivery?.audio {
             // 信里没带录音：去 iCloud 镜像里找（后台读，占位的要等它下载）
             let data: Data? = await withCheckedContinuation { c in
@@ -153,6 +157,10 @@ final class ButlerService {
         case .word(let r):
             words.answered(r.id, ok: r.ok)
             saveWords()
+            return true
+        case .look(let r, let audio):
+            looks.remove(r.id)
+            app.companion.answer(r, audio: audio)
             return true
         case .deliver(let d, let audio):
             app.addDelivery(d, audio: audio)
@@ -366,6 +374,37 @@ final class ButlerService {
         guard app?.demo == nil else { return }
         UserDefaults.standard.set(words.encoded(), forKey: ButlerService.wordsKey)
     }
+
+    // ---------------------------------------------------------------- 陪玩（100）
+    /// 问一句：只走信箱（晚到的回答没用，不走 iCloud）。信箱说两台大管家都不在：当场撤回，回 .sent(false)
+    func sendLook(_ req: ButlerRequest, files: [String: Data]) async -> LookSent {
+        if mail == nil { connectMail() }
+        guard let mail else { return .noPair }
+        looks.insert(req.id)
+        do {
+            let sent = try await mail.send(.request(req, files: files), timeout: 15)
+            if !sent.pc {
+                looks.remove(req.id)
+                try? await mail.ack(sent.seq)
+            }
+            return .sent(sent.pc)
+        } catch {
+            looks.remove(req.id)
+            return .failed((error as? MailError)?.errorDescription ?? error.localizedDescription)
+        }
+    }
+
+    /// 开始听了：叫大管家先把大脑热上（不回信；大管家不在就算了）
+    func lookWarm() {
+        if mail == nil { connectMail() }
+        guard let mail, app?.demo == nil else { return }
+        let req = ButlerRequest.lookWarm(id: UUID().uuidString, at: ISOTime.string(Date()), app: ButlerService.appVersion)
+        Task {
+            if let sent = try? await mail.send(.request(req), timeout: 15), !sent.pc { try? await mail.ack(sent.seq) }
+        }
+    }
+
+    func forgetLook(_ id: String) { looks.remove(id) }
 
     // ---------------------------------------------------------------- iCloud（v1 备胎）
     /// 看一眼：配对、心跳、在等的结果、送来的
