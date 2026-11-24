@@ -3061,6 +3061,40 @@
         }
       }
     },
+    "settings.backupHave": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backup channel: ready"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "备用通道：有"
+          }
+        }
+      }
+    },
+    "settings.backupOn": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Using the backup channel"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "走备用通道"
+          }
+        }
+      }
+    },
     "settings.butler": {
       "extractionState": "manual",
       "localizations": {

@@ -228,6 +228,8 @@ S = {
  "tools.title": ("工具箱", "Toolbox"),
  "companion.noPanel": ("直播面板叫不出来", "Couldn’t open the broadcast panel"),
  "tools.deep": ("深聊", "Deep talk"),
+ "settings.backupHave": ("备用通道：有", "Backup channel: ready"),
+ "settings.backupOn": ("走备用通道", "Using the backup channel"),
  "tools.dove": ("飞鸽传书", "Dove Post"),
  "dove.title": ("飞鸽传书", "Dove Post"),
  "dove.empty": ("先复制钥匙，再点粘贴", "Copy a key, then tap Paste"),

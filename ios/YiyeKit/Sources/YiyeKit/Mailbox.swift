@@ -137,6 +137,8 @@ public struct MailEnvelope: Equatable, Sendable {
     public var request: ButlerRequest?
     public var result: ButlerResult?
     public var delivery: ButlerDelivery?
+    /// kind2=config 的送来（130）：大管家递的备用信箱配置
+    public var config: FbConfigLetter?
     public var files: [String: Data]
 
     public init(kind: MailKind, id: String, at: String, request: ButlerRequest? = nil, result: ButlerResult? = nil,
@@ -157,6 +159,26 @@ public struct MailEnvelope: Equatable, Sendable {
         MailEnvelope(kind: .delivery, id: d.id, at: d.at ?? ISOTime.string(Date()), delivery: d, files: files)
     }
 
+    /// 备用信箱配置的信（130；假大管家、测试用）
+    public static func config(_ c: FbConfigLetter) -> MailEnvelope {
+        var e = MailEnvelope(kind: .delivery, id: c.id, at: c.at)
+        e.config = c
+        return e
+    }
+
+    private struct ConfigData: Codable {
+        var id: String
+        var kind2: String
+        var at: String
+        var backup: FbConfig
+    }
+    private struct ConfigWire: Codable { var v: Int; var kind: MailKind; var kind2: String; var id: String; var at: String?; var data: ConfigData }
+    private struct ConfigProbe: Decodable {
+        var kind2: String?
+        var data: Inner?
+        struct Inner: Decodable { var id: String?; var kind2: String?; var at: String?; var backup: FbConfig? }
+    }
+
     private struct Head: Codable { var v: Int; var kind: MailKind; var id: String; var at: String? }
     private struct Wire<T: Codable>: Codable { var v: Int; var kind: MailKind; var id: String; var at: String?; var data: T; var files: [String: Data]? }
 
@@ -173,6 +195,9 @@ public struct MailEnvelope: Equatable, Sendable {
             guard let r = result else { throw MailError.badLetter("result 没有 data") }
             return try e.encode(Wire(v: v, kind: kind, id: id, at: at, data: r, files: f))
         case .delivery:
+            if let c = config {
+                return try e.encode(ConfigWire(v: v, kind: kind, kind2: "config", id: id, at: at, data: ConfigData(id: c.id, kind2: "config", at: c.at, backup: c.config)))
+            }
             guard let d = delivery else { throw MailError.badLetter("delivery 没有 data") }
             return try e.encode(Wire(v: v, kind: kind, id: id, at: at, data: d, files: f))
         }
@@ -184,6 +209,12 @@ public struct MailEnvelope: Equatable, Sendable {
         do { head = try d.decode(Head.self, from: data) } catch { throw MailError.badLetter("拆开了不是一封信") }
         guard head.v == version else { throw MailError.badLetter("接口版本不对：手机 v\(version)，信 v\(head.v)") }
         var env = MailEnvelope(kind: head.kind, id: head.id, at: head.at ?? "")
+        if head.kind == .delivery, let probe = try? d.decode(ConfigProbe.self, from: data),
+           probe.kind2 == "config" || probe.data?.kind2 == "config" {
+            guard let b = probe.data?.backup, b.isValid else { throw MailError.badLetter("备用信箱的配置不对") }
+            env.config = FbConfigLetter(id: probe.data?.id ?? head.id, at: probe.data?.at ?? head.at ?? "", config: b)
+            return env
+        }
         do {
             switch head.kind {
             case .request:
@@ -218,7 +249,7 @@ public enum MailError: Error, Equatable, LocalizedError {
         case .crypto: return "拆不开：钥匙对不上，或者信坏了"
         case .gone: return "信箱里已经没有这封了"
         case .tooBig(let n): return "信太大了：\(n) 字节"
-        case .http(let c, let s): return "信箱回了 \(c)：\(s)"
+        case .http(let c, let s): return c == 0 ? s : "信箱回了 \(c)：\(s)"
         case .badLetter(let s): return s
         }
     }
@@ -314,6 +345,8 @@ public enum MailAction: Equatable, Sendable {
     case dove(ButlerResult)
     /// 大管家递来的一次性机密（128）：弹一张卡，不存
     case secret(ButlerDelivery)
+    /// 大管家递来的备用信箱配置（130）：存钥匙串，回「收到」
+    case fbConfig(FbConfigLetter)
     /// 送来的听力稿 / 配好的音
     case deliver(ButlerDelivery, audio: Data?)
     /// 送来的录音信里没带、本地也没有：先别 ack，下回再拿
@@ -337,6 +370,7 @@ public enum MailAction: Equatable, Sendable {
             if !r.ok, let n = dubbing[r.id] { return .dubFailed(r, note: n) }
             return .drop("没人在等 \(r.id)")
         case .delivery:
+            if let c = env.config { return .fbConfig(c) }
             guard let d = env.delivery else { return .drop("delivery 没有 data") }
             if d.kind == "secret" { return .secret(d) }
             guard let a = d.audio else { return .deliver(d, audio: nil) }
@@ -398,10 +432,12 @@ public final class MailClient: Sendable {
     public let role: String
     let http: MailHTTP
     let keyBytes: Data
+    /// 备用管子（130）：没有就只走 Cloudflare
+    public let backup: MailBackup?
 
-    public init?(pairing: MailPairing, role: String = "phone", http: MailHTTP = URLSessionHTTP()) {
+    public init?(pairing: MailPairing, role: String = "phone", http: MailHTTP = URLSessionHTTP(), backup: MailBackup? = nil) {
         guard pairing.isValid, let k = pairing.keyData, role == "phone" || role == "pc" else { return nil }
-        self.pairing = pairing; self.role = role; self.http = http; self.keyBytes = k
+        self.pairing = pairing; self.role = role; self.http = http; self.keyBytes = k; self.backup = backup
     }
 
     /// 寄给谁：手机寄给 pc，掌机寄给 phone
@@ -441,11 +477,35 @@ public final class MailClient: Sendable {
         return id
     }
 
-    /// 寄一封给对面：加密、PUT。同一个 id 重寄，信箱不存第二份
+    /// 寄一封给对面：加密、PUT。同一个 id 重寄，信箱不存第二份。
+    /// 130：在备用模式就先走谷歌（走不通再试一次 Cloudflare）；Cloudflare 寄不出去（连不上、5xx、4xx、429，413 除外）这一封改走谷歌，并进备用模式。
+    /// 备用管子寄的信没有信箱里的号：seq = -1
     public func send(_ env: MailEnvelope, timeout: TimeInterval = 20) async throws -> MailSent {
         let body = try seal(env, to: peer)
         guard body.count <= MailClient.maxLetter else { throw MailError.tooBig(body.count) }
         let mid = try MailClient.safeID(env.id)
+        let fits = body.count <= FbChunk.maxRaw
+        if let b = backup, b.isOn, fits, b.hasPipe {
+            if let sent = try? await b.put(body, mid: mid, to: peer) { return sent }
+        }
+        do {
+            let sent = try await putCloudflare(body, mid: mid, timeout: timeout)
+            backup?.socketUp()
+            return sent
+        } catch {
+            guard let b = backup, b.hasPipe, fits, BackupGate.failsOver(error) else { throw error }
+            b.sendFailed()
+            do {
+                return try await b.put(body, mid: mid, to: peer)
+            } catch let e2 {
+                let why = (e2 as? FbError)?.errorDescription ?? e2.localizedDescription
+                let first = (error as? MailError)?.errorDescription ?? error.localizedDescription
+                throw MailError.http(0, "\(first)；备用也不成：\(why)")
+            }
+        }
+    }
+
+    private func putCloudflare(_ body: Data, mid: String, timeout: TimeInterval) async throws -> MailSent {
         let u = try url("msg?to=\(peer)&mid=\(mid)")
         var req = URLRequest(url: u, timeoutInterval: timeout)
         req.httpMethod = "PUT"
@@ -531,11 +591,14 @@ public enum ButlerOutbox {
 
 // ================================================================ 长连接
 /// 连着信箱的那根 WebSocket。断了自己重连（等 2、5、10、30、60 秒），每 keepAliveEvery 秒发一句 keepAlive（保活，顺便问状态）。
-/// 手机：app 在前台时开着，keepAlive 是 {"t":"state"}；掌机那头用文本 "ping"（站里自动回 pong，不算额度）。
+/// 130：保活发文本 "ping"（站里自动回 pong，不叫醒信箱、不算额度）；{"t":"state"}（问大管家在不在）每 stateEvery 次保活才发一回。
 public final class MailSocket: @unchecked Sendable {
     public let url: URL
-    public var keepAlive = #"{"t":"state"}"#
+    public var keepAlive = "ping"
+    public var stateText = #"{"t":"state"}"#
+    public var stateEvery = 10
     public var keepAliveEvery: TimeInterval = 30
+    private var ticks = 0
     private let q = DispatchQueue(label: "lab.qianshou.yiye.mailsocket")
     private let onPush: @Sendable (MailPush) -> Void
     private let onDown: @Sendable (String) -> Void
@@ -629,7 +692,9 @@ public final class MailSocket: @unchecked Sendable {
         tm.schedule(deadline: .now() + keepAliveEvery, repeating: keepAliveEvery)
         tm.setEventHandler { [weak self] in
             guard let self, self.gen == g, let t = self.task else { return }
+            self.ticks += 1
             t.send(.string(self.keepAlive)) { _ in }
+            if self.stateEvery > 0, self.ticks % self.stateEvery == 0 { t.send(.string(self.stateText)) { _ in } }
         }
         tm.resume()
         timer = tm

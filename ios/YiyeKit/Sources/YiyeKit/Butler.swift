@@ -40,6 +40,8 @@ public struct ButlerRequest: Codable, Equatable, Sendable {
     /// ask=key（128 飞鸽传书）：钥匙本身（text 留空，老大管家不会把它当成一条笔记交给大脑）、他写的这是谁家的（可以没有）。只走信箱，不走 iCloud，不落盘
     public var key: String?
     public var name: String?
+    /// ask=fb-config-ok（130）：收到了备用信箱配置，of 是那封配置的 id
+    public var of: String?
 
     /// ask：fix = 理顺（结果回 已理顺/）；speak = 配音（0.4.0 起，结果走 送来/，带 note）；word = 会了 / 不会（088，见 WordMark.swift）
     public init(id: String, note: String, kind: ButlerKind, text: String, images: [String]?, unsure: [String]?, ask: String = "fix", at: String, app: String) {

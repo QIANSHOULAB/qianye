@@ -86,6 +86,12 @@ struct SettingsScreen: View {
                                     .foregroundStyle(Color(Ink.text2))
                                     .fixedSize(horizontal: false, vertical: true)
                             }
+                            if app.butler.backup.hasConfig {                         // 130：备用通道
+                                Text(t.t(app.butler.backup.on ? "settings.backupOn" : "settings.backupHave"))
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(Color(Ink.text3))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
                             HStack(spacing: 16) {
                                 Button(t.t("settings.pairScan")) { showScanner = true }
                                     .buttonStyle(SmartButtonStyle())

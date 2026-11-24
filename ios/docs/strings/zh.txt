@@ -184,6 +184,8 @@ secret.copy	复制
 secret.stamp	机密
 secret.title	特勤局机密文件
 settings.appearance	外观
+settings.backupHave	备用通道：有
+settings.backupOn	走备用通道
 settings.butler	大管家
 settings.butlerAuto	拍照、录音的自动交给大管家
 settings.butlerNote	手写认歪的字，交给大管家对着原图理顺，几秒后送回一份干净的。走加密信箱，两头上锁；信箱断了就走镜像文件夹。手机里一把 AI 钥匙都不放。

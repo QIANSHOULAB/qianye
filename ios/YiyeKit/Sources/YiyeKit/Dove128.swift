@@ -49,6 +49,15 @@ extension ButlerRequest {
     }
 }
 
+extension ButlerRequest {
+    /// 「收到」备用信箱配置（130）：大管家收到后记下，不再递
+    public static func fbConfigOK(id: String, of cfg: String, at: String, app: String) -> ButlerRequest {
+        var r = ButlerRequest(id: id, note: "", kind: .text, text: "", images: nil, unsure: nil, ask: "fb-config-ok", at: at, app: app)
+        r.of = cfg
+        return r
+    }
+}
+
 /// 大管家对一把钥匙的回信：ok = 存了；line 是要显示的那句（ok 时是 text，不 ok 时是 error）
 public struct DoveReply: Equatable, Sendable {
     public var ok: Bool

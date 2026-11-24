@@ -184,6 +184,8 @@ secret.copy	Copy
 secret.stamp	CLASSIFIED
 secret.title	Eyes Only
 settings.appearance	Appearance
+settings.backupHave	Backup channel: ready
+settings.backupOn	Using the backup channel
 settings.butler	Butler
 settings.butlerAuto	Auto-send scans and voice notes
 settings.butlerNote	Scribbles the phone misreads go to your butler, who checks them against the photo and sends back a clean copy in seconds. Encrypted mailbox, locked at both ends; if it's down, the mirror folder takes over. Zero AI keys on this phone.

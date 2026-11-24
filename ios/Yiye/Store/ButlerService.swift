@@ -36,6 +36,11 @@ final class ButlerService {
     @ObservationIgnored private var looks: Set<String> = []
     /// 飞鸽传书（128）：在等回信的请求 id（只在内存里）
     @ObservationIgnored private var doves: Set<String> = []
+    /// 备用信箱（130）：谷歌那根管子
+    let backup = BackupCoordinator()
+    /// 办过的信封号（两条管子可能各来一份：只办一次）
+    @ObservationIgnored private var handledIDs: [String] = []
+    @ObservationIgnored private var fbTaking: Set<String> = []
     /// 信箱说电脑（desk）在线（111：只寄给电脑，掌机不存文件）
     private(set) var deskOn = false
     /// 抄到电脑（111）：寄出去、回信还没来的「便签 → 寄的那版 modifiedAt、寄的时间」
@@ -47,8 +52,11 @@ final class ButlerService {
 
     func start() {
         DoveModel.shared.service = self
+        backup.service = self
+        backup.resume()
         guard timer == nil else { return }
         if pairing == nil, app?.demo == nil, let d = Keychain.read(ButlerService.pairingAccount) { pairing = MailPairing.parse(d) }
+        backup.configure(box: pairing?.box)
         connectMail()
         look()
         let t = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
@@ -66,7 +74,7 @@ final class ButlerService {
 
     // ---------------------------------------------------------------- 信箱（v2）
     private func connectMail() {
-        guard socket == nil, app?.demo == nil, let p = pairing, let client = MailClient(pairing: p), let url = client.socketURL else { return }
+        guard socket == nil, app?.demo == nil, let p = pairing, let client = MailClient(pairing: p, backup: backup.hub), let url = client.socketURL else { return }
         mail = client
         let s = MailSocket(url: url, onPush: { [weak self] push in
             Task { @MainActor in self?.onPush(push) }
@@ -84,12 +92,15 @@ final class ButlerService {
     private func disconnectMail() {
         socket?.stop()
         socket = nil
-        relayDown()
+        relayDown(deliberate: true)
+        backup.hub.socketStopped()                 // 自己关的（退到后台）不算断
+        backup.suspend()
     }
 
-    private func relayDown() {
+    private func relayDown(deliberate: Bool = false) {
         relayUp = false
         deskOn = false
+        if !deliberate { backup.hub.socketDown() }
         refreshPresence()
     }
 
@@ -103,6 +114,7 @@ final class ButlerService {
         switch p {
         case .hello(let items, let pc, let seen):
             relayUp = true
+            backup.hub.socketUp()
             relayOn = pc
             relaySeen = seen
             refreshPresence()
@@ -116,6 +128,7 @@ final class ButlerService {
             refreshPresence()
         case .state(let pc, let seen):
             relayUp = true
+            backup.hub.socketUp()
             relayOn = pc
             if let seen { relaySeen = seen }
             refreshPresence()
@@ -134,7 +147,11 @@ final class ButlerService {
             defer { self.taking.remove(it.seq) }
             do {
                 let env = try await mail.receive(it)
-                if await self.handle(env) { try? await mail.ack(it.seq) }
+                if self.handledIDs.contains(env.id) { try? await mail.ack(it.seq); return }       // 130：谷歌那头先到过了
+                if await self.handle(env) {
+                    self.rememberHandled(env.id)
+                    try? await mail.ack(it.seq)
+                }
             } catch let e as MailError where e.isPermanent {
                 if e != .gone { try? await mail.ack(it.seq) }
             } catch {
@@ -192,6 +209,10 @@ final class ButlerService {
         case .secret(let d):                                // 128：大管家递来的一次性机密：弹一张卡，不存
             DoveModel.shared.show(d)
             return true
+        case .fbConfig(let c):                              // 130：备用信箱的配置：存钥匙串，回「收到」
+            backup.adopt(c.config, box: pairing?.box)
+            sendFbConfigOK(of: c.id)
+            return true
         case .article(let r):
             if let nid = articles[r.id] { app.articleReply(r, nid) }
             return true
@@ -209,6 +230,7 @@ final class ButlerService {
     func adopt(_ p: MailPairing) {
         guard p.isValid else { return }
         Keychain.write(Data(p.code.utf8), ButlerService.pairingAccount)
+        backup.configure(box: p.box)
         disconnectMail()
         mail = nil
         seqs = [:]
@@ -245,6 +267,7 @@ final class ButlerService {
     }
 
     private func rememberSeq(_ rid: String, _ seq: Int) {
+        guard seq >= 0 else { return }                       // 130：谷歌那条管子寄的没有信箱里的号
         seqs[rid] = seq
         if seqs.count > 100 {
             seqs = Dictionary(uniqueKeysWithValues: seqs.sorted { $0.value > $1.value }.prefix(100).map { ($0.key, $0.value) })
@@ -473,6 +496,42 @@ final class ButlerService {
         UserDefaults.standard.set(keepWait, forKey: "yiye.keepWait")
     }
 
+    // ---------------------------------------------------------------- 备用信箱（130）
+    private func rememberHandled(_ id: String) {
+        handledIDs.append(id)
+        if handledIDs.count > 300 { handledIDs.removeFirst(handledIDs.count - 300) }
+    }
+
+    /// 谷歌那条管子来的一封（备用模式下听着）：拆、办、办完删。两条路都来了只办一次
+    func fbLetter(_ l: FbLetterBody) {
+        guard let mail, !fbTaking.contains(l.mid) else { return }
+        fbTaking.insert(l.mid)
+        Task {
+            defer { self.fbTaking.remove(l.mid) }
+            var done = false
+            do {
+                let env = try mail.open(l.body)
+                if self.handledIDs.contains(env.id) {
+                    done = true
+                } else if await self.handle(env) {
+                    self.rememberHandled(env.id)
+                    done = true
+                }
+            } catch let e as MailError where e.isPermanent {
+                done = true                                  // 拆不开、不是信：删掉，别堵着
+            } catch {
+            }
+            if done { self.backup.ack(l.mid) }
+        }
+    }
+
+    /// 备用信箱的配置存好了：回大管家一句「收到」（它不再递）。走 send：Cloudflare 或谷歌，哪条通走哪条
+    private func sendFbConfigOK(of cfg: String) {
+        guard let mail else { return }
+        let req = ButlerRequest.fbConfigOK(id: UUID().uuidString, of: cfg, at: ISOTime.string(Date()), app: ButlerService.appVersion)
+        Task { _ = try? await mail.send(.request(req), timeout: 20) }
+    }
+
     // ---------------------------------------------------------------- 飞鸽传书（128）
     enum DoveSent: Equatable { case sent(pc: Bool), noPair, failed(String) }
 
@@ -631,6 +690,7 @@ final class ButlerService {
     /// 看一眼：配对、心跳、在等的结果、送来的
     func look() {
         guard let app else { return }
+        backup.hub.tick()
         checkPairing()
         keepFlush()
         if !words.items.isEmpty { flushWords() }
