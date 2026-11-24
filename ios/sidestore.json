@@ -25,6 +25,15 @@
       ],
       "versions": [
         {
+          "version": "0.7.13",
+          "buildVersion": "23",
+          "date": "2026-11-24",
+          "localizedDescription": "0.7.13：陪玩会抢答了。大管家边想边说，第一句一出来就念，后面的边念边到；它说着你直接插嘴，它就闭嘴听你的。喊「二档」「三档」「四档」想得更深，「回一档」回来。陪玩开着就一直记着前面聊了啥；「记住……」进记事本，「翻一下记事本」才去翻；「派个活：……」它复述一遍，你说「对」就派出去。话筒被电话、Siri、换耳机打断了自己接回来。手机自己念的话也换成了晓晓，不再两个人轮流说。",
+          "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.13/Yiye-0.7.13.ipa",
+          "size": 2985253,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.7.12",
           "buildVersion": "22",
           "date": "2026-11-24",
@@ -223,11 +232,11 @@
           "NSSpeechRecognitionUsageDescription": "Turns your voice into text right on your phone."
         }
       },
-      "version": "0.7.12",
+      "version": "0.7.13",
       "versionDate": "2026-11-24",
-      "versionDescription": "0.7.12：认字结果清爽了。写字页里 # - > ** 这些记号藏起来了，光标到哪一行，那一行才露出来；标题照大、粗体照粗、清单照缩进。顶栏日期右边多一个「原图」按钮，点一下上半屏看图、下半屏对字，再点收起。大管家理顺的时候，「标签: 值」排成一行，表单行不再加横杠。",
-      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.12/Yiye-0.7.12.ipa",
-      "size": 2688298
+      "versionDescription": "0.7.13：陪玩会抢答了。大管家边想边说，第一句一出来就念，后面的边念边到；它说着你直接插嘴，它就闭嘴听你的。喊「二档」「三档」「四档」想得更深，「回一档」回来。陪玩开着就一直记着前面聊了啥；「记住……」进记事本，「翻一下记事本」才去翻；「派个活：……」它复述一遍，你说「对」就派出去。话筒被电话、Siri、换耳机打断了自己接回来。手机自己念的话也换成了晓晓，不再两个人轮流说。",
+      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.13/Yiye-0.7.13.ipa",
+      "size": 2985253
     }
   ],
   "news": []
