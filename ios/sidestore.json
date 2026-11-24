@@ -25,6 +25,15 @@
       ],
       "versions": [
         {
+          "version": "0.7.17",
+          "buildVersion": "27",
+          "date": "2026-11-25",
+          "localizedDescription": "0.7.17：设置里多了「配色」：素白、米黄、豆青、天青、藕粉，点一下整个 app 的底、栏、纸、字一起换，深色也各有一套。手动换过纸的便签不动；便签「换纸」里多了「跟整体」，点了它就回去跟着整体变。",
+          "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.17/Yiye-0.7.17.ipa",
+          "size": 3254645,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.7.16",
           "buildVersion": "26",
           "date": "2026-11-24",
@@ -259,11 +268,11 @@
           "NSSpeechRecognitionUsageDescription": "Turns your voice into text right on your phone."
         }
       },
-      "version": "0.7.16",
-      "versionDate": "2026-11-24",
-      "versionDescription": "0.7.16：信箱多了一条备用通道：Cloudflare 叫不应时，陪玩、深聊、交给大管家自动改走谷歌，通了以后自己回来，不弹任何提示；设置里大管家那一行多一行小字「备用通道：有」。需要大管家先把配置递过来（手机在线时自动）。",
-      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.16/Yiye-0.7.16.ipa",
-      "size": 3217764
+      "version": "0.7.17",
+      "versionDate": "2026-11-25",
+      "versionDescription": "0.7.17：设置里多了「配色」：素白、米黄、豆青、天青、藕粉，点一下整个 app 的底、栏、纸、字一起换，深色也各有一套。手动换过纸的便签不动；便签「换纸」里多了「跟整体」，点了它就回去跟着整体变。",
+      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.17/Yiye-0.7.17.ipa",
+      "size": 3254645
     }
   ],
   "news": []
