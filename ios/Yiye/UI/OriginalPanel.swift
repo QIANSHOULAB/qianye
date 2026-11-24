@@ -11,7 +11,7 @@ struct OriginalPanel: View {
     @State private var page = 0
 
     var body: some View {
-        let h = UIScreen.main.bounds.height * (compact ? 0.28 : 0.46)
+        let h = UIScreen.main.bounds.height * (compact ? 0.22 : 0.46)
         TabView(selection: $page) {
             ForEach(paths.indices, id: \.self) { i in
                 Group {
