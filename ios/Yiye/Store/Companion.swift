@@ -1,45 +1,50 @@
 import AVFoundation
 import Network
 import Observation
-import Speech
 import UIKit
 import YiyeKit
 
 /// 陪玩模式（pc-butler 施工单 100，Song 11-24 10:07）：
 /// 「像游戏陪玩那样，打开以后它能实时读我的屏幕，然后可以实时问它问题，它可以实时做出反馈」「主要是一些英文内容，我不太看得懂」。
 /// - 104（Song 11-24）：没有「陪玩模式」开关了。工具栏耳机右边一个小图标，点一下弹苹果的直播面板选一叶笺（苹果规定这一下要人点）；开了直播就算开，停了直播就算关。之后全自动。
-/// - 直播开着就在后台听（后台音频）：本机判断开口、说完（停 0.8 秒），苹果本机听写成字（不上传），
-///   去直播扩展取问的那一刻的一帧，走信箱（两头加密）交给大管家；大管家看图答话、配好音回来，直接放（别的 App 的声音压低）。
-/// - 两台大管家都不在：用苹果的中文嗓子念「大管家不在」。关掉陪玩、停了直播：马上停听、停截。
-/// - 截到的屏幕只在开口那一刻取一帧，只交自己的大管家，不存。
+/// - 直播开着就在后台听（后台音频）：本机按音量判断开口、说完（停 0.8 秒），这一句录成 16 kHz 单声道 WAV（开口前 0.3 秒一起要，最长 20 秒），
+///   去直播扩展取问的那一刻的一帧，录音 + 截图一起走信箱（两头加密）交给大管家；大管家用本机 SenseVoice 认字、看图答话、配好音回来，直接放（别的 App 的声音压低）。
+/// - 108（Song 11-24 12:20 选 A）：不用苹果听写了（「非常差，经常听不懂我在说啥」，12:12 真机说话一点反应都没有）。
+///   出错就说：凡是会让「他说了话却什么都不发生」的地方，都弹一行字、用苹果的中文嗓子念出哪一步坏了，小圆点变红。不许再有静默 return。
+///   开听那一下「叮」一声。小圆点：在听绿，判到他在说绿色一闪一闪，等大管家橙，出错红。每次开听体检一次，工具箱「陪玩」下面显示，也寄给大管家记日志。
+/// - 截到的屏幕只在开口那一刻取一帧，录音、截图只交自己的大管家，都不存。
 @MainActor @Observable
 final class Companion {
-    enum Phase: Equatable { case off, listening, hearing, asking, speaking, failed(String) }
+    typealias Phase = CompanionPhase
 
     private(set) var phase: Phase = .off
     /// 直播扩展在跑（回环口子能连上）
     private(set) var live = false
     /// 上一问从说完到出声几秒
     private(set) var lastTotal: Double?
+    /// 这一问哪一步出了错（念过了）：小圆点红，到他下次开口
+    private(set) var alert: CompanionTrouble?
+    /// 体检那一行（工具箱「陪玩」下面）
+    private(set) var healthLine: String?
+    /// 上一句大管家认出来的字（工具箱「陪玩」下面，听歪了一眼看得出来）。只在内存里
+    private(set) var lastHeard: String?
+
+    var light: CompanionLight? { CompanionLight.of(phase, alert: alert != nil) }
 
     @ObservationIgnored weak var app: AppModel?
     @ObservationIgnored private let bell = LiveBell()
+    @ObservationIgnored private let mouth = AVSpeechSynthesizer()
     @ObservationIgnored private var ear: Ear?
     @ObservationIgnored private var current: String?
     @ObservationIgnored private var clock: LookClock?
     @ObservationIgnored private var prev: [String: Double] = [:]
+    @ObservationIgnored private var shorts = 0
     @ObservationIgnored private var probeTimer: Timer?
     @ObservationIgnored private var startedAt: Date?
     @ObservationIgnored private var batteryAtStart: Float?
 
     /// 开着陪玩、在听：后台也别断信箱
     var holdsButler: Bool { ear != nil }
-
-    static let saysAway = "大管家不在"
-    static let saysNoPair = "还没配大管家的信箱"
-    static let saysNoMail = "信箱连不上"
-    static let saysNoAnswer = "大管家没回，再问一次？"
-    static let saysFailed = "大管家这回没答上来"
 
     func setUp() {
         bell.onRing = { [weak self] name in self?.ring(name) }
@@ -73,40 +78,55 @@ final class Companion {
         live = false
         stopListening()
         phase = .off
+        alert = nil
     }
 
     // ---------------------------------------------------------------- 听
     private func startListening() {
         guard ear == nil, let app, app.demo == nil else { return }
         Task {
-            guard await AVAudioApplication.requestRecordPermission() else { return self.fail(app.lang.t("companion.noMic")) }
-            let auth = await withCheckedContinuation { (c: CheckedContinuation<SFSpeechRecognizerAuthorizationStatus, Never>) in
-                SFSpeechRecognizer.requestAuthorization { c.resume(returning: $0) }
+            guard await AVAudioApplication.requestRecordPermission() else {
+                self.healthLine = CompanionHealth(mic: false, live: self.live, mail: app.butler.relayUp, noise: nil, echo: false).line
+                return self.fail(.noMic, app.lang.t("companion.noMic"))
             }
-            guard auth == .authorized else { return self.fail(app.lang.t("companion.noMic")) }
             guard self.ear == nil, self.live else { return }
-            let ear = Ear(locale: "zh-CN")
+            let ear = Ear()
             ear.onStart = { [weak self] in Task { @MainActor in self?.heardStart() } }
-            ear.onHeard = { [weak self] text, end in Task { @MainActor in self?.heard(text, spokeEnd: end) } }
-            ear.onDrop = { [weak self] in Task { @MainActor in self?.backToListening() } }
+            ear.onClip = { [weak self] wav, secs, peak, end in
+                Task { @MainActor in self?.heard(wav, seconds: secs, peak: peak, spokeEnd: end) }
+            }
+            ear.onDrop = { [weak self] in Task { @MainActor in self?.dropped() } }
             do {
                 try ear.start()
             } catch {
                 ear.stop()
-                return self.fail(error.localizedDescription)
+                return self.fail(.earFailed, error.localizedDescription)
             }
             self.ear = ear
             self.phase = .listening
+            self.alert = nil
             self.startedAt = Date()
+            self.shorts = 0
             UIDevice.current.isBatteryMonitoringEnabled = true
             self.batteryAtStart = UIDevice.current.batteryLevel
             self.app?.butler.start()
             self.app?.butler.lookWarm()
+            ear.chime()                                       // 真正开始听了：叮
             self.probeTimer?.invalidate()
             let t = Timer(timeInterval: 15, repeats: true) { [weak self] _ in Task { @MainActor in await self?.probe() } }
             RunLoop.main.add(t, forMode: .common)
             self.probeTimer = t
+            // 体检：等底噪稳下来（门槛看最近 3 秒）再量
+            try? await Task.sleep(nanoseconds: 3_500_000_000)
+            if self.ear === ear { self.checkUp(ear) }
         }
+    }
+
+    private func checkUp(_ ear: Ear) {
+        guard let app else { return }
+        let h = CompanionHealth(mic: true, live: live, mail: app.butler.relayUp, noise: ear.noise, echo: ear.echo)
+        healthLine = h.line
+        app.butler.lookCheck(h)
     }
 
     private func stopListening() {
@@ -120,109 +140,178 @@ final class Companion {
         if UIApplication.shared.applicationState == .background { app?.butler.stop() }
     }
 
-    private func fail(_ why: String) {
+    /// 开不起来：停听、红点、弹一行、念出来
+    private func fail(_ t: CompanionTrouble, _ detail: String) {
         stopListening()
-        phase = .failed(why)
-        if let app { app.show(app.lang.f("companion.failed", why), seconds: 6) }    // 出错弹一次，不留条
+        phase = .failed(t.words)
+        if let app { app.show(app.lang.f("companion.failed", detail), seconds: 6) }
+        say(t.words, thenListen: false)
     }
 
     private func heardStart() {
-        if phase == .listening { phase = .hearing }
+        if phase == .listening {
+            phase = .hearing
+            alert = nil
+        }
     }
 
-    private func backToListening() {
+    /// 太短的一下（咔哒、咳嗽）：不算一句，记个数跟下一封信走
+    private func dropped() {
+        shorts += 1
         if phase == .hearing { phase = .listening }
     }
 
     // ---------------------------------------------------------------- 问
-    private func heard(_ text: String, spokeEnd: Double) {
-        let q = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    private func heard(_ wav: Data, seconds: Double, peak: Double, spokeEnd: Double) {
         guard ear != nil, let app else { return }
-        guard q.count >= 2 else { return backToListening() }
         let id = UUID().uuidString
-        if let old = current { app.butler.forgetLook(old) }
+        if let old = current {                           // 上一句还在等：不要了，它的账先记上
+            app.butler.forgetLook(old)
+            finishStats()
+        }
         current = id
-        var c = LookClock(spokeEnd: spokeEnd)
-        c.heard = ProcessInfo.processInfo.systemUptime
-        clock = c
+        clock = LookClock(spokeEnd: spokeEnd, rec: seconds, peak: peak)
         phase = .asking
-        var prevNow = prev
-        UIDevice.current.isBatteryMonitoringEnabled = true
-        let bat = UIDevice.current.batteryLevel
-        if bat >= 0 { prevNow["bat"] = Double((bat * 100).rounded()) }
-        if let b0 = batteryAtStart, b0 >= 0 { prevNow["bat0"] = Double((b0 * 100).rounded()) }
-        if let s = startedAt { prevNow["mins"] = (Date().timeIntervalSince(s) / 60 * 10).rounded() / 10 }
-        prev = [:]
-        let prevSend = prevNow
+        alert = nil
+        let prevSend = takePrev()
         Task {
-            var files: [String: Data] = [:]
+            let audioPath = ButlerRequest.lookAudioPath(id)
+            var files: [String: Data] = [audioPath: wav]
             var path: String?
+            var trouble: CompanionTrouble?
             if self.live {
                 switch await LiveLink.fetch(id) {
                 case .frame(let d):
                     let p = "陪玩/\(id.prefix(8))-屏.jpg"
                     files[p] = d
                     path = p
+                case .noFrame: trouble = .noFrame
+                case .refused: trouble = .frameRefused
                 case .down:
                     self.live = false
-                default:
-                    break
+                    trouble = .liveDown
                 }
+            } else {
+                trouble = .liveDown
             }
             guard self.current == id else { return }
             self.clock?.frame = ProcessInfo.processInfo.systemUptime
-            let req = ButlerRequest.look(id: id, question: q, image: path, at: ISOTime.string(Date()), app: ButlerService.appVersion, prev: prevSend)
+            self.clock?.frameOK = path != nil
+            if let trouble { self.notice(trouble) }           // 少了图照样问，先说一声
+            let req = ButlerRequest.look(id: id, question: "", audio: audioPath, image: path, at: ISOTime.string(Date()),
+                                         app: ButlerService.appVersion, prev: prevSend)
             let r = await app.butler.sendLook(req, files: files)
             guard self.current == id else { return }
             self.clock?.sent = ProcessInfo.processInfo.systemUptime
             switch r {
             case .sent(true):
+                self.clock?.sentOK = true
                 try? await Task.sleep(nanoseconds: 45_000_000_000)
-                if self.current == id, self.phase == .asking { self.giveUp(id, Companion.saysNoAnswer) }
-            case .sent(false): self.giveUp(id, Companion.saysAway)
-            case .noPair: self.giveUp(id, Companion.saysNoPair)
-            case .failed: self.giveUp(id, Companion.saysNoMail)
+                if self.current == id, self.phase == .asking { self.giveUp(id, .noAnswer) }
+            case .sent(false):
+                self.clock?.sentOK = false
+                self.giveUp(id, .away)
+            case .noPair:
+                self.clock?.sentOK = false
+                self.giveUp(id, .noPair)
+            case .failed:
+                self.clock?.sentOK = false
+                self.giveUp(id, .noMail)
             }
             if !self.live { self.liveGone() }
         }
     }
 
-    private func giveUp(_ id: String, _ words: String) {
+    /// 这一问走不下去了：记账、红点、弹一行、念出来，念完接着听
+    private func giveUp(_ id: String, _ t: CompanionTrouble) {
         app?.butler.forgetLook(id)
         current = nil
-        speak(words)
+        finishStats()
+        alert = t
+        app?.show(t.words, seconds: 5)
+        phase = .speaking
+        say(t.words, thenListen: true)
+    }
+
+    /// 这一问还接着走，只是哪一步差了点（没截到图）：红点、弹一行、念一句，不改现在在干嘛
+    private func notice(_ t: CompanionTrouble) {
+        alert = t
+        app?.show(t.words, seconds: 5)
+        say(t.words, thenListen: false)
     }
 
     /// 大管家的回答到了（ButlerService 收信时叫）
     func answer(_ r: ButlerResult, audio: Data?) {
-        guard r.id == current, let ear else { return }
+        guard r.id == current, let ear else { return }        // 不是最新那一问的：不放（只要最新的）
         current = nil
         clock?.back = ProcessInfo.processInfo.systemUptime
+        if let h = r.heard { lastHeard = h.isEmpty ? "（什么都没听出来）" : h }
+        let missed = (r.timing?["miss"] ?? 0) > 0
+        if missed {
+            alert = .misheard
+            app?.show(CompanionTrouble.misheard.words, seconds: 4)
+        }
         phase = .speaking
         let done: @Sendable () -> Void = { [weak self] in Task { @MainActor in self?.played() } }
         let started: @Sendable () -> Void = { [weak self] in Task { @MainActor in self?.playing(r.timing ?? [:]) } }
-        if let audio, ear.play(audio, started: started, done: done) { return }
-        let words = (r.text?.isEmpty == false ? r.text : nil) ?? Companion.saysFailed
+        if let audio {
+            if ear.play(audio, started: started, done: done) { return }
+            alert = .cantPlay                                   // 配好的声音坏了：弹一行，用手机自己的嗓子念回答
+            app?.show(CompanionTrouble.cantPlay.words, seconds: 5)
+        }
+        let words = (r.text?.isEmpty == false ? r.text : nil) ?? (missed ? CompanionTrouble.misheard.words : CompanionTrouble.brainFailed.words)
         ear.speak(words, voice: PhoneVoice.bestVoice("zh-CN"), started: started, done: done)
     }
 
     private func playing(_ butler: [String: Double]) {
-        guard var c = clock else { return }
-        c.playing = ProcessInfo.processInfo.systemUptime
-        prev = c.summary(butler: butler)
-        lastTotal = prev["total"]
-        clock = nil
-    }
-
-    private func speak(_ words: String) {
-        guard let ear else { return }
-        phase = .speaking
-        clock = nil
-        ear.speak(words, voice: PhoneVoice.bestVoice("zh-CN"), started: {}, done: { [weak self] in Task { @MainActor in self?.played() } })
+        clock?.playing = ProcessInfo.processInfo.systemUptime
+        clock?.playOK = true
+        finishStats(butler: butler)
     }
 
     private func played() {
+        if clock != nil {                                     // 放完了还没开始出声：没放出来
+            clock?.playOK = false
+            finishStats()
+            alert = .cantPlay
+            app?.show(CompanionTrouble.cantPlay.words, seconds: 5)
+        }
         if ear != nil, phase == .speaking { phase = .listening }
+    }
+
+    /// 用苹果的中文嗓子念一句。在听就走耳朵（念的时候不判开口）；耳朵没开就直接念
+    private func say(_ words: String, thenListen: Bool) {
+        let voice = PhoneVoice.bestVoice("zh-CN")
+        guard let ear else {
+            let u = AVSpeechUtterance(string: words)
+            u.voice = voice
+            mouth.speak(u)
+            return
+        }
+        ear.speak(words, voice: voice, started: {}, done: { [weak self] in
+            Task { @MainActor in if thenListen { self?.played() } }
+        })
+    }
+
+    // ---------------------------------------------------------------- 记账（只有是 / 否和秒数，跟下一封信走）
+    private func finishStats(butler: [String: Double] = [:]) {
+        guard let c = clock else { return }
+        prev = c.summary(butler: butler)
+        if let t = prev["total"] { lastTotal = t }
+        clock = nil
+    }
+
+    private func takePrev() -> [String: Double] {
+        var p = prev
+        prev = [:]
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        let bat = UIDevice.current.batteryLevel
+        if bat >= 0 { p["bat"] = Double((bat * 100).rounded()) }
+        if let b0 = batteryAtStart, b0 >= 0 { p["bat0"] = Double((b0 * 100).rounded()) }
+        if let s = startedAt { p["mins"] = (Date().timeIntervalSince(s) / 60 * 10).rounded() / 10 }
+        if shorts > 0 { p["short"] = Double(shorts) }
+        shorts = 0
+        return p
     }
 }
 
@@ -336,36 +425,37 @@ final class Once: @unchecked Sendable {
     }
 }
 
-// ================================================================ 耳朵和嘴：话筒、听写、放回答
+// ================================================================ 耳朵和嘴：话筒、切句录音、放回答
 /// 一个 AVAudioEngine 从开到关一直跑着（后台不能重新开话筒，所以不停）：
 /// - 话筒开回声消除（voice processing），别的 App 的声音在有人说话时压低（advanced ducking），自己放的回答不会被自己听进去；
-/// - 每一小块算分贝交给 VoiceGate；开口了就开一个本机听写（zh-CN，requiresOnDeviceRecognition），开口前 0.3 秒一起喂进去；
-/// - 说完：收尾，等定稿（最多 2 秒，没定稿用最后一版）交出去；
-/// - 放回答、念一句的时候不判开口（mute），放完再等 0.3 秒。
+/// - 每一小块转成 16 kHz 单声道交给 ClipCutter：判开口、说完，开口前 0.3 秒一起要，最长 20 秒；说完把这一句编成 WAV 交出去（108，不再用苹果听写）；
+/// - 放回答、念一句、叮的时候不判开口（mute），放完再等 0.3 秒。
 final class Ear: @unchecked Sendable {
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
     private let playFormat = AVAudioFormat(standardFormatWithSampleRate: 24_000, channels: 1)!
-    private let recognizer: SFSpeechRecognizer?
+    private let earFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: Double(ClipCutter.rate), channels: 1, interleaved: false)!
+    private var converter: AVAudioConverter?
     private let synth = AVSpeechSynthesizer()
+    private let backup = AVSpeechSynthesizer()
     private let lock = NSLock()
-    private var gate = VoiceGate()
-    private var pre: [AVAudioPCMBuffer] = []
-    private var preMs: Double = 0
-    private var request: SFSpeechAudioBufferRecognitionRequest?
-    private var task: SFSpeechRecognitionTask?
-    private var texts: [Int: String] = [:]
-    private var gen = 0
+    private var cutter = ClipCutter()
     private var mutedUntil: Double = 0
     private var playing = false
+    private var playGen = 0
     private var running = false
+    /// 回声消除开上了没有（体检用）
+    private(set) var echo = false
 
     var onStart: (@Sendable () -> Void)?
-    var onHeard: (@Sendable (String, Double) -> Void)?
+    /// 一句说完：WAV、录了几秒、最响一块的 dB、说完的那一刻（systemUptime）
+    var onClip: (@Sendable (Data, Double, Double, Double) -> Void)?
     var onDrop: (@Sendable () -> Void)?
 
-    init(locale: String) {
-        recognizer = SFSpeechRecognizer(locale: Locale(identifier: locale))
+    /// 门槛现在的底噪（dBFS）
+    var noise: Double {
+        lock.lock(); defer { lock.unlock() }
+        return cutter.noise
     }
 
     func start() throws {
@@ -377,25 +467,24 @@ final class Ear: @unchecked Sendable {
             try input.setVoiceProcessingEnabled(true)
             input.voiceProcessingOtherAudioDuckingConfiguration = AVAudioVoiceProcessingOtherAudioDuckingConfiguration(
                 enableAdvancedDucking: true, duckingLevel: .mid)
+            echo = true
         } catch {
-            // 没有回声消除也照样能用：放回答时本来就不听
+            echo = false        // 没有回声消除也照样能用：放回答时本来就不听
         }
         engine.attach(player)
         engine.connect(player, to: engine.mainMixerNode, format: playFormat)
         input.installTap(onBus: 0, bufferSize: 1024, format: nil) { [weak self] buf, _ in self?.hear(buf) }
         engine.prepare()
         try engine.start()
+        lock.lock()
         running = true
+        lock.unlock()
     }
 
     func stop() {
         lock.lock()
         running = false
-        gen += 1
-        task?.cancel()
-        task = nil
-        request = nil
-        pre = []
+        cutter = ClipCutter()
         lock.unlock()
         player.stop()
         engine.inputNode.removeTap(onBus: 0)
@@ -406,102 +495,85 @@ final class Ear: @unchecked Sendable {
 
     // ---------------------------------------------------------------- 听
     private func hear(_ buf: AVAudioPCMBuffer) {
-        guard buf.frameLength > 0, let copy = Ear.copy(buf) else { return }
-        let ms = Double(buf.frameLength) / buf.format.sampleRate * 1000
-        let db = Ear.level(buf)
+        guard buf.frameLength > 0, let samples = toEar(buf), !samples.isEmpty else { return }
         let now = ProcessInfo.processInfo.systemUptime
         lock.lock()
         guard running else { lock.unlock(); return }
         let mute = playing || now < mutedUntil
-        let was = gate.speaking
-        let ev = gate.feed(db: db, ms: ms, mute: mute)
-        var startCB: (@Sendable () -> Void)?
-        var dropCB: (@Sendable () -> Void)?
+        let ev = cutter.feed(samples, mute: mute)
+        let endSilence = cutter.gate.endSilenceMs / 1000
+        let maxSeconds = cutter.maxSeconds
+        let startCB = onStart, dropCB = onDrop, clipCB = onClip
+        lock.unlock()
         switch ev {
         case .start?:
-            beginLocked(pre + [copy])
-            pre = []
-            preMs = 0
-            startCB = onStart
-        case .end?:
-            request?.append(copy)
-            endLocked(spokeEnd: now - gate.endSilenceMs / 1000)
+            startCB?()
         case .tooShort?:
-            task?.cancel()
-            task = nil
-            request = nil
-            gen += 1
-            dropCB = onDrop
+            dropCB?()
+        case .clip(let s, let secs, let peak)?:
+            let end = secs >= maxSeconds - 0.01 ? now : now - endSilence
+            clipCB?(Wav.encode(s), secs, peak, end)
         case nil:
-            if gate.speaking {
-                request?.append(copy)
-            } else {
-                if was { request = nil }
-                pre.append(copy)
-                preMs += ms
-                while preMs > 300, pre.count > 1 {
-                    preMs -= Double(pre[0].frameLength) / pre[0].format.sampleRate * 1000
-                    pre.removeFirst()
-                }
+            break
+        }
+    }
+
+    /// 话筒那一块 → 16 kHz 单声道浮点。转换器一直用同一个（接着上一块转，接缝不咔哒）
+    private func toEar(_ b: AVAudioPCMBuffer) -> [Float]? {
+        if converter == nil || converter?.inputFormat != b.format {
+            converter = AVAudioConverter(from: b.format, to: earFormat)
+            converter?.downmix = true
+        }
+        guard let conv = converter else { return nil }
+        let cap = AVAudioFrameCount(Double(b.frameLength) * earFormat.sampleRate / b.format.sampleRate) + 256
+        guard let out = AVAudioPCMBuffer(pcmFormat: earFormat, frameCapacity: cap) else { return nil }
+        let fed = Once()
+        var err: NSError?
+        let st = conv.convert(to: out, error: &err) { _, status in
+            if fed.take() {
+                status.pointee = .haveData
+                return b
             }
+            status.pointee = .noDataNow
+            return nil
         }
-        lock.unlock()
-        startCB?()
-        dropCB?()
-    }
-
-    private func beginLocked(_ first: [AVAudioPCMBuffer]) {
-        gen += 1
-        let g = gen
-        texts = texts.filter { $0.key >= g - 3 }
-        endAt = endAt.filter { $0.key >= g - 3 }
-        task?.cancel()
-        let r = SFSpeechAudioBufferRecognitionRequest()
-        r.shouldReportPartialResults = true
-        r.requiresOnDeviceRecognition = true
-        r.addsPunctuation = true
-        r.taskHint = .dictation
-        for b in first { r.append(b) }
-        request = r
-        guard let recognizer, recognizer.isAvailable else { return }
-        task = recognizer.recognitionTask(with: r) { [weak self] result, _ in
-            guard let self, let result else { return }
-            self.lock.lock()
-            self.texts[g] = result.bestTranscription.formattedString
-            let final = result.isFinal
-            self.lock.unlock()
-            if final { self.deliver(g) }
-        }
-    }
-
-    private var endAt: [Int: Double] = [:]
-
-    private func endLocked(spokeEnd: Double) {
-        let g = gen
-        endAt[g] = spokeEnd
-        request?.endAudio()
-        request = nil
-        DispatchQueue.global().asyncAfter(deadline: .now() + 2) { [weak self] in self?.deliver(g) }
-    }
-
-    /// 一句定稿了（或者等了 2 秒）：交出去，只交一次
-    private func deliver(_ g: Int) {
-        lock.lock()
-        guard let end = endAt.removeValue(forKey: g) else { lock.unlock(); return }
-        let text = texts.removeValue(forKey: g) ?? ""
-        let cb = onHeard
-        lock.unlock()
-        cb?(text, end)
+        guard st != .error, err == nil else { return nil }
+        guard out.frameLength > 0, let d = out.floatChannelData else { return [] }
+        return Array(UnsafeBufferPointer(start: d[0], count: Int(out.frameLength)))
     }
 
     // ---------------------------------------------------------------- 说
+    /// 真正开始听的那一下：很短的「叮」（两个音，不念字）
+    func chime() {
+        let sr = playFormat.sampleRate
+        let parts: [(Double, Double)] = [(1318.5, 0.07), (1760, 0.10)]
+        let counts = parts.map { Int($0.1 * sr) }
+        let total = counts.reduce(0, +)
+        guard let buf = AVAudioPCMBuffer(pcmFormat: playFormat, frameCapacity: AVAudioFrameCount(total)), let d = buf.floatChannelData else { return }
+        var i = 0
+        for (j, part) in parts.enumerated() {
+            let n = counts[j]
+            for k in 0..<n {
+                let fadeIn = min(1, Double(k) / (0.004 * sr))
+                let fadeOut = min(1, Double(n - k) / (0.03 * sr))
+                d[0][i] = Float(sin(2 * Double.pi * part.0 * Double(k) / sr) * 0.22 * fadeIn * fadeOut)
+                i += 1
+            }
+        }
+        buf.frameLength = AVAudioFrameCount(total)
+        schedule(buf, started: {}, done: {})
+    }
+
     /// 放大管家配好的 mp3。放不了（坏的）返回 false
     func play(_ data: Data, started: @escaping @Sendable () -> Void, done: @escaping @Sendable () -> Void) -> Bool {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("yiye-answer.mp3")
         do {
             try data.write(to: url, options: .atomic)
             let f = try AVAudioFile(forReading: url)
-            guard let raw = AVAudioPCMBuffer(pcmFormat: f.processingFormat, frameCapacity: AVAudioFrameCount(f.length)) else { return false }
+            guard let raw = AVAudioPCMBuffer(pcmFormat: f.processingFormat, frameCapacity: AVAudioFrameCount(f.length)) else {
+                try? FileManager.default.removeItem(at: url)
+                return false
+            }
             try f.read(into: raw)
             try? FileManager.default.removeItem(at: url)
             guard let buf = Ear.convert(raw, to: playFormat) else { return false }
@@ -513,7 +585,7 @@ final class Ear: @unchecked Sendable {
         }
     }
 
-    /// 用苹果的中文嗓子念一句（大管家不在、没回……）
+    /// 用苹果的中文嗓子念一句（大管家不在、没回、哪一步坏了……）。合成出不来声音就直接让系统念
     func speak(_ words: String, voice: AVSpeechSynthesisVoice?, started: @escaping @Sendable () -> Void, done: @escaping @Sendable () -> Void) {
         let u = AVSpeechUtterance(string: words)
         u.voice = voice
@@ -524,25 +596,41 @@ final class Ear: @unchecked Sendable {
             if pcm.frameLength == 0 {
                 guard box.finish() else { return }
                 let all = box.items.compactMap { Ear.convert($0, to: fmt) }
-                guard let self, let one = Ear.join(all, fmt) else { return done() }
-                self.schedule(one, started: started, done: done)
+                guard let self else { return done() }
+                if let one = Ear.join(all, fmt) {
+                    self.schedule(one, started: started, done: done)
+                } else {
+                    self.sayDirect(words, voice: voice)
+                    started()
+                    done()
+                }
             } else {
                 box.add(pcm)
             }
         }
     }
 
+    private func sayDirect(_ words: String, voice: AVSpeechSynthesisVoice?) {
+        let u = AVSpeechUtterance(string: words)
+        u.voice = voice
+        backup.speak(u)
+    }
+
     private func schedule(_ buf: AVAudioPCMBuffer, started: @escaping @Sendable () -> Void, done: @escaping @Sendable () -> Void) {
         lock.lock()
         guard running else { lock.unlock(); return done() }
         playing = true
+        playGen += 1
+        let g = playGen
         lock.unlock()
-        player.stop()
+        player.stop()                                   // 前一段（叮、念的一句）还没完就让给新的
         player.scheduleBuffer(buf, at: nil, options: [], completionCallbackType: .dataPlayedBack) { [weak self] _ in
             guard let self else { return }
             self.lock.lock()
-            self.playing = false
-            self.mutedUntil = ProcessInfo.processInfo.systemUptime + 0.3
+            if self.playGen == g {                      // 被新的一段顶掉的那段不算放完
+                self.playing = false
+                self.mutedUntil = ProcessInfo.processInfo.systemUptime + 0.3
+            }
             self.lock.unlock()
             done()
         }
@@ -552,34 +640,6 @@ final class Ear: @unchecked Sendable {
     }
 
     // ---------------------------------------------------------------- 小工具
-    static func level(_ b: AVAudioPCMBuffer) -> Double {
-        let n = Int(b.frameLength)
-        guard n > 0 else { return -120 }
-        var sum: Double = 0
-        if let f = b.floatChannelData {
-            let p = f[0]
-            for i in 0..<n { let v = Double(p[i]); sum += v * v }
-        } else if let s = b.int16ChannelData {
-            let p = s[0]
-            for i in 0..<n { let v = Double(p[i]) / 32768; sum += v * v }
-        } else {
-            return -120
-        }
-        return 20 * log10(max(sqrt(sum / Double(n)), 1e-6))
-    }
-
-    static func copy(_ b: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
-        guard let c = AVAudioPCMBuffer(pcmFormat: b.format, frameCapacity: b.frameLength) else { return nil }
-        c.frameLength = b.frameLength
-        let src = UnsafeMutableAudioBufferListPointer(b.mutableAudioBufferList)
-        let dst = UnsafeMutableAudioBufferListPointer(c.mutableAudioBufferList)
-        for (s, d) in zip(src, dst) {
-            guard let sp = s.mData, let dp = d.mData else { continue }
-            memcpy(dp, sp, Int(min(s.mDataByteSize, d.mDataByteSize)))
-        }
-        return c
-    }
-
     static func convert(_ b: AVAudioPCMBuffer, to fmt: AVAudioFormat) -> AVAudioPCMBuffer? {
         if b.format == fmt { return b }
         guard let conv = AVAudioConverter(from: b.format, to: fmt) else { return nil }

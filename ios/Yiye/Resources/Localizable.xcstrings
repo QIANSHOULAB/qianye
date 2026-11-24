@@ -670,13 +670,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mic or speech recognition is off. Turn them on in Settings > Yiye."
+            "value": "The mic is off. Turn it on in Settings > Yiye."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "麦克风或语音识别没开：iPhone 设置 › 一叶笺 里打开"
+            "value": "麦克风没开：iPhone 设置 › 一叶笺 里打开"
           }
         }
       }
@@ -2370,13 +2370,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open the toolbox at the top left, tap Buddy, pick Yiye, start. Then use your phone as usual and just ask out loud: Yiye grabs the screen at that moment, hands it to your own butler, and the answer comes back as a voice. While broadcasting, the toolbox gets a dot: green is listening, orange is the butler on it, red is an error. The red and orange dots up top are Apple’s broadcast and mic lights. Normal."
+            "value": "Open the toolbox at the top left, tap Buddy, pick Yiye, start. The ding means it’s listening: use your phone as usual and just ask out loud. Your words and the screen at that moment go to your own butler, which listens, looks, and answers out loud. The dot on the toolbox: green is listening, blinking means it hears you, orange is the butler on it, red is something broke (it’ll tell you what). The red and orange dots up top are Apple’s broadcast and mic lights. Normal."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "左上角工具箱里点「陪玩」，弹苹果的直播面板，选一叶笺，点开始。之后手机随便用，开口就问：它截你问的那一刻的屏幕，交给自己的大管家，用声音答你。直播中工具箱右上角有个小圆点：绿是在听，橙是大管家在忙，红是出错了。屏幕上方的红点、橙点是苹果的直播和麦克风提示，正常。"
+            "value": "左上角工具箱里点「陪玩」，弹苹果的直播面板，选一叶笺，点开始。听到「叮」就是在听了：手机随便用，开口就问，它把你这句话和那一刻的屏幕交给自己的大管家，大管家听、看、用声音答你。工具箱右上角的小圆点：绿是在听，一闪一闪是听到你在说，橙是大管家在忙，红是哪儿坏了（它会念出来）。屏幕上方的红点、橙点是苹果的直播和麦克风提示，正常。"
           }
         }
       }

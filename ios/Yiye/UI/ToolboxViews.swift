@@ -35,8 +35,8 @@ struct ToolboxButton: View {
         Button(action: open) {
             Image(systemName: "shippingbox")
                 .overlay(alignment: .topTrailing) {
-                    if let c = companionColor(app.companion.phase) {
-                        Circle().fill(Color(c))
+                    if let l = app.companion.light {
+                        CompanionDot(light: l)
                             .frame(width: 9, height: 9)
                             .overlay(Circle().strokeBorder(Color(Ink.btnTop), lineWidth: 1.5))
                             .offset(x: 6, y: -5)
@@ -70,6 +70,7 @@ struct ToolboxPanel: View {
                 .contentShape(Rectangle())
                 .onTapGesture(perform: dismiss)
                 .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 6) {
             LazyVGrid(columns: columns, alignment: .leading, spacing: 6) {
                 ForEach(Tool.allCases) { tool in
                     Button { pick(tool) } label: {
@@ -90,6 +91,8 @@ struct ToolboxPanel: View {
                     .buttonStyle(.plain)
                 }
             }
+            companionLines
+            }
             .frame(width: 80 * 3 + 6 * 2, alignment: .leading)      // 面板贴着格子，不拉满整行
             .padding(8)
             .background {
@@ -103,8 +106,31 @@ struct ToolboxPanel: View {
         .transition(.opacity.combined(with: .move(edge: .top)))
     }
 
+    /// 「陪玩」那格下面两行小字（108）：上次开听的体检、上一句大管家认出来的字。听歪了、哪样没连上，一眼看得出来
+    @ViewBuilder private var companionLines: some View {
+        let c = app.companion
+        if c.healthLine != nil || c.lastHeard != nil {
+            VStack(alignment: .leading, spacing: 2) {
+                if let h = c.healthLine {
+                    Text(h)
+                }
+                if let w = c.lastHeard {
+                    Text("上一句：" + w)
+                        .truncationMode(.tail)
+                }
+            }
+            .font(.system(size: 11))
+            .foregroundStyle(Color(Ink.text2))
+            .lineLimit(1)
+            .padding(.horizontal, 6)
+            .padding(.bottom, 2)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+        }
+    }
+
     private func tint(_ tool: Tool) -> UIColor {
-        if tool == .companion, let c = companionColor(app.companion.phase) { return c }
+        if tool == .companion, let c = companionColor(app.companion.light) { return c }
         return Ink.text2
     }
 }

@@ -2,13 +2,26 @@ import ReplayKit
 import SwiftUI
 import YiyeKit
 
-/// 陪玩现在在干嘛的颜色（104 定的，105 起用在工具箱的小圆点和「陪玩」那一格上）：在听绿，问和说橙，出错红；没直播回 nil
-func companionColor(_ p: Companion.Phase) -> UIColor? {
-    switch p {
-    case .listening, .hearing: return .dyn(0x34C759, 0x30D158)
-    case .asking, .speaking: return Ink.accent
-    case .failed: return Ink.danger
-    case .off: return nil
+/// 陪玩小圆点的颜色（104 定，108 加了闪）：在听绿，判到他在说绿色一闪一闪，等大管家、放回答橙，出错红；没直播回 nil
+func companionColor(_ l: CompanionLight?) -> UIColor? {
+    switch l {
+    case .green?, .greenBlink?: return .dyn(0x34C759, 0x30D158)
+    case .orange?: return Ink.accent
+    case .red?: return Ink.danger
+    case nil: return nil
+    }
+}
+
+/// 工具箱右上角的小圆点。greenBlink 一秒闪两三下
+struct CompanionDot: View {
+    let light: CompanionLight
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 0.2)) { ctx in
+            let on = light != .greenBlink || Int(ctx.date.timeIntervalSinceReferenceDate / 0.4) % 2 == 0
+            Circle().fill(Color(companionColor(light) ?? .clear))
+                .opacity(on ? 1 : 0.2)
+        }
     }
 }
 

@@ -404,6 +404,16 @@ final class ButlerService {
         }
     }
 
+    /// 陪玩体检（108）：大管家只记一行日志（是 / 否和数），不回信；大管家不在就算了
+    func lookCheck(_ h: CompanionHealth) {
+        if mail == nil { connectMail() }
+        guard let mail, app?.demo == nil else { return }
+        let req = ButlerRequest.lookCheck(id: UUID().uuidString, health: h, at: ISOTime.string(Date()), app: ButlerService.appVersion)
+        Task {
+            if let sent = try? await mail.send(.request(req), timeout: 15), !sent.pc { try? await mail.ack(sent.seq) }
+        }
+    }
+
     func forgetLook(_ id: String) { looks.remove(id) }
 
     // ---------------------------------------------------------------- iCloud（v1 备胎）

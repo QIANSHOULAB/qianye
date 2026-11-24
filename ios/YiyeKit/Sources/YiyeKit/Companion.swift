@@ -1,7 +1,8 @@
 import Foundation
 
 // 陪玩模式（pc-butler 施工单 100，Song 11-24 10:07）：手机直播自己的屏幕，开口问一句，取问的那一刻的一帧，
-// 连问题一起走信箱交给大管家（ask=look），大管家看图答话、配好音送回来，手机直接放。接口见 ios/docs/大管家接口.md「v3.2」。
+// 连问题一起走信箱交给大管家（ask=look），大管家看图答话、配好音送回来，手机直接放。接口见 ios/docs/大管家接口.md「v3.2」「v3.3」。
+// 108（Song 11-24 12:20 选 A）：手机不再用苹果听写。一句话录成 16 kHz 单声道 WAV 寄过去，大管家用本机 SenseVoice 认字。
 // 这里是不碰系统框架、能在 Mac 上单测的那几块：缩图尺寸、扩展和主 App 之间的回环格式、开口 / 说完的判断、请求和回信。
 
 // ================================================================ 缩到大脑看的尺寸
@@ -98,16 +99,17 @@ public enum LiveWire {
 /// - 底噪 = 最近 windowMs（3 秒）里排在低处（第 10 百分位）的音量：游戏声一直响着，底噪就跟着抬上去，人说话比它高才算。
 ///   说话的时候底噪不动（不把自己的话算进去）。
 /// - 比底噪高 margin 分贝、而且不低于 floorMin，连着 startMs 算开口。
-/// - 开口以后安静 endSilenceMs（0.8 秒，单子写的）算说完；说了 maxMs 还没停也算说完。太短的（< minMs）不算一句。
+/// - 开口以后安静 endSilenceMs（0.8 秒，单子写的）算说完；说了 maxMs（20 秒，108）还没停也算说完。太短的（< minMs）不算一句。
+/// - floorMin 108 从 -52 降到 -60：话筒开了回声消除（voiceProcessing）以后电平整体变低，-52 可能把人声也挡在门外（11-24 12:12 真机一点反应都没有）。
 /// - 自己在放声音的时候（mute）什么都不判。
 public struct VoiceGate: Sendable {
     public enum Event: Equatable, Sendable { case start, end(seconds: Double), tooShort }
 
     public var margin: Double = 12
-    public var floorMin: Double = -52
+    public var floorMin: Double = -60
     public var startMs: Double = 120
     public var endSilenceMs: Double = 800
-    public var maxMs: Double = 15_000
+    public var maxMs: Double = 20_000
     public var minMs: Double = 350
     public var windowMs: Double = 3_000
 
@@ -167,11 +169,188 @@ public struct VoiceGate: Sendable {
     }
 }
 
+// ================================================================ 切句录音（108）
+/// 每一小块声音（16 kHz 单声道的浮点样本）喂进来：VoiceGate 判开口、说完；开口前 preMs（0.3 秒）的声音一起要，
+/// 最长 maxSeconds（20 秒）。说完交出这一句的样本。只在内存里，不落盘。
+public struct ClipCutter: Sendable {
+    public static let rate = 16_000
+
+    public enum Out: Equatable, Sendable {
+        case start
+        /// 一句：样本、多长（秒）、说话时最响的一块（dBFS）
+        case clip(samples: [Float], seconds: Double, peak: Double)
+        case tooShort
+    }
+
+    public var gate = VoiceGate()
+    public var preMs: Double = 300
+    public var maxSeconds: Double = 20
+    public private(set) var pre: [Float] = []
+    public private(set) var clip: [Float] = []
+    private var peak: Double = -120
+
+    public init() {}
+
+    public var noise: Double { gate.noise }
+    public var speaking: Bool { gate.speaking }
+
+    /// 开口前留多少样本：0.3 秒 + 判开口要的那段（startMs），这样交出去的一句从开口前 0.3 秒开始
+    var preCap: Int { Int((preMs + gate.startMs) / 1000 * Double(ClipCutter.rate)) }
+    var maxCount: Int { Int(maxSeconds * Double(ClipCutter.rate)) }
+
+    public static func level(_ s: [Float]) -> Double {
+        guard !s.isEmpty else { return -120 }
+        var sum: Double = 0
+        for v in s { sum += Double(v) * Double(v) }
+        return 20 * log10(max(sqrt(sum / Double(s.count)), 1e-6))
+    }
+
+    public mutating func feed(_ s: [Float], mute: Bool = false) -> Out? {
+        guard !s.isEmpty else { return nil }
+        let db = ClipCutter.level(s)
+        let ms = Double(s.count) / Double(ClipCutter.rate) * 1000
+        let was = gate.speaking
+        let ev = gate.feed(db: db, ms: ms, mute: mute)
+        switch ev {
+        case .start?:
+            clip = pre + s
+            pre = []
+            peak = db
+            if clip.count >= maxCount { return finish() }
+            return .start
+        case .end?:
+            clip += s
+            return finish()
+        case .tooShort?:
+            clip = []
+            return .tooShort
+        case nil:
+            if gate.speaking {
+                clip += s
+                peak = max(peak, db)
+                if clip.count >= maxCount { return finish() }
+            } else {
+                if was { clip = [] }                 // 说到一半自己开始放声音了（mute）：这一句不要了
+                pre += s
+                if pre.count > preCap { pre.removeFirst(pre.count - preCap) }
+            }
+            return nil
+        }
+    }
+
+    private mutating func finish() -> Out {
+        if clip.count > maxCount { clip.removeLast(clip.count - maxCount) }
+        let out = clip
+        clip = []
+        pre = []
+        gate.reset()
+        return .clip(samples: out, seconds: Double(out.count) / Double(ClipCutter.rate), peak: (peak * 10).rounded() / 10)
+    }
+}
+
+/// 16 位 PCM 的 WAV（电脑那头 Python 自带的 wave 就能读，不用装东西）
+public enum Wav {
+    public static func encode(_ samples: [Float], rate: Int = ClipCutter.rate) -> Data {
+        var d = Data(capacity: 44 + samples.count * 2)
+        func u32(_ v: UInt32) { withUnsafeBytes(of: v.littleEndian) { d.append(contentsOf: $0) } }
+        func u16(_ v: UInt16) { withUnsafeBytes(of: v.littleEndian) { d.append(contentsOf: $0) } }
+        let bytes = UInt32(samples.count * 2)
+        d.append(contentsOf: Array("RIFF".utf8)); u32(36 + bytes); d.append(contentsOf: Array("WAVE".utf8))
+        d.append(contentsOf: Array("fmt ".utf8)); u32(16); u16(1); u16(1); u32(UInt32(rate)); u32(UInt32(rate * 2)); u16(2); u16(16)
+        d.append(contentsOf: Array("data".utf8)); u32(bytes)
+        for v in samples {
+            let x = Int16(max(-1, min(1, v)) * 32767)
+            u16(UInt16(bitPattern: x))
+        }
+        return d
+    }
+}
+
+// ================================================================ 小圆点（108）
+/// 陪玩现在在干嘛
+public enum CompanionPhase: Equatable, Sendable { case off, listening, hearing, asking, speaking, failed(String) }
+
+/// 工具箱小圆点：在听绿，判到他在说绿色一闪一闪，寄出去等大管家、放回答橙，出错红；没直播没有点
+public enum CompanionLight: Equatable, Sendable {
+    case green, greenBlink, orange, red
+
+    /// alert：这一问哪一步出了错（念过了），下次开口前一直红
+    public static func of(_ p: CompanionPhase, alert: Bool) -> CompanionLight? {
+        switch p {
+        case .off: return nil
+        case .failed: return .red
+        case .hearing: return .greenBlink        // 他又开口了：先让他看见在听
+        case _ where alert: return .red
+        case .listening: return .green
+        case .asking, .speaking: return .orange
+        }
+    }
+}
+
+// ================================================================ 出错就说（108）
+/// 凡是会让「他说了话却什么都不发生」的地方，都弹一行字 + 用苹果的中文嗓子念出来，小圆点变红
+public enum CompanionTrouble: Equatable, Sendable, CaseIterable {
+    case noMic, earFailed, noFrame, frameRefused, liveDown, noPair, away, noMail, noAnswer, cantPlay, misheard, brainFailed
+
+    /// 念的（也是弹的那行字）：短，说清哪一步坏了
+    public var words: String {
+        switch self {
+        case .noMic: return "麦克风没开，去设置里给一叶笺开麦克风"
+        case .earFailed: return "话筒打不开，停一下直播再开"
+        case .noFrame: return "没截到屏幕，只问了话"
+        case .frameRefused: return "直播不认这个一叶笺，停了重开"
+        case .liveDown: return "直播断了，只问了话"
+        case .noPair: return "还没配大管家的信箱"
+        case .away: return "大管家不在"
+        case .noMail: return "信箱连不上"
+        case .noAnswer: return "大管家没回，再问一次？"
+        case .cantPlay: return "回答的声音放不出来"
+        case .misheard: return "没听清，再说一遍"
+        case .brainFailed: return "大管家这回没答上来"
+        }
+    }
+
+    /// 这一问还接着走（只是少了图）：不打断等回答
+    public var keepsGoing: Bool { self == .noFrame || self == .frameRefused || self == .liveDown }
+}
+
+// ================================================================ 体检（108）
+/// 每次开听记一行：话筒权限、直播在不在、信箱连没连上、门槛的底噪。工具箱「陪玩」下面显示，也寄一封 look-check 给大管家记日志（只有是 / 否和数）
+public struct CompanionHealth: Equatable, Sendable {
+    public var mic: Bool
+    public var live: Bool
+    public var mail: Bool
+    public var noise: Double?
+    /// 话筒的回声消除开上了没有（开了电平会低，调门槛用）
+    public var echo: Bool
+
+    public init(mic: Bool, live: Bool, mail: Bool, noise: Double?, echo: Bool) {
+        self.mic = mic; self.live = live; self.mail = mail; self.noise = noise; self.echo = echo
+    }
+
+    public var numbers: [String: Double] {
+        var out: [String: Double] = ["mic": mic ? 1 : 0, "live": live ? 1 : 0, "mail": mail ? 1 : 0, "echo": echo ? 1 : 0]
+        if let noise { out["noise"] = (noise * 10).rounded() / 10 }
+        return out
+    }
+
+    public var line: String {
+        func m(_ b: Bool) -> String { b ? "✓" : "✗" }
+        var s = "话筒\(m(mic)) 直播\(m(live)) 信箱\(m(mail))"
+        if let noise { s += " 底噪 \(Int(noise.rounded())) dB" }
+        return s
+    }
+}
+
 // ================================================================ 请求、回信
 extension ButlerRequest {
-    /// 陪玩问一句：问的字 + 那一帧（images 里一个路径，图跟着信走）；prev 是上一问手机这头量的秒数（大管家记进日志，验收用）
-    public static func look(id: String, question: String, image: String?, at: String, app: String, prev: [String: Double]? = nil) -> ButlerRequest {
-        var r = ButlerRequest(id: id, note: "", kind: .text, text: question, images: image.map { [$0] }, unsure: nil, ask: "look", at: at, app: app)
+    /// 陪玩问一句：录音（audio，108 起）或者问的字（question，留给以后打字问），二选一；那一帧（images 里一个路径）。图、录音都跟着信走。
+    /// prev 是上一问手机这头量的秒数和是 / 否（大管家记进日志，验收用）
+    public static func look(id: String, question: String, audio: String? = nil, image: String?, at: String, app: String,
+                            prev: [String: Double]? = nil) -> ButlerRequest {
+        var r = ButlerRequest(id: id, note: "", kind: audio == nil ? .text : .voice, text: audio == nil ? question : "",
+                              images: image.map { [$0] }, unsure: nil, ask: "look", at: at, app: app)
+        r.audio = audio
         r.timing = (prev?.isEmpty ?? true) ? nil : prev
         return r
     }
@@ -180,30 +359,55 @@ extension ButlerRequest {
     public static func lookWarm(id: String, at: String, app: String) -> ButlerRequest {
         ButlerRequest(id: id, note: "", kind: .text, text: "", images: nil, unsure: nil, ask: "look-warm", at: at, app: app)
     }
+
+    /// 陪玩体检（108）：大管家只记一行日志，不回信
+    public static func lookCheck(id: String, health: CompanionHealth, at: String, app: String) -> ButlerRequest {
+        var r = ButlerRequest(id: id, note: "", kind: .text, text: "", images: nil, unsure: nil, ask: "look-check", at: at, app: app)
+        r.timing = health.numbers
+        return r
+    }
+
+    /// 录音在信里的路径
+    public static func lookAudioPath(_ id: String) -> String { "陪玩/\(id.prefix(8))-问.wav" }
 }
 
-/// 一问的来回，手机这头记的几个时间点（秒，ProcessInfo.systemUptime）
+/// 一问的来回，手机这头记的（时间点是秒，ProcessInfo.systemUptime；ok 是这一步成没成，没走到是 nil）
 public struct LookClock: Sendable, Equatable {
+    /// 说完的那一刻
     public var spokeEnd: Double
-    public var heard: Double?
+    /// 录音几秒
+    public var rec: Double = 0
+    /// 说话时最响一块的 dB
+    public var peak: Double?
     public var frame: Double?
+    public var frameOK: Bool?
     public var sent: Double?
+    public var sentOK: Bool?
     public var back: Double?
     public var playing: Double?
+    public var playOK: Bool?
 
-    public init(spokeEnd: Double) { self.spokeEnd = spokeEnd }
+    public init(spokeEnd: Double, rec: Double = 0, peak: Double? = nil) {
+        self.spokeEnd = spokeEnd; self.rec = rec; self.peak = peak
+    }
 
-    /// 交给大管家的下一问带着的那份：识别、取图、寄出（含传图）、等回信、放出声、一共；电量另外加
+    /// 交给大管家的下一问带着的那份：门槛开口、录音几秒、取帧（秒、成没成）、寄出（秒、成没成）、等回信、回信到没到、放出声（秒、成没成）、一共；
+    /// 大管家那头的几段加 b 前缀；电量另外加
     public func summary(butler: [String: Double] = [:]) -> [String: Double] {
-        var out: [String: Double] = [:]
+        var out: [String: Double] = ["gate": 1, "rec": (rec * 100).rounded() / 100]
         func put(_ k: String, _ a: Double?, _ b: Double?) { if let a, let b { out[k] = max(0, (b - a) * 100).rounded() / 100 } }
-        put("asr", spokeEnd, heard)
-        put("frame", heard, frame)
-        put("put", frame ?? heard, sent)
+        func ok(_ k: String, _ v: Bool?) { if let v { out[k] = v ? 1 : 0 } }
+        if let peak { out["peak"] = (peak * 10).rounded() / 10 }
+        put("frame", spokeEnd, frame)
+        ok("frameOK", frameOK)
+        put("put", frame ?? spokeEnd, sent)
+        ok("sentOK", sentOK)
         put("wait", sent, back)
+        if sentOK == true { out["backOK"] = back == nil ? 0 : 1 }
         put("play", back, playing)
+        ok("playOK", playOK)
         put("total", spokeEnd, playing)
-        for (k, v) in butler where ["fetch", "brain", "voice"].contains(k) { out["b" + k.prefix(1).uppercased() + k.dropFirst()] = v }
+        for (k, v) in butler where ["fetch", "brain", "voice", "asr"].contains(k) { out["b" + k.prefix(1).uppercased() + k.dropFirst()] = v }
         return out
     }
 }

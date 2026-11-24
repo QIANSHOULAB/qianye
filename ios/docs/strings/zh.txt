@@ -43,7 +43,7 @@ common.cancel	取消
 common.close	关
 common.done	好了
 companion.failed	陪玩没开起来：%@
-companion.noMic	麦克风或语音识别没开：iPhone 设置 › 一叶笺 里打开
+companion.noMic	麦克风没开：iPhone 设置 › 一叶笺 里打开
 companion.noPanel	直播面板叫不出来
 editor.back	便签
 editor.more	更多
@@ -143,7 +143,7 @@ settings.butler	大管家
 settings.butlerAuto	拍照、录音的自动交给大管家
 settings.butlerNote	手写认不准的字，掌机上的大管家对着原图理顺再送回来。走 Cloudflare 信箱，几秒就到，信两头加密；信箱连不上才走镜像文件夹。手机上不存任何 AI 钥匙。
 settings.companion	陪玩
-settings.companionNote	左上角工具箱里点「陪玩」，弹苹果的直播面板，选一叶笺，点开始。之后手机随便用，开口就问：它截你问的那一刻的屏幕，交给自己的大管家，用声音答你。直播中工具箱右上角有个小圆点：绿是在听，橙是大管家在忙，红是出错了。屏幕上方的红点、橙点是苹果的直播和麦克风提示，正常。
+settings.companionNote	左上角工具箱里点「陪玩」，弹苹果的直播面板，选一叶笺，点开始。听到「叮」就是在听了：手机随便用，开口就问，它把你这句话和那一刻的屏幕交给自己的大管家，大管家听、看、用声音答你。工具箱右上角的小圆点：绿是在听，一闪一闪是听到你在说，橙是大管家在忙，红是哪儿坏了（它会念出来）。屏幕上方的红点、橙点是苹果的直播和麦克风提示，正常。
 settings.fontSize	字号
 settings.import	从文件夹导入
 settings.language	语言

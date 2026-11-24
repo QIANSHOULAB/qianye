@@ -192,11 +192,11 @@ S = {
  "listen.noAudio": ("还没声音 · 点一下先用手机念", "No audio yet · tap to have your phone read it"),
  "busy.speak": ("一句一句念，稍等…", "Reading it aloud…"),
  "settings.companion": ("陪玩", "Buddy"),
- "settings.companionNote": ("左上角工具箱里点「陪玩」，弹苹果的直播面板，选一叶笺，点开始。之后手机随便用，开口就问：它截你问的那一刻的屏幕，交给自己的大管家，用声音答你。直播中工具箱右上角有个小圆点：绿是在听，橙是大管家在忙，红是出错了。屏幕上方的红点、橙点是苹果的直播和麦克风提示，正常。", "Open the toolbox at the top left, tap Buddy, pick Yiye, start. Then use your phone as usual and just ask out loud: Yiye grabs the screen at that moment, hands it to your own butler, and the answer comes back as a voice. While broadcasting, the toolbox gets a dot: green is listening, orange is the butler on it, red is an error. The red and orange dots up top are Apple’s broadcast and mic lights. Normal."),
+ "settings.companionNote": ("左上角工具箱里点「陪玩」，弹苹果的直播面板，选一叶笺，点开始。听到「叮」就是在听了：手机随便用，开口就问，它把你这句话和那一刻的屏幕交给自己的大管家，大管家听、看、用声音答你。工具箱右上角的小圆点：绿是在听，一闪一闪是听到你在说，橙是大管家在忙，红是哪儿坏了（它会念出来）。屏幕上方的红点、橙点是苹果的直播和麦克风提示，正常。", "Open the toolbox at the top left, tap Buddy, pick Yiye, start. The ding means it’s listening: use your phone as usual and just ask out loud. Your words and the screen at that moment go to your own butler, which listens, looks, and answers out loud. The dot on the toolbox: green is listening, blinking means it hears you, orange is the butler on it, red is something broke (it’ll tell you what). The red and orange dots up top are Apple’s broadcast and mic lights. Normal."),
  "tools.title": ("工具箱", "Toolbox"),
  "companion.noPanel": ("直播面板叫不出来", "Couldn’t open the broadcast panel"),
  "companion.failed": ("陪玩没开起来：%@", "Buddy mode didn’t start: %@"),
- "companion.noMic": ("麦克风或语音识别没开：iPhone 设置 › 一叶笺 里打开", "Mic or speech recognition is off. Turn them on in Settings > Yiye."),
+ "companion.noMic": ("麦克风没开：iPhone 设置 › 一叶笺 里打开", "The mic is off. Turn it on in Settings > Yiye."),
  "settings.voice": ("录一段", "Voice notes"),
  "settings.voiceNote": ("说的话在手机上转成字，不上传。侧键一按就录：iPhone 的 Settings > Action Button > Shortcut，选一叶笺下面的「录一段」（手机是英文就叫 Record a voice note）。", "Your voice turns into text on this phone. Nothing is uploaded. To record with the Action Button: Settings > Action Button > Shortcut > Yiye “Record a voice note”."),
 }
