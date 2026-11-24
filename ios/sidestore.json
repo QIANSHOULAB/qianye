@@ -25,6 +25,15 @@
       ],
       "versions": [
         {
+          "version": "0.7.15",
+          "buildVersion": "25",
+          "date": "2026-11-24",
+          "localizedDescription": "0.7.15：工具箱多一格「飞鸽传书」：复制 API 钥匙、点粘贴、发送，钥匙经加密信箱直接交给大管家，不用再绕 Telegram；大管家递来的一次性密码弹成一张「特勤局机密文件」卡，复制后 2 分钟清剪贴板，关了就没了。",
+          "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.15/Yiye-0.7.15.ipa",
+          "size": 3042664,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.7.14",
           "buildVersion": "24",
           "date": "2026-11-24",
@@ -241,11 +250,11 @@
           "NSSpeechRecognitionUsageDescription": "Turns your voice into text right on your phone."
         }
       },
-      "version": "0.7.14",
+      "version": "0.7.15",
       "versionDate": "2026-11-24",
-      "versionDescription": "0.7.14：便签又点得开、滑得动了。列表里点一条就进去，右滑扔、左滑置顶照常；长按一条进批量选，手指不抬往下划还是一串都选上。",
-      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.14/Yiye-0.7.14.ipa",
-      "size": 2964995
+      "versionDescription": "0.7.15：工具箱多一格「飞鸽传书」：复制 API 钥匙、点粘贴、发送，钥匙经加密信箱直接交给大管家，不用再绕 Telegram；大管家递来的一次性密码弹成一张「特勤局机密文件」卡，复制后 2 分钟清剪贴板，关了就没了。",
+      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.15/Yiye-0.7.15.ipa",
+      "size": 3042664
     }
   ],
   "news": []
