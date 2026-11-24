@@ -91,6 +91,7 @@ struct ToolboxPanel: View {
                 }
             }
             .padding(8)
+            .fixedSize()          // 面板贴着格子，不拉满整行
             .background {
                 RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(Ink.paper))
                     .shadow(color: Color.black.opacity(0.14), radius: 10, x: 0, y: 4)
