@@ -1,19 +1,18 @@
-# UI 测试：有红的（xcodebuild 退出码 65）
+# UI 测试：全绿
 
--[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting]' failed (64.978 seconds).
--[YiyeUITests.ListGestureTests testListeningOpensText]' passed (15.477 seconds).
--[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (40.347 seconds).
--[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (16.214 seconds).
--[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (38.693 seconds).
--[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects]' passed (32.150 seconds).
--[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange]' passed (22.838 seconds).
--[YiyeUITests.ListGestureTests testSweepMiddleScrollsNotSelects]' passed (40.214 seconds).
--[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (21.151 seconds).
--[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (19.609 seconds).
--[YiyeUITests.ListGestureTests testTapOpensNote]' passed (10.267 seconds).
+-[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting]' passed (35.093 seconds).
+-[YiyeUITests.ListGestureTests testListeningOpensText]' passed (19.198 seconds).
+-[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (30.366 seconds).
+-[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (16.624 seconds).
+-[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (85.307 seconds).
+-[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects]' passed (29.698 seconds).
+-[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange]' passed (27.149 seconds).
+-[YiyeUITests.ListGestureTests testSweepMiddleScrollsNotSelects]' passed (27.057 seconds).
+-[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (16.725 seconds).
+-[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (17.017 seconds).
+-[YiyeUITests.ListGestureTests testTapOpensNote]' passed (16.181 seconds).
 
-ListGestureTests.swift:207: error: -[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting] : XCTAssertTrue failed - 11-没有撤销：扔了以后底下没出「Undo」
 
-	 Executed 11 tests, with 1 failure (0 unexpected) in 321.939 (321.951) seconds
-	 Executed 11 tests, with 1 failure (0 unexpected) in 321.939 (321.953) seconds
-** TEST FAILED **
+	 Executed 11 tests, with 0 failures (0 unexpected) in 320.416 (320.428) seconds
+	 Executed 11 tests, with 0 failures (0 unexpected) in 320.416 (320.434) seconds
+** TEST SUCCEEDED **
