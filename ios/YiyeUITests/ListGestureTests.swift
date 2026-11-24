@@ -144,6 +144,79 @@ final class ListGestureTests: XCTestCase {
         check(n >= 3, "06-长按往下划没选上一串", "从 Weekly sync 划到 Handover 该选上 3 条以上，实际 \(n)")
     }
 
+    // ---------------------------------------------------------------- 沿左边那一条划选（135）
+    // Demo 主页从上往下：Weekend groceries（置顶）、Weekly sync、Tomorrow's sync、Handover, Nov 3、Team lunch、Reading list
+
+    /// 一条纸条上的一个点：左边那一条（圆圈 / 小木钉）离纸条按钮左边 x 点；mid = true 就是纸条正中间
+    private func spot(_ r: XCUIElement, x: CGFloat = 24, mid: Bool = false) -> XCUICoordinate {
+        mid ? r.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5))
+            : r.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5)).withOffset(CGVector(dx: x, dy: 0))
+    }
+
+    /// 按住（不到长按的 0.4 秒）慢慢划过去，停一下再松手
+    private func sweep(_ from: XCUICoordinate, _ to: XCUICoordinate) {
+        from.press(forDuration: 0.1, thenDragTo: to, withVelocity: .slow, thenHoldForDuration: 0.3)
+    }
+
+    /// 进批量选、一条都没选：长按 Handover 进去，再点它取消
+    private func enterSelectingEmpty() {
+        row("Handover, Nov 3").press(forDuration: 1.0)
+        waitSelected(1, "08-长按没进批量选")
+        row("Handover, Nov 3").tap()
+        waitSelected(0, "08-点按下那条没取消")
+    }
+
+    func testSweepLeftStripSelectsRange() {
+        launch()
+        enterSelectingEmpty()
+        sweep(spot(row("Weekend groceries")), spot(row("Handover, Nov 3")))
+        waitSelected(4, "08-左边那一条从第 1 条划到第 4 条没选上 4 条")
+        check(!editorText.exists, "08-划完打开了便签", "划选松手不该进写字页")
+    }
+
+    func testSweepFromSelectedDeselects() {
+        launch()
+        enterSelectingEmpty()
+        sweep(spot(row("Weekend groceries")), spot(row("Handover, Nov 3")))
+        waitSelected(4, "09-先划选 4 条没成")
+        // 从已选的第 2 条起手往下划到第 4 条：这三条都取消，只剩第 1 条
+        sweep(spot(row("Weekly sync")), spot(row("Handover, Nov 3")))
+        waitSelected(1, "09-从已选的那条往下划没取消")
+    }
+
+    func testSweepMiddleScrollsNotSelects() {
+        launch()
+        enterSelectingEmpty()
+        sweep(spot(row("Weekend groceries"), mid: true), spot(row("Handover, Nov 3"), mid: true))
+        waitSelected(0, "10-纸条中间往下划选上了")
+        check(!editorText.exists, "10-纸条中间划完打开了便签", "上下滚不该进写字页")
+        // 还能点：点一条照样选上
+        row("Weekly sync").tap()
+        waitSelected(1, "10-划完以后点一条没选上")
+    }
+
+    func testLeftStripWhenNotSelecting() {
+        launch()
+        // 右滑：从左边那一条起手往右划，照样扔进废纸篓
+        let r = row("Tomorrow")
+        spot(r).press(forDuration: 0.05, thenDragTo: spot(r, x: 330), withVelocity: .fast, thenHoldForDuration: 0)
+        let trash = app.buttons["Trash"]
+        if r.exists, trash.waitForExistence(timeout: 1.5) { trash.tap() }
+        check(r.waitForNonExistence(timeout: 4), "11-左边那一条右滑没扔掉", "从左边那一条右滑以后这条还在列表里")
+        let undo = app.buttons["Undo"]
+        check(undo.waitForExistence(timeout: 3), "11-没有撤销", "扔了以后底下没出「Undo」")
+        undo.tap()
+        // 左滑：从左边那一条起手往左划，露出置顶
+        let w = row("Weekly sync")
+        spot(w, x: 70).press(forDuration: 0.05, thenDragTo: spot(w, x: -10), withVelocity: .fast, thenHoldForDuration: 0)
+        let pin = app.buttons["Pin"]
+        check(pin.waitForExistence(timeout: 3), "11-左边那一条左滑没露出置顶", "从左边那一条左滑以后没有「Pin」")
+        pin.tap()
+        // 点左边那一条：进写字页
+        spot(row("Tomorrow")).tap()
+        assertEditor("room two", "11-点左边那一条没进写字页")
+    }
+
     // ---------------------------------------------------------------- 小耳机（112）
 
     func testListeningOpensText() {

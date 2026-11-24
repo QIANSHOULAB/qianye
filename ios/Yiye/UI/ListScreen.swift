@@ -2,11 +2,13 @@ import SwiftUI
 import SwiftData
 import PhotosUI
 import UIKit
+import UIKit.UIGestureRecognizerSubclass
 import YiyeKit
 
 /// 列表：一条笔记一张纸条（第一行当标题，下面一两行摘要，加时间）。置顶的在最上面。
 /// 右滑扔进废纸篓（留 3 天，底下给撤销）；左滑置顶、小耳机；长按一条进批量选，手指不抬往上往下划，划过的都选上。
 /// 长按（133）：不挂 SwiftUI 手势（0.7.8–0.7.12 的高优先长按把点按和左右滑都压住了），挂在列表底下的 UICollectionView 上，见 NoteListPress。
+/// 批量选里沿左边那一条（圆圈连同小木钉）往上往下划（135）：起手那条没选，划过的都选上；选了的，划过的都取消。见 NoteListSweep。
 struct ListScreen: View {
     @Environment(AppModel.self) private var app
     @Query(filter: #Predicate<Note> { $0.trashed == false && $0.kind != "listen" }, sort: \Note.modifiedAt, order: .reverse) private var notes: [Note]
@@ -30,6 +32,8 @@ struct ListScreen: View {
     /// 长按起来的时刻（松手变回 nil）；松手的时刻。松手那一下按钮要是也算一次点按，就不理它（133）
     @State private var pressBeganAt: Date?
     @State private var pressEndedAt = Date.distantPast
+    /// 沿左边那一条划（135）：这一划是在选（起手那条原来没选）还是在取消
+    @State private var sweepAdds = true
 
     private var t: Lang { app.lang }
 
@@ -197,7 +201,8 @@ struct ListScreen: View {
             }
         }
         .buttonStyle(StripButtonStyle())
-        .background(RowTag(id: n.id, begin: startTouch, move: moveTouch, end: endTouch))
+        .background(RowTag(id: n.id, begin: startTouch, move: moveTouch, end: endTouch,
+                           selecting: selecting, sweepBegin: sweepBegin, sweepMove: sweepMove, sweepEnd: endTouch))
         .accessibilityAddTraits(on ? .isSelected : [])
         .listRowInsets(EdgeInsets(top: 5, leading: 12, bottom: 5, trailing: 12))
         .listRowBackground(Color.clear)
@@ -297,6 +302,30 @@ struct ListScreen: View {
         pressEndedAt = Date()
     }
 
+    /// 批量选里从左边那一条起手往上往下划（135）：起手那条没选 → 这一划是选；选了 → 这一划是取消（跟苹果邮件一样）
+    private func sweepBegin(_ id: UUID) {
+        guard selecting else { return }
+        let ids = shown.map(\.id)
+        guard let at = ids.firstIndex(of: id) else { return }
+        dragBase = selected
+        dragAnchor = at
+        sweepAdds = !selected.contains(id)
+        sweepMove(id)
+    }
+
+    /// 手指划到了 id 这条：起手那条到这一条都选上（或都取消）；往回划，退掉的回到划之前的样子
+    private func sweepMove(_ id: UUID) {
+        guard selecting else { return }
+        let ids = shown.map(\.id)
+        guard let current = ids.firstIndex(of: id) else { return }
+        let span = BatchSelect.span(ids, from: dragAnchor, to: current)
+        let next = sweepAdds ? dragBase.union(span) : dragBase.subtracting(span)
+        if next != selected {
+            haptic()
+            selected = next
+        }
+    }
+
     private func endSelecting() {
         withAnimation(.easeOut(duration: 0.2)) { selecting = false }
         selected = []
@@ -347,6 +376,11 @@ struct RowTag: UIViewRepresentable {
     let begin: @MainActor (UUID) -> Void
     let move: @MainActor (UUID) -> Void
     let end: @MainActor () -> Void
+    /// 135：批量选开着没有；沿左边那一条划的三个回调
+    var selecting = false
+    var sweepBegin: @MainActor (UUID) -> Void = { _ in }
+    var sweepMove: @MainActor (UUID) -> Void = { _ in }
+    var sweepEnd: @MainActor () -> Void = {}
 
     func makeUIView(context: Context) -> RowTagView {
         let v = RowTagView()
@@ -360,6 +394,10 @@ struct RowTag: UIViewRepresentable {
         v.begin = begin
         v.move = move
         v.end = end
+        v.selecting = selecting
+        v.sweepBegin = sweepBegin
+        v.sweepMove = sweepMove
+        v.sweepEnd = sweepEnd
         v.install()
     }
 }
@@ -369,6 +407,10 @@ final class RowTagView: UIView {
     var begin: (@MainActor (UUID) -> Void)?
     var move: (@MainActor (UUID) -> Void)?
     var end: (@MainActor () -> Void)?
+    var selecting = false
+    var sweepBegin: (@MainActor (UUID) -> Void)?
+    var sweepMove: (@MainActor (UUID) -> Void)?
+    var sweepEnd: (@MainActor () -> Void)?
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
@@ -385,6 +427,14 @@ final class RowTagView: UIView {
         g.onBegin = begin
         g.onMove = move
         g.onEnd = end
+        // 135：沿左边那一条划
+        if let sweepBegin, let sweepMove, let sweepEnd {
+            let s = NoteListSweep.on(cv)
+            s.selecting = selecting
+            s.onBegin = sweepBegin
+            s.onMove = sweepMove
+            s.onEnd = sweepEnd
+        }
     }
 
     /// 这一格里垫着的那个
@@ -472,6 +522,146 @@ final class NoteListPress: UILongPressGestureRecognizer, UIGestureRecognizerDele
     }
 
     /// 手指到了哪条：选上那一段；离列表上下边缘 80 点以内，越靠边滚得越快
+    private func follow() {
+        guard let cv = list else { return }
+        let p = location(in: cv)
+        pick(p)
+        let y = p.y - cv.contentOffset.y
+        let h = cv.bounds.height
+        let edge: CGFloat = 80
+        if y < edge { speed = -min(edge, edge - y) / 6 }
+        else if y > h - edge { speed = min(edge, y - (h - edge)) / 6 }
+        else { speed = 0 }
+    }
+
+    private func pick(_ p: CGPoint) {
+        guard let id = noteID(at: p), id != lastID else { return }
+        lastID = id
+        onMove(id)
+    }
+
+    private func startLink() {
+        link?.invalidate()
+        let l = CADisplayLink(target: self, selector: #selector(tick))
+        l.add(to: .main, forMode: .common)
+        link = l
+    }
+
+    private func stopLink() {
+        link?.invalidate()
+        link = nil
+        speed = 0
+    }
+
+    @objc private func tick() {
+        guard speed != 0, let cv = list else { return }
+        let top = -cv.adjustedContentInset.top
+        let bottom = max(top, cv.contentSize.height + cv.adjustedContentInset.bottom - cv.bounds.height)
+        let y = min(max(cv.contentOffset.y + speed, top), bottom)
+        guard y != cv.contentOffset.y else { return }
+        cv.contentOffset.y = y
+        pick(location(in: cv))
+    }
+}
+
+// ---------------------------------------------------------------- 沿左边那一条划选（135）
+/// 批量选开着时，从左边那一条（圆圈那列连同纸条左边小木钉，离格子左边 stripWidth 点以内）按下、往上往下划：
+/// 起手那条没选，划过的都选上；起手那条选了，划过的都取消（ListScreen.sweepBegin 定）。划到上下边缘，列表自己往那边滚，接着选。
+/// 跟 133 的长按、点按、左右滑、上下滚怎么不打架：
+/// - 没在批量选、或者手指没落在左边那一条上：手指一落下它就作废（touchesBegan 里直接 failed），别的识别器一点不等它；
+/// - 列表自己的上下滚要等它作废才动（require(toFail:)）；落在左边那一条上、手指横着走，它也作废，照旧滚；
+/// - 它起来了，cancelsTouchesInView 把这次触摸从按钮上收走，松手不算点；长按手指一动超过 10 点自己就作废了。
+final class NoteListSweep: UIPanGestureRecognizer, UIGestureRecognizerDelegate {
+    /// 左边那一条多宽：行左边距 12 + 圆圈 22 + 间距 10 + 纸条左边距 6 + 小木钉 22 = 72，多给 4 点
+    static let stripWidth: CGFloat = 76
+    var selecting = false
+    var onBegin: @MainActor (UUID) -> Void = { _ in }
+    var onMove: @MainActor (UUID) -> Void = { _ in }
+    var onEnd: @MainActor () -> Void = {}
+    private weak var list: UICollectionView?
+    private var link: CADisplayLink?
+    private var speed: CGFloat = 0
+    private var lastID: UUID?
+    private var active = false
+
+    static func on(_ cv: UICollectionView) -> NoteListSweep {
+        if let g = cv.gestureRecognizers?.first(where: { $0 is NoteListSweep }) as? NoteListSweep { return g }
+        let g = NoteListSweep(target: nil, action: nil)
+        g.list = cv
+        g.maximumNumberOfTouches = 1
+        g.cancelsTouchesInView = true
+        g.delegate = g
+        g.addTarget(g, action: #selector(NoteListSweep.handle))
+        cv.addGestureRecognizer(g)
+        cv.panGestureRecognizer.require(toFail: g)
+        return g
+    }
+
+    /// 这一点落在哪条便签的左边那一条上（不在左边那一条上、空白处：nil）
+    private func stripNote(at p: CGPoint) -> UUID? {
+        guard let cv = list else { return nil }
+        var hit: UICollectionViewCell?
+        if let ip = cv.indexPathForItem(at: p) { hit = cv.cellForItem(at: ip) }
+        if hit == nil { hit = cv.visibleCells.first { $0.frame.contains(p) } }
+        guard let cell = hit, p.x - cell.frame.minX < Self.stripWidth else { return nil }
+        return RowTagView.find(in: cell)?.noteID
+    }
+
+    /// 手指底下是哪条便签（不管左右）
+    private func noteID(at p: CGPoint) -> UUID? {
+        guard let cv = list else { return nil }
+        if let ip = cv.indexPathForItem(at: p), let cell = cv.cellForItem(at: ip) {
+            return RowTagView.find(in: cell)?.noteID
+        }
+        for cell in cv.visibleCells where cell.frame.contains(p) {
+            return RowTagView.find(in: cell)?.noteID
+        }
+        return nil
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesBegan(touches, with: event)
+        guard state == .possible else { return }
+        guard selecting, let cv = list, let t = touches.first, stripNote(at: t.location(in: cv)) != nil else {
+            state = .failed
+            return
+        }
+    }
+
+    func gestureRecognizerShouldBegin(_ g: UIGestureRecognizer) -> Bool {
+        guard g === self else { return true }
+        guard selecting, let cv = list else { return false }
+        let tr = translation(in: cv)
+        guard abs(tr.y) >= abs(tr.x) else { return false }                 // 横着走：不是划选
+        let start = CGPoint(x: location(in: cv).x - tr.x, y: location(in: cv).y - tr.y)
+        return stripNote(at: start) != nil
+    }
+
+    @objc private func handle() {
+        guard let cv = list else { return }
+        switch state {
+        case .began:
+            let tr = translation(in: cv)
+            let p = location(in: cv)
+            guard let id = stripNote(at: CGPoint(x: p.x - tr.x, y: p.y - tr.y)) else { return }
+            active = true
+            lastID = id
+            onBegin(id)
+            startLink()
+            follow()
+        case .changed:
+            guard active else { return }
+            follow()
+        default:
+            guard active else { return }
+            active = false
+            stopLink()
+            lastID = nil
+            onEnd()
+        }
+    }
+
+    /// 手指到了哪条：起手那条到这一条都选上（或取消）；离列表上下边缘 80 点以内，越靠边滚得越快
     private func follow() {
         guard let cv = list else { return }
         let p = location(in: cv)
