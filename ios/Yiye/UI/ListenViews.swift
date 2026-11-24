@@ -11,10 +11,12 @@ import YiyeKit
 struct PlaylistScreen: View {
     let open: ListenOpen
     @Environment(AppModel.self) private var app
-    @Query(filter: #Predicate<Note> { $0.trashed == false && ($0.inListen == true || $0.kind == "listen") }, sort: \Note.createdAt, order: .reverse)
-    private var notes: [Note]
+    @Query(filter: #Predicate<Note> { $0.trashed == false }, sort: \Note.createdAt, order: .reverse)
+    private var everything: [Note]
     @State private var textFor: Track?
     @State private var began = false
+    /// 小耳机收全（112）：听力不管哪条路进来都在，加上 Song 自己点小耳机放进来的普通便签。条件放在代码里（查询里写太复杂，编译器吃不下）
+    private var notes: [Note] { everything.filter { ListenRule.inPlaylist(kind: $0.kind, inListen: $0.inListen, trashed: $0.trashed) } }
     private var player: AudioPlayback { AudioPlayback.shared }
     private var t: Lang { app.lang }
 
