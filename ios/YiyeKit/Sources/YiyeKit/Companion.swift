@@ -401,8 +401,8 @@ public enum Deep {
     public static let maxSeconds: Double = 60
     /// 30 分钟一句没问（没「大管家」开头的）就退出深聊；话题号也是 30 分钟
     public static let idle: TimeInterval = 30 * 60
-    /// 大管家收到以后 10 分钟没想好：念「大管家没想出来，再问一次？」
-    public static let answerWait: TimeInterval = 10 * 60
+    /// 大管家收到以后 15 分钟没回：念「大管家没想出来，再问一次？」（它想 10 分钟、写到一半的再给 3 分钟收尾，加上配音和路上）
+    public static let answerWait: TimeInterval = 15 * 60
     /// 信箱连不上、大管家不在：深聊里每一句都会寄（不知道是不是在问），所以这种话 10 分钟最多念一回
     public static let troubleEvery: TimeInterval = 10 * 60
     /// 大管家说收到了，手机马上念的
