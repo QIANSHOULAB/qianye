@@ -34,6 +34,8 @@ final class ButlerService {
     @ObservationIgnored private var wordSending: Set<String> = []
     /// 陪玩（100）：在等回答的请求 id
     @ObservationIgnored private var looks: Set<String> = []
+    /// 飞鸽传书（128）：在等回信的请求 id（只在内存里）
+    @ObservationIgnored private var doves: Set<String> = []
     /// 信箱说电脑（desk）在线（111：只寄给电脑，掌机不存文件）
     private(set) var deskOn = false
     /// 抄到电脑（111）：寄出去、回信还没来的「便签 → 寄的那版 modifiedAt、寄的时间」
@@ -44,6 +46,7 @@ final class ButlerService {
     enum LookSent: Equatable { case sent(Bool), noPair, failed(String) }
 
     func start() {
+        DoveModel.shared.service = self
         guard timer == nil else { return }
         if pairing == nil, app?.demo == nil, let d = Keychain.read(ButlerService.pairingAccount) { pairing = MailPairing.parse(d) }
         connectMail()
@@ -156,7 +159,7 @@ final class ButlerService {
                 if a.simplify == .working, let f = a.simplifyID { articles[f] = n.id }
             }
         }
-        var action = MailAction.decide(env, waiting: waiting, dubbing: dubbing, words: words.requestIDs, looks: looks, keeps: Set(keepWait.keys), articles: Set(articles.keys))
+        var action = MailAction.decide(env, waiting: waiting, dubbing: dubbing, words: words.requestIDs, looks: looks, keeps: Set(keepWait.keys), articles: Set(articles.keys), doves: doves)
         if action == .later, let ch = app.mirror.channel, let a = env.delivery?.audio {
             // 信里没带录音：去 iCloud 镜像里找（后台读，占位的要等它下载）
             let data: Data? = await withCheckedContinuation { c in
@@ -181,6 +184,13 @@ final class ButlerService {
             return true
         case .keep(let r):
             keepReply(r)
+            return true
+        case .dove(let r):                                  // 128：钥匙的回信
+            doves.remove(r.id)
+            DoveModel.shared.answered(DoveReply.from(r))
+            return true
+        case .secret(let d):                                // 128：大管家递来的一次性机密：弹一张卡，不存
+            DoveModel.shared.show(d)
             return true
         case .article(let r):
             if let nid = articles[r.id] { app.articleReply(r, nid) }
@@ -461,6 +471,25 @@ final class ButlerService {
     private func saveKeepWait() {
         guard app?.demo == nil else { return }
         UserDefaults.standard.set(keepWait, forKey: "yiye.keepWait")
+    }
+
+    // ---------------------------------------------------------------- 飞鸽传书（128）
+    enum DoveSent: Equatable { case sent(pc: Bool), noPair, failed(String) }
+
+    /// 把一把钥匙寄给大管家：只走信箱，不走 iCloud（钥匙不进 iCloud）。寄不出去就是没交，钥匙还在调用的人手里。
+    /// 请求、钥匙都不落盘、不进 UserDefaults；这里只记请求 id 等回信
+    func sendKey(key: String, name: String) async -> DoveSent {
+        if mail == nil { connectMail() }
+        guard let mail else { return .noPair }
+        let req = ButlerRequest.dove(id: UUID().uuidString, key: key, name: name, at: ISOTime.string(Date()), app: ButlerService.appVersion)
+        doves.insert(req.id)
+        do {
+            let sent = try await mail.send(.request(req), timeout: 20)
+            return .sent(pc: sent.pc)
+        } catch {
+            doves.remove(req.id)
+            return .failed((error as? MailError)?.errorDescription ?? error.localizedDescription)
+        }
     }
 
     // ---------------------------------------------------------------- 文章（114）

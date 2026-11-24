@@ -327,6 +327,8 @@ struct ListScreen: View {
             if !broadcast.fire() { app.show(t.t("companion.noPanel")) }
         case .deep:
             app.companion.toggleDeep()
+        case .dove:
+            DoveModel.shared.open = true             // 128：飞鸽传书（RootView 里的 sheet）
         }
     }
 

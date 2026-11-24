@@ -38,7 +38,7 @@ except Exception:
 
 names = {
     "list": "列表", "editor": "写字页", "markdown": "Markdown 五招", "ocr": "拍照认字", "share-note": "分享成图 · 便签",
-    "share-white": "分享成图 · 白纸", "settings": "设置", "butler": "大管家", "voice": "录一段", "voice-note": "录音笔记", "listen": "听力列表", "listen-text": "听力 · 原文", "toolbox": "工具箱（点开）",
+    "share-white": "分享成图 · 白纸", "settings": "设置", "butler": "大管家", "voice": "录一段", "voice-note": "录音笔记", "listen": "听力列表", "listen-text": "听力 · 原文", "toolbox": "工具箱（点开）", "dove": "飞鸽传书", "dove-done": "飞鸽传书 · 回信", "secret": "特勤局机密文件",
 }
 sets = {}
 for d in ["zh-light", "zh-dark", "en-light", "en-dark"]:

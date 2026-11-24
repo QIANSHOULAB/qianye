@@ -65,11 +65,21 @@ capture.shootPage	拍一页
 common.cancel	取消
 common.close	关
 common.done	好了
-companion.deepOn	深聊开了：锁屏揣兜里，开口先叫「大管家」
+companion.deepOn	深聊开了：锁屏揣兜里，直接问
 companion.failed	陪玩没开起来：%@
-companion.noMic	一叶笺借不到话筒：设置 › 一叶笺 里打开。
+companion.noMic	一叶笺借不到话筒：Settings › 一叶笺 › Microphone 打开。
 companion.noPanel	直播面板叫不出来
 companion.restart	重开
+dove.empty	先复制钥匙，再点粘贴
+dove.failed	鸽子没飞出去：%@
+dove.looksLike	看着像 %@
+dove.name	谁家的钥匙？不写也行
+dove.noMailbox	鸽子没飞出去：信箱没通，钥匙没交
+dove.queued	鸽子在信箱里蹲着，大管家一上线就收
+dove.send	交给大管家
+dove.sending	鸽子起飞了…
+dove.title	飞鸽传书
+dove.waiting	鸽子飞出去了，等大管家回信
 editor.back	便签
 editor.more	更多
 editor.original	看原图
@@ -167,12 +177,18 @@ paper.green	豆青
 paper.pink	藕粉
 paper.white	素白
 paper.yellow	米黄
+secret.burn	阅后即焚，关了就没了
+secret.close	关闭
+secret.copied	已复制，2 分钟后清掉
+secret.copy	复制
+secret.stamp	机密
+secret.title	特勤局机密文件
 settings.appearance	外观
 settings.butler	大管家
 settings.butlerAuto	拍照、录音的自动交给大管家
 settings.butlerNote	手写认歪的字，交给大管家对着原图理顺，几秒后送回一份干净的。走加密信箱，两头上锁；信箱断了就走镜像文件夹。手机里一把 AI 钥匙都不放。
 settings.companion	陪玩
-settings.companionNote	工具箱里点「陪玩」，苹果弹出直播面板，选一叶笺，开始。听到「叮」就是它在听了，手机该干嘛干嘛，开口就问：它截下你问的那一屏，交给自家大管家，再用嘴回你。工具箱上的小点：绿＝在听，绿闪＝听见你了，橙＝大管家在想，红＝坏了（它会说坏在哪）。想深聊：陪玩开着锁屏，或点工具箱里的「深聊」，不截屏了，叫一声「大管家」再问，它想几分钟念给你，全文存进「深聊」文件夹；说「大管家，结束」收工。屏幕顶上的红点橙点是苹果在报备，别慌。
+settings.companionNote	工具箱里点「陪玩」，苹果弹出直播面板，选一叶笺，开始。听到「叮」就是它在听了，手机该干嘛干嘛，开口就问：它截下你问的那一屏，交给自家大管家，再用嘴回你。工具箱上的小点：绿＝在听，绿闪＝听见你了，橙＝大管家在想，红＝坏了（它会说坏在哪）。它说着你直接插嘴，它就闭嘴。喊「二档」「三档」「四档」想得更深，「回一档」回来。「记住……」它记进记事本。「派个活：……」它复述一遍，你说「对」就派出去。想深聊：陪玩开着锁屏，或点工具箱里的「深聊」，不截屏了，直接问，它想几分钟念给你，全文存进「深聊」文件夹；说「结束」收工。屏幕顶上的红点橙点是苹果在报备，别慌。
 settings.deskStale	「%1$@」有 %2$lld 条还没到电脑
 settings.fontSize	字号
 settings.import	从文件夹导入
@@ -204,6 +220,7 @@ time.yesterday	昨天
 toast.deleted	删了「%@」
 toast.undo	撤销
 tools.deep	深聊
+tools.dove	飞鸽传书
 tools.title	工具箱
 trash.days	还剩 %lld 天
 trash.deleteNow	现在就删

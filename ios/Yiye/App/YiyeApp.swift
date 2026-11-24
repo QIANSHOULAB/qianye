@@ -13,7 +13,11 @@ struct YiyeApp: App {
                 .modelContainer(app.container)
                 .environment(\.locale, app.lang.locale)
                 .preferredColorScheme(app.demo?.forcedScheme ?? app.appearance.scheme)
-                .onChange(of: phase) { _, p in app.scenePhase(p); if p == .active { app.appearance.apply() } }
+                .onChange(of: phase) { _, p in
+                    app.scenePhase(p)
+                    if p == .active { app.appearance.apply() }
+                    if p == .background { DoveModel.shared.wipeKey() }      // 128：钥匙不在后台的内存里留着
+                }
         }
     }
 }
@@ -23,6 +27,7 @@ struct RootView: View {
 
     var body: some View {
         @Bindable var app = app
+        @Bindable var dove = DoveModel.shared
         NavigationStack(path: $app.path) {
             ListScreen()
                 .navigationDestination(for: Route.self) { r in
@@ -38,6 +43,11 @@ struct RootView: View {
         .fullScreenCover(item: $app.voiceTarget) { target in RecorderScreen(target: target) }
         .background {
             Color.clear.fullScreenCover(item: $app.listening) { o in PlaylistScreen(open: o) }
+        }
+        .background { Color.clear.sheet(isPresented: $dove.open) { DoveSheet() } }                 // 128 飞鸽传书
+        .background { Color.clear.sheet(item: $dove.secret) { c in SecretCardView(card: c) } }    // 128 特勤局机密文件
+        .task {                                                                                    // 截图用
+            if let s = app.demo?.screen, ["dove", "dove-done", "secret"].contains(s) { DoveModel.shared.demo(s) }
         }
         .onAppear { app.started() }
     }

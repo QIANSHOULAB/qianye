@@ -139,6 +139,8 @@ public struct ButlerDelivery: Codable, Equatable, Sendable {
     public var note: String?
     /// 回的是哪个请求
     public var request: String?
+    /// kind=secret（128 特勤局机密文件）：text 是那串一次性的东西，hint 是一句说明；手机弹一张卡，不存、不镜像
+    public var hint: String?
     public init(v: Int = Butler.version, id: String, kind: String = "listen", title: String? = nil, text: String,
                 audio: String?, marks: [ListenMark]?, folder: String? = nil, at: String? = nil, note: String? = nil, request: String? = nil) {
         self.v = v; self.id = id; self.kind = kind; self.title = title; self.text = text
