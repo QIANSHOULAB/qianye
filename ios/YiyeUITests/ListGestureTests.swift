@@ -145,7 +145,7 @@ final class ListGestureTests: XCTestCase {
     }
 
     // ---------------------------------------------------------------- 沿左边那一条划选（135）
-    // Demo 主页从上往下：Weekend groceries（置顶）、Weekly sync、Tomorrow's sync、Handover, Nov 3、Team lunch、Reading list
+    // Demo 主页从上往下（CI 截图里看的）：Weekend groceries（置顶）、Weekly sync、An article being pulled、Tomorrow's sync、Handover, Nov 3……
 
     /// 一条纸条上的一个点：左边那一条（圆圈 / 小木钉）离纸条按钮左边 x 点；mid = true 就是纸条正中间
     private func spot(_ r: XCUIElement, x: CGFloat = 24, mid: Bool = false) -> XCUICoordinate {
@@ -169,7 +169,7 @@ final class ListGestureTests: XCTestCase {
     func testSweepLeftStripSelectsRange() {
         launch()
         enterSelectingEmpty()
-        sweep(spot(row("Weekend groceries")), spot(row("Handover, Nov 3")))
+        sweep(spot(row("Weekend groceries")), spot(row("Tomorrow")))
         waitSelected(4, "08-左边那一条从第 1 条划到第 4 条没选上 4 条")
         check(!editorText.exists, "08-划完打开了便签", "划选松手不该进写字页")
     }
@@ -177,17 +177,17 @@ final class ListGestureTests: XCTestCase {
     func testSweepFromSelectedDeselects() {
         launch()
         enterSelectingEmpty()
-        sweep(spot(row("Weekend groceries")), spot(row("Handover, Nov 3")))
+        sweep(spot(row("Weekend groceries")), spot(row("Tomorrow")))
         waitSelected(4, "09-先划选 4 条没成")
         // 从已选的第 2 条起手往下划到第 4 条：这三条都取消，只剩第 1 条
-        sweep(spot(row("Weekly sync")), spot(row("Handover, Nov 3")))
+        sweep(spot(row("Weekly sync")), spot(row("Tomorrow")))
         waitSelected(1, "09-从已选的那条往下划没取消")
     }
 
     func testSweepMiddleScrollsNotSelects() {
         launch()
         enterSelectingEmpty()
-        sweep(spot(row("Weekend groceries"), mid: true), spot(row("Handover, Nov 3"), mid: true))
+        sweep(spot(row("Weekend groceries"), mid: true), spot(row("Tomorrow"), mid: true))
         waitSelected(0, "10-纸条中间往下划选上了")
         check(!editorText.exists, "10-纸条中间划完打开了便签", "上下滚不该进写字页")
         // 还能点：点一条照样选上
