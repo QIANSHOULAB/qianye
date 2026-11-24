@@ -12,6 +12,7 @@ struct ListScreen: View {
     @Query(sort: \Folder.order) private var folders: [Folder]
     @State private var query = ""
     @State private var showFolders = false
+    @State private var folderDetent: PresentationDetent = .medium
     @State private var pickedItem: PhotosPickerItem?
     /// 相册认字：菜单里放 PhotosPicker 点了没反应（Song 11-22），菜单里放普通按钮，再从这儿打开相册
     @State private var showAlbum = false
@@ -146,7 +147,11 @@ struct ListScreen: View {
             }
         }
         .background(DeskBackground())
-        .task { if app.demo?.screen == "folders" { showFolders = true } }      // 截图用：直接开着文件夹面板（排序那排叶子）
+        .task {                                                              // 截图用：直接开着文件夹面板（排序那排叶子）；folders-tall 拉到最高，看得到最底下的废纸篓；trash 再叠开废纸篓
+            let s = app.demo?.screen ?? ""
+            if ["folders", "folders-tall", "trash"].contains(s) { showFolders = true }
+            if s == "folders-tall" { folderDetent = .large }
+        }
         .task { if app.demo?.screen == "toolbox" { showTools = true } }      // 截图用：直接开着工具箱
         .task {                                                              // 截图用：批量选里已经选了三条
             guard app.demo?.screen == "batch" else { return }
@@ -160,7 +165,7 @@ struct ListScreen: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
-        .sheet(isPresented: $showFolders) { FolderSheet().presentationDetents([.medium, .large]) }
+        .sheet(isPresented: $showFolders) { FolderSheet().presentationDetents([.medium, .large], selection: $folderDetent) }
         .photosPicker(isPresented: $showAlbum, selection: $pickedItem, matching: .images)
         .onChange(of: pickedItem) { _, item in
             guard let item else { return }
