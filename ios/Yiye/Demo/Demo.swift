@@ -188,6 +188,8 @@ enum Demo {
         try? ctx.save()
 
         switch cfg.screen {
+        case "original", "original-focus": app.path = [.editor(photo.id)]
+        case "markdown-focus": app.path = [.editor(mdNote.id)]
         case "article": app.path = [.editor(art.id)]
         case "article-wait": app.path = [.editor(artWait.id)]
         case "article-done": app.path = [.editor(artDone.id)]

@@ -3,7 +3,7 @@ import SwiftUI
 import YiyeKit
 
 // 写字页：横线信纸。字一行一个行高，横线跟着行走；图片占整数行，横线照样对得上。
-// Markdown 标记字露在字里，颜色淡；拿不准的字黄底，点一下整段选中，直接打字替换。
+// Markdown 记号留在字里（存的还是 Markdown），写字页只在光标所在的行露出来（淡色），别的行藏起来（123）；拿不准的字黄底，点一下整段选中，直接打字替换。
 
 extension NSAttributedString.Key {
     static let yiyeUnsure = NSAttributedString.Key("yiyeUnsure")
@@ -92,12 +92,14 @@ struct MarkdownStyler {
 
     func font(_ size: CGFloat, _ w: UIFont.Weight = .regular) -> UIFont { UIFont.systemFont(ofSize: size, weight: w) }
 
-    func para(_ align: NSTextAlignment = .natural, height: CGFloat? = nil) -> NSParagraphStyle {
+    func para(_ align: NSTextAlignment = .natural, height: CGFloat? = nil, indent: CGFloat = 0) -> NSParagraphStyle {
         let p = NSMutableParagraphStyle()
         let h = height ?? m.line
         p.minimumLineHeight = h
         p.maximumLineHeight = h
         p.alignment = align
+        p.firstLineHeadIndent = indent
+        p.headIndent = indent
         p.lineBreakStrategy = .pushOut
         return p
     }
@@ -110,7 +112,11 @@ struct MarkdownStyler {
         return [.font: f, .foregroundColor: Ink.text, .paragraphStyle: para()]
     }
 
-    func apply(_ s: NSTextStorage) {
+    /// 藏起来的记号：字小到几乎没有宽度，颜色透明。行高是固定的，藏了也不影响横线对齐
+    static let hiddenFont = UIFont.systemFont(ofSize: 0.01)
+
+    /// active：光标 / 选区（写字页开着键盘才有；没开着就 nil，全藏）。光标碰到的行露记号，别的行藏记号
+    func apply(_ s: NSTextStorage, active: NSRange? = nil) {
         let full = NSRange(location: 0, length: s.length)
         guard full.length > 0 else { return }
         let text = s.string
@@ -123,6 +129,14 @@ struct MarkdownStyler {
             guard l.range.length > 0, l.range.location + l.range.length <= s.length else { continue }
             let lineR = ns.paragraphRange(for: l.range)
             if l.centered { s.addAttribute(.paragraphStyle, value: para(.center), range: lineR) }
+            let reveal = active.map { MarkerVisibility.reveals(line: lineR, selection: $0, total: s.length) } ?? false
+            var isImage = false
+            if case .image = l.block { isImage = true }
+            // 藏着记号的清单、引用行：整行缩进对齐，替代行首的「- 」「> 」
+            if !reveal && !l.centered {
+                if case .bullet = l.block { s.addAttribute(.paragraphStyle, value: para(indent: 18), range: lineR) }
+                if case .quote = l.block { s.addAttribute(.paragraphStyle, value: para(indent: 14), range: lineR) }
+            }
             var cf = font(m.size)
             var color = Ink.text
             switch l.block {
@@ -142,6 +156,10 @@ struct MarkdownStyler {
                 s.addAttribute(.font, value: bf, range: b)
             }
             for mk in l.markers where mk.length > 0 {
+                if !reveal && !isImage {
+                    s.addAttributes([.font: MarkdownStyler.hiddenFont, .foregroundColor: UIColor.clear], range: mk)
+                    continue
+                }
                 let piece = ns.substring(with: mk)
                 if piece.hasPrefix("<") {
                     let sf = font((m.size * 0.72).rounded())
@@ -244,10 +262,23 @@ final class EditorController: NSObject, UITextViewDelegate {
         return DisplayMap(markdown: md).toMarkdown(tv.selectedRange).location
     }
 
+    /// 露记号的那几行（光标 / 选区碰到的整段）。没开着键盘（没有光标）是 nil：全藏
+    private func revealKey() -> NSRange? {
+        guard let tv, tv.isFirstResponder else { return nil }
+        let ns = tv.textStorage.string as NSString
+        guard ns.length > 0 else { return NSRange(location: 0, length: 0) }
+        let sel = tv.selectedRange
+        let loc = min(sel.location, ns.length)
+        return ns.paragraphRange(for: NSRange(location: loc, length: min(sel.length, ns.length - loc)))
+    }
+
+    private var lastRevealKey: NSRange?
+
     func restyle() {
         guard let tv, tv.markedTextRange == nil else { return }
         let sel = tv.selectedRange
-        styler.apply(tv.textStorage)
+        lastRevealKey = revealKey()
+        styler.apply(tv.textStorage, active: tv.isFirstResponder ? sel : nil)
         tv.typingAttributes = styler.base()
         if tv.selectedRange != sel { tv.selectedRange = sel }
     }
@@ -422,6 +453,8 @@ final class EditorController: NSObject, UITextViewDelegate {
 
     func textViewDidChangeSelection(_ textView: UITextView) {
         guard !programmatic, textView.markedTextRange == nil else { return }
+        // 123：光标走到另一行，那行的记号露出来、这行的藏起来；同一行里挪光标不用重染
+        if MarkerVisibility.needsRestyle(oldKey: lastRevealKey, newKey: revealKey()) { restyle() }
         let sel = textView.selectedRange
         guard sel.length == 0, sel.location < textView.textStorage.length else { return }
         var eff = NSRange(location: 0, length: 0)
@@ -441,8 +474,8 @@ final class EditorController: NSObject, UITextViewDelegate {
         return UIMenu(children: [UIMenu(options: .displayInline, children: [known, learning])] + suggestedActions)
     }
 
-    func textViewDidBeginEditing(_ textView: UITextView) { onFocus?(true) }
-    func textViewDidEndEditing(_ textView: UITextView) { onFocus?(false) }
+    func textViewDidBeginEditing(_ textView: UITextView) { onFocus?(true); restyle() }
+    func textViewDidEndEditing(_ textView: UITextView) { onFocus?(false); restyle() }
 }
 
 struct NoteTextEditor: UIViewRepresentable {

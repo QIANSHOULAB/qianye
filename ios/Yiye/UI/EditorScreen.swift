@@ -12,7 +12,8 @@ struct EditorScreen: View {
     @State private var focused = false
     @State private var showShare = false
     @State private var showCamera = false
-    @State private var showOriginals = false
+    /// 原图从顶栏下面展开，占上半屏（123）
+    @State private var showPanel = false
     /// 相册里挑的：插进正文的图 / 要认字的图
     @State private var insertItem: PhotosPickerItem?
     @State private var ocrItem: PhotosPickerItem?
@@ -27,7 +28,7 @@ struct EditorScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            SmartBar {
+            SmartBar(centerInset: note?.originalPaths.isEmpty == false ? 150 : 104) {
                 Button { close() } label: {
                     HStack(spacing: 2) {
                         Image(systemName: "chevron.left").font(.system(size: 14, weight: .semibold))
@@ -44,10 +45,22 @@ struct EditorScreen: View {
                         .minimumScaleFactor(0.8)
                 }
             } right: {
+                // 有原图的便签：日期右边、纸飞机左边一个原图按钮，点一下上半屏对照，再点收起（123）
+                if note?.originalPaths.isEmpty == false {
+                    Button { withAnimation(.easeOut(duration: 0.24)) { showPanel.toggle() } } label: { Image(systemName: "photo") }
+                        .buttonStyle(SmartButtonStyle(prominent: showPanel))
+                        .accessibilityLabel(t.t("editor.original"))
+                        .accessibilityAddTraits(showPanel ? .isSelected : [])
+                }
                 Button { flush(); showShare = true } label: { Image(systemName: "paperplane") }
                     .buttonStyle(SmartButtonStyle())
                     .accessibilityLabel(t.t("share.title"))
                 menu
+            }
+
+            if showPanel, let note, !note.originalPaths.isEmpty {
+                OriginalPanel(paths: note.originalPaths, compact: focused)
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
 
             VStack(spacing: 0) {
@@ -108,9 +121,6 @@ struct EditorScreen: View {
             }
             .ignoresSafeArea()
         }
-        .sheet(isPresented: $showOriginals) {
-            if let note { OriginalsViewer(paths: note.originalPaths) }
-        }
     }
 
     // ---------------------------------------------------------------- 菜单
@@ -124,9 +134,6 @@ struct EditorScreen: View {
                         }
                     }
                 } label: { Label(t.t("editor.paper"), systemImage: "paintpalette") }
-                if !note.originalPaths.isEmpty {
-                    Button { showOriginals = true } label: { Label(t.t("editor.original"), systemImage: "photo") }
-                }
                 Button { flush(); app.butler.submit(note) } label: { Label(t.t("editor.toButler"), systemImage: "wand.and.stars") }
                 Menu {
                     Button { flush(); app.toggleListen(note) } label: {
@@ -172,6 +179,19 @@ struct EditorScreen: View {
                 controller.focus()
             }
         }
+        if let d = app.demo, ["original", "original-focus", "markdown-focus"].contains(d.screen) {     // 截图用
+            let screen = d.screen
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                if screen != "markdown-focus" { withAnimation { showPanel = true } }
+                if screen != "original" { controller.focus() }
+                if screen == "markdown-focus", let tv = controller.tv {
+                    let ns = tv.textStorage.string as NSString
+                    let r = ns.range(of: app.lang.isZh ? "进度" : "Progress")
+                    if r.location != NSNotFound { tv.selectedRange = NSRange(location: r.location + 1, length: 0) }
+                }
+            }
+        }
         if let d = app.demo, d.screen.hasPrefix("share") {
             Task { @MainActor in
                 try? await Task.sleep(nanoseconds: 300_000_000)
@@ -181,7 +201,7 @@ struct EditorScreen: View {
     }
 
     private func tearDown() {
-        guard let note, !showShare, !showCamera, !showOriginals, app.voiceTarget == nil, app.busy == nil else { return }
+        guard let note, !showShare, !showCamera, app.voiceTarget == nil, app.busy == nil else { return }
         flush()
         app.leave(note)
     }

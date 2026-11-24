@@ -8,16 +8,18 @@ struct SmartBar<Left: View, Center: View, Right: View>: View {
     let left: Left
     let center: Center
     let right: Right
+    /// 中间标题左右各让出多少（右边按钮多的时候加大）
+    let centerInset: CGFloat
 
-    init(@ViewBuilder left: () -> Left, @ViewBuilder center: () -> Center, @ViewBuilder right: () -> Right) {
-        self.left = left(); self.center = center(); self.right = right()
+    init(centerInset: CGFloat = 104, @ViewBuilder left: () -> Left, @ViewBuilder center: () -> Center, @ViewBuilder right: () -> Right) {
+        self.left = left(); self.center = center(); self.right = right(); self.centerInset = centerInset
     }
 
     var body: some View {
         ZStack {
             center
                 .frame(maxWidth: .infinity)
-                .padding(.horizontal, 104)
+                .padding(.horizontal, centerInset)
             HStack(spacing: 4) {
                 left
                 Spacer(minLength: 0)
