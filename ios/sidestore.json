@@ -25,6 +25,15 @@
       ],
       "versions": [
         {
+          "version": "0.7.8",
+          "buildVersion": "18",
+          "date": "2026-11-24",
+          "localizedDescription": "0.7.8：删了不再当场没，先进废纸篓留 3 天，文件夹面板最底下能放回。便签右滑扔，左滑置顶和小耳机；长按一条进批量选，手指不抬往下一划，划过的全选上，一把扔或一把挪。「思想排泄物」夹子里的字，改完自动抄一份到电脑。",
+          "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.8/Yiye-0.7.8.ipa",
+          "size": 2586894,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.7.6",
           "buildVersion": "16",
           "date": "2026-11-24",
@@ -178,11 +187,11 @@
           "NSSpeechRecognitionUsageDescription": "Turns your voice into text right on your phone."
         }
       },
-      "version": "0.7.6",
+      "version": "0.7.8",
       "versionDate": "2026-11-24",
-      "versionDescription": "0.7.6：外观可以选了。设置里新加一排「外观」：跟随系统（默认，跟你手机走）、纸（一直是亮的纸、木头底）、深色（一直是深的）。选了马上变，不用重启。",
-      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.6/Yiye-0.7.6.ipa",
-      "size": 2419908
+      "versionDescription": "0.7.8：删了不再当场没，先进废纸篓留 3 天，文件夹面板最底下能放回。便签右滑扔，左滑置顶和小耳机；长按一条进批量选，手指不抬往下一划，划过的全选上，一把扔或一把挪。「思想排泄物」夹子里的字，改完自动抄一份到电脑。",
+      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.8/Yiye-0.7.8.ipa",
+      "size": 2586894
     }
   ],
   "news": []
