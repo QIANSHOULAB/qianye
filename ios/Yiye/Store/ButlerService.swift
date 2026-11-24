@@ -176,7 +176,7 @@ final class ButlerService {
             saveWords()
             return true
         case .look(let r, let audio):
-            if r.stage != "ack" { looks.remove(r.id) }          // 深聊（107）：ack 之后同一个 id 还有一封回答
+            if r.stage != "ack" && r.stage != "part" { looks.remove(r.id) }   // 深聊（107）：ack 之后同一个 id 还有一封回答；117：part 之后还有
             app.companion.answer(r, audio: audio)
             return true
         case .keep(let r):
@@ -573,6 +573,24 @@ final class ButlerService {
         if mail == nil { connectMail() }
         guard let mail, app?.demo == nil else { return }
         let req = ButlerRequest.deepWarm(id: UUID().uuidString, at: ISOTime.string(Date()), app: ButlerService.appVersion)
+        Task {
+            if let sent = try? await mail.send(.request(req), timeout: 15), !sent.pc { try? await mail.ack(sent.seq) }
+        }
+    }
+
+    /// 117 边说边传：他一开口就把那一刻的截图先寄出去（不回信；大管家不在就算了）
+    func lookPre(_ req: ButlerRequest, files: [String: Data]) {
+        if mail == nil { connectMail() }
+        guard let mail, app?.demo == nil else { return }
+        Task {
+            if let sent = try? await mail.send(.request(req, files: files), timeout: 15), !sent.pc { try? await mail.ack(sent.seq) }
+        }
+    }
+
+    /// 117 关了陪玩：这一场结束（不回信；大管家不在就算了）
+    func lookOff() {
+        guard let mail, app?.demo == nil else { return }
+        let req = ButlerRequest.lookOff(id: UUID().uuidString, at: ISOTime.string(Date()), app: ButlerService.appVersion)
         Task {
             if let sent = try? await mail.send(.request(req), timeout: 15), !sent.pc { try? await mail.ack(sent.seq) }
         }

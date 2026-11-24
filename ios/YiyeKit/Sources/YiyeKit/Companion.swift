@@ -112,6 +112,10 @@ public struct VoiceGate: Sendable {
     public var maxMs: Double = 20_000
     public var minMs: Double = 350
     public var windowMs: Double = 3_000
+    /// 117 插嘴：自己在放回答时（回声消除开着）也判开口，但要更响、更长：比底噪高 strictMargin、不低于 strictFloor、连着 strictStartMs（0.5 秒）
+    public var strictMargin: Double = 18
+    public var strictFloor: Double = -38
+    public var strictStartMs: Double = 500
 
     public private(set) var noise: Double = -60
     public private(set) var speaking = false
@@ -138,18 +142,18 @@ public struct VoiceGate: Sendable {
         noise = sorted[Int(Double(sorted.count - 1) * 0.1)]
     }
 
-    /// 一块声音：分贝（dBFS）、多长（毫秒）。返回这一块带来的事
-    public mutating func feed(db: Double, ms: Double, mute: Bool = false) -> Event? {
+    /// 一块声音：分贝（dBFS）、多长（毫秒）。返回这一块带来的事。strict（117）：在放回答，只认够响、够长的开口（插嘴）
+    public mutating func feed(db: Double, ms: Double, mute: Bool = false, strict: Bool = false) -> Event? {
         if mute {
             if speaking { reset() }
             loudMs = 0
             return nil
         }
         if !speaking {
-            track(db, ms)
-            let loud = db > max(noise + margin, floorMin)
+            if !strict { track(db, ms) }                 // 放回答时漏进来的那点声音不算底噪
+            let loud = strict ? db > max(noise + strictMargin, strictFloor) : db > max(noise + margin, floorMin)
             loudMs = loud ? loudMs + ms : 0
-            if loudMs >= startMs {
+            if loudMs >= (strict ? strictStartMs : startMs) {
                 speaking = true
                 spokeMs = loudMs
                 quietMs = 0
@@ -194,8 +198,8 @@ public struct ClipCutter: Sendable {
     public var noise: Double { gate.noise }
     public var speaking: Bool { gate.speaking }
 
-    /// 开口前留多少样本：0.3 秒 + 判开口要的那段（startMs），这样交出去的一句从开口前 0.3 秒开始
-    var preCap: Int { Int((preMs + gate.startMs) / 1000 * Double(ClipCutter.rate)) }
+    /// 开口前留多少样本：0.3 秒 + 判开口要的那段（startMs；插嘴要 0.5 秒，按长的留），这样交出去的一句从开口前 0.3 秒开始
+    var preCap: Int { Int((preMs + max(gate.startMs, gate.strictStartMs)) / 1000 * Double(ClipCutter.rate)) }
     var maxCount: Int { Int(maxSeconds * Double(ClipCutter.rate)) }
 
     public static func level(_ s: [Float]) -> Double {
@@ -205,12 +209,12 @@ public struct ClipCutter: Sendable {
         return 20 * log10(max(sqrt(sum / Double(s.count)), 1e-6))
     }
 
-    public mutating func feed(_ s: [Float], mute: Bool = false) -> Out? {
+    public mutating func feed(_ s: [Float], mute: Bool = false, strict: Bool = false) -> Out? {
         guard !s.isEmpty else { return nil }
         let db = ClipCutter.level(s)
         let ms = Double(s.count) / Double(ClipCutter.rate) * 1000
         let was = gate.speaking
-        let ev = gate.feed(db: db, ms: ms, mute: mute)
+        let ev = gate.feed(db: db, ms: ms, mute: mute, strict: strict)
         switch ev {
         case .start?:
             clip = pre + s
@@ -291,6 +295,8 @@ public enum CompanionLight: Equatable, Sendable {
 /// 凡是会让「他说了话却什么都不发生」的地方，都弹一行字 + 用苹果的中文嗓子念出来，小圆点变红
 public enum CompanionTrouble: Equatable, Sendable, CaseIterable {
     case noMic, earFailed, noFrame, frameRefused, liveDown, noPair, away, noMail, noAnswer, cantPlay, misheard, brainFailed
+    /// 117：话筒被系统停了（来电、Siri、别的 App、换耳机……），自动重开成了 / 重开不了
+    case earBack, earLost
     /// 深聊（107）：10 分钟没想好；来电话把话筒打断了、续不上
     case deepNoAnswer, deepCut
 
@@ -309,6 +315,8 @@ public enum CompanionTrouble: Equatable, Sendable, CaseIterable {
         case .cantPlay: return "回答的声音放不出来"
         case .misheard: return "没听清，再说一遍"
         case .brainFailed: return "大管家这回没答上来"
+        case .earBack: return "话筒刚才断了，又接上了"
+        case .earLost: return "话筒被停了，重开不了，点一下陪玩重开"
         case .deepNoAnswer: return "大管家没想出来，再问一次？"
         case .deepCut: return "深聊被电话打断了，点一下重开"
         }
@@ -351,13 +359,38 @@ extension ButlerRequest {
     /// 陪玩问一句：录音（audio，108 起）或者问的字（question，留给以后打字问），二选一；那一帧（images 里一个路径）。图、录音都跟着信走。
     /// prev 是上一问手机这头量的秒数和是 / 否（大管家记进日志，验收用）
     public static func look(id: String, question: String, audio: String? = nil, image: String?, at: String, app: String,
-                            prev: [String: Double]? = nil) -> ButlerRequest {
+                            prev: [String: Double]? = nil, pre: Bool = false, stream: Bool = false) -> ButlerRequest {
         var r = ButlerRequest(id: id, note: "", kind: audio == nil ? .text : .voice, text: audio == nil ? question : "",
                               images: image.map { [$0] }, unsure: nil, ask: "look", at: at, app: app)
         r.audio = audio
         r.timing = (prev?.isEmpty ?? true) ? nil : prev
+        if pre { r.pre = true }
+        if stream { r.stream = true }
         return r
     }
+
+    /// 117 边说边传：他一开口就先把那一刻的截图寄出去（note = 这一问将来的 id），说完寄的那封只带录音（pre=true）
+    public static func lookPre(id: String, question: String, image: String, at: String, app: String) -> ButlerRequest {
+        ButlerRequest(id: id, note: question, kind: .text, text: "", images: [image], unsure: nil, ask: "look-pre", at: at, app: app)
+    }
+
+    /// 117 关了陪玩：这一场结束（大管家关掉这一场的大脑，前面聊的不再记）。不回信
+    public static func lookOff(id: String, at: String, app: String) -> ButlerRequest {
+        ButlerRequest(id: id, note: "", kind: .text, text: "", images: nil, unsure: nil, ask: "look-off", at: at, app: app)
+    }
+
+    /// 117 插嘴：他插嘴的头 1 秒录音，问大管家是不是他的声音（回 stage=who，timing.him 1/0）
+    public static func lookWho(id: String, audio: String, at: String, app: String) -> ButlerRequest {
+        var r = ButlerRequest(id: id, note: "", kind: .voice, text: "", images: nil, unsure: nil, ask: "look-who", at: at, app: app)
+        r.audio = audio
+        return r
+    }
+
+    /// 插嘴那一秒录音在信里的路径
+    public static func lookWhoPath(_ id: String) -> String { "陪玩/\(id.prefix(8))-谁.wav" }
+
+    /// 先寄的截图在信里的路径
+    public static func lookPrePath(_ id: String) -> String { "陪玩/\(id.prefix(8))-屏.jpg" }
 
     /// 开了陪玩：叫大管家先把大脑热上（不回信）
     public static func lookWarm(id: String, at: String, app: String) -> ButlerRequest {
@@ -374,7 +407,7 @@ extension ButlerRequest {
     /// 录音在信里的路径
     public static func lookAudioPath(_ id: String) -> String { "陪玩/\(id.prefix(8))-问.wav" }
 
-    /// 深聊（107）一句：只有录音（不截屏），带话题号。是不是在问大管家（「大管家」开头）由大管家认完字判，不是的当场扔
+    /// 深聊（107）一句：只有录音（不截屏），带话题号。是不是在问大管家由大管家认完字判（127：过一道门，不用喊「大管家」），不是的当场扔
     public static func deep(id: String, audio: String, topic: String, at: String, app: String, prev: [String: Double]? = nil) -> ButlerRequest {
         var r = ButlerRequest(id: id, note: "", kind: .voice, text: "", images: nil, unsure: nil, ask: "deep", at: at, app: app)
         r.audio = audio
@@ -399,7 +432,7 @@ public enum Deep {
     public static let endSilenceMs: Double = 1_500
     /// 一句最长 60 秒
     public static let maxSeconds: Double = 60
-    /// 30 分钟一句没问（没「大管家」开头的）就退出深聊；话题号也是 30 分钟
+    /// 30 分钟一句没问（没有「收到」）就退出深聊；话题号也是 30 分钟
     public static let idle: TimeInterval = 30 * 60
     /// 大管家收到以后 15 分钟没回：念「大管家没想出来，再问一次？」（它想 10 分钟、写到一半的再给 3 分钟收尾，加上配音和路上）
     public static let answerWait: TimeInterval = 15 * 60
@@ -485,7 +518,9 @@ public struct LookClock: Sendable, Equatable {
         put("play", back, playing)
         ok("playOK", playOK)
         put("total", spokeEnd, playing)
-        for (k, v) in butler where ["fetch", "brain", "voice", "asr"].contains(k) { out["b" + k.prefix(1).uppercased() + k.dropFirst()] = v }
+        for (k, v) in butler where ["fetch", "brain", "voice", "asr", "first", "brainFirst", "parts", "gear", "pre"].contains(k) {
+            out["b" + k.prefix(1).uppercased() + k.dropFirst()] = v                 // 117：第一段配好、几段、几档、截图先寄了没有
+        }
         return out
     }
 }

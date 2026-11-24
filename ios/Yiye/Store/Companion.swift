@@ -8,15 +8,18 @@ import YiyeKit
 /// 「像游戏陪玩那样，打开以后它能实时读我的屏幕，然后可以实时问它问题，它可以实时做出反馈」「主要是一些英文内容，我不太看得懂」。
 /// - 104（Song 11-24）：没有「陪玩模式」开关了。工具栏耳机右边一个小图标，点一下弹苹果的直播面板选一叶笺（苹果规定这一下要人点）；开了直播就算开，停了直播就算关。之后全自动。
 /// - 直播开着就在后台听（后台音频）：本机按音量判断开口、说完（停 0.8 秒），这一句录成 16 kHz 单声道 WAV（开口前 0.3 秒一起要，最长 20 秒），
-///   去直播扩展取问的那一刻的一帧，录音 + 截图一起走信箱（两头加密）交给大管家；大管家用本机 SenseVoice 认字、看图答话、配好音回来，直接放（别的 App 的声音压低）。
-/// - 108（Song 11-24 12:20 选 A）：不用苹果听写了（「非常差，经常听不懂我在说啥」，12:12 真机说话一点反应都没有）。
-///   出错就说：凡是会让「他说了话却什么都不发生」的地方，都弹一行字、用苹果的中文嗓子念出哪一步坏了，小圆点变红。不许再有静默 return。
+///   录音走信箱（两头加密）交给大管家；大管家用本机 SenseVoice 认字、看图答话、配好音回来，直接放（别的 App 的声音压低）。
+/// - 108（Song 11-24 12:20 选 A）：不用苹果听写了。出错就说：凡是会让「他说了话却什么都不发生」的地方，都弹一行字、念出哪一步坏了，小圆点变红。
 ///   开听那一下「叮」一声。小圆点：在听绿，判到他在说绿色一闪一闪，等大管家橙，出错红。每次开听体检一次，工具箱「陪玩」下面显示，也寄给大管家记日志。
-/// - 截到的屏幕只在开口那一刻取一帧，录音、截图只交自己的大管家，都不存。
-/// - 107 深聊（Song 11-24 11:58「我不需要快速回答……他可以去思考 5 分钟再回答我，但是回答的问题要有深度」「锁屏以后，它就进入语音聊模式，不用去截屏」）：
-///   陪玩开着锁屏（系统停了直播）话筒不撒手，转深聊；工具箱「深聊」一格亮屏时直接进。不截屏，说完停 1.5 秒算一句，每一句录音寄给大管家，
-///   大管家认完字只认「大管家」开头的（别的当场扔，不回）；收到了回一封 ack，手机马上念「收到，想好了叫你」；想好了回口语版 mp3 + 完整文字，
-///   到了就念（他正说着就等他说完），完整文字存成「深聊」文件夹里的一条便签。说「大管家，结束」、再点一下「深聊」、30 分钟一句没问：退出，撒手话筒。
+/// - 截到的屏幕只取开口那一刻的一帧，录音、截图只交自己的大管家，都不存。
+/// - 107 深聊：陪玩开着锁屏（系统停了直播）话筒不撒手，转深聊；工具箱「深聊」一格亮屏时直接进。不截屏，说完停 1.5 秒算一句，每一句录音寄给大管家，
+///   大管家认完字判是不是在问它（127：不用喊「大管家」）；收到了回一封 ack，手机马上念「收到，想好了叫你」；想好了回口语版 mp3 + 完整文字，
+///   到了就念（他正说着就等他说完），完整文字存成「深聊」文件夹里的一条便签。说「结束」、再点一下「深聊」、30 分钟一句没问：退出，撒手话筒。
+/// - 117（Song 11-24 14:02–14:54，照掌机那套「语音陪玩」）：
+///   不聋：来电、闹钟、Siri、别的 App 出声、蓝牙耳机连上断开、媒体服务重置，话筒被系统停了自动整个重开；15 秒一次看话筒还有没有声音进来，
+///   没了也重开；重开不了念出来、变红。边说边传：判到他开口就先去取那一刻的截图、先寄出去，说完只寄录音。边想边说：大管家一句一句寄回来，
+///   到一句放一句。插嘴：放回答时也判开口（更响、更长才算）；声纹建好以前够响够长就停，建好以后先把头 1 秒寄去对声纹，是他才停。
+///   一个嗓子：手机自己念的固定的话都是随 App 带的晓晓录音。陪玩开着每 4 分钟敲一下大管家（大脑不下班），关了陪玩说一声（这一场结束）。
 @MainActor @Observable
 final class Companion {
     typealias Phase = CompanionPhase
@@ -32,6 +35,8 @@ final class Companion {
     private(set) var healthLine: String?
     /// 上一句大管家认出来的字（工具箱「陪玩」下面，听歪了一眼看得出来）。只在内存里
     fileprivate(set) var lastHeard: String?
+    /// 117：声纹攒到哪了（工具箱「陪玩」下面）
+    fileprivate(set) var voiceprintLine: String?
 
     var light: CompanionLight? { CompanionLight.of(phase, alert: alert != nil) }
     /// 在深聊（107）
@@ -40,6 +45,7 @@ final class Companion {
     @ObservationIgnored weak var app: AppModel?
     @ObservationIgnored private let bell = LiveBell()
     @ObservationIgnored private let mouth = AVSpeechSynthesizer()
+    @ObservationIgnored fileprivate var lineMouth: AVAudioPlayer?
     @ObservationIgnored fileprivate var ear: Ear?
     @ObservationIgnored fileprivate var current: String?
     @ObservationIgnored fileprivate var clock: LookClock?
@@ -48,6 +54,19 @@ final class Companion {
     @ObservationIgnored fileprivate var probeTimer: Timer?
     @ObservationIgnored fileprivate var startedAt: Date?
     @ObservationIgnored fileprivate var batteryAtStart: Float?
+    // 117
+    @ObservationIgnored fileprivate var parts = PartQueue()
+    @ObservationIgnored fileprivate var doneTotal: Int?
+    @ObservationIgnored fileprivate var doneTiming: [String: Double] = [:]
+    @ObservationIgnored fileprivate var statsLater = false
+    @ObservationIgnored fileprivate var gear = 1
+    @ObservationIgnored fileprivate var deadline: Date?
+    @ObservationIgnored fileprivate var preID: String?
+    @ObservationIgnored fileprivate var preState: PreState = .none
+    @ObservationIgnored fileprivate var pingTimer: Timer?
+    @ObservationIgnored fileprivate var whoID: String?
+    @ObservationIgnored fileprivate var vpReady = false
+    @ObservationIgnored fileprivate var rebuilding = false
     // 107 深聊
     @ObservationIgnored fileprivate var topic = DeepTopic()
     @ObservationIgnored fileprivate var limiter = TroubleLimiter()
@@ -60,6 +79,8 @@ final class Companion {
     @ObservationIgnored fileprivate var observers: [NSObjectProtocol] = []
 
     enum After { case nothing, listen, stop }
+    /// 117：开口那一刻的截图先寄了没有
+    enum PreState { case none, pending, sent, failed(CompanionTrouble) }
 
     /// 开着陪玩、在听：后台也别断信箱
     var holdsButler: Bool { ear != nil }
@@ -79,6 +100,14 @@ final class Companion {
             let began = AVAudioSession.InterruptionType(rawValue: raw) == .began
             MainActor.assumeIsolated { self?.interrupted(began: began) }
         })
+        // 117 不聋：换了耳机（蓝牙连上、断开）、媒体服务重置
+        observers.append(nc.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { [weak self] n in
+            let raw = (n.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt) ?? 0
+            MainActor.assumeIsolated { self?.routeChanged(raw) }
+        })
+        observers.append(nc.addObserver(forName: AVAudioSession.mediaServicesWereResetNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.rebuildEar("媒体服务重置", tell: true) }
+        })
     }
 
     // ---------------------------------------------------------------- 直播在不在
@@ -95,6 +124,10 @@ final class Companion {
     }
 
     private func probe() async {
+        // 117 不聋：话筒还在不在出声（引擎停了、15 秒里一块声音都没进来）：整个重开
+        if let ear, !rebuilding, !ear.healthy() {
+            rebuildEar("话筒没声音了", tell: true)
+        }
         let r = await LiveLink.fetch("hello")
         if case .down = r {
             if deep { live = false; return }            // 深聊不看直播
@@ -133,16 +166,10 @@ final class Companion {
                 return self.fail(.noMic, app.lang.t("companion.noMic"))
             }
             guard self.ear == nil, self.live || wantDeep else { return }
-            let ear = Ear()
-            ear.onStart = { [weak self] in Task { @MainActor in self?.heardStart() } }
-            ear.onClip = { [weak self] wav, secs, peak, end in
-                Task { @MainActor in self?.heard(wav, seconds: secs, peak: peak, spokeEnd: end) }
-            }
-            ear.onDrop = { [weak self] in Task { @MainActor in self?.dropped() } }
+            let ear: Ear
             do {
-                try ear.start()
+                ear = try self.makeEar()
             } catch {
-                ear.stop()
                 return self.fail(.earFailed, error.localizedDescription)
             }
             self.ear = ear
@@ -163,9 +190,68 @@ final class Companion {
             let t = Timer(timeInterval: 15, repeats: true) { [weak self] _ in Task { @MainActor in await self?.probe() } }
             RunLoop.main.add(t, forMode: .common)
             self.probeTimer = t
+            self.armPing()
             // 体检：等底噪稳下来（门槛看最近 3 秒）再量
             try? await Task.sleep(nanoseconds: 3_500_000_000)
             if self.ear === ear { self.checkUp(ear) }
+        }
+    }
+
+    /// 一只耳朵：话筒、门槛、嘴。开不起来抛错
+    private func makeEar() throws -> Ear {
+        let ear = Ear()
+        ear.onStart = { [weak self] in Task { @MainActor in self?.heardStart() } }
+        ear.onClip = { [weak self] wav, secs, peak, end in
+            Task { @MainActor in self?.heard(wav, seconds: secs, peak: peak, spokeEnd: end) }
+        }
+        ear.onDrop = { [weak self] in Task { @MainActor in self?.dropped() } }
+        ear.onBarge = { [weak self] in Task { @MainActor in self?.barge() } }
+        ear.onProbe = { [weak self] wav in Task { @MainActor in self?.askWho(wav) } }
+        ear.onLost = { [weak self] why in Task { @MainActor in self?.rebuildEar(why, tell: false) } }
+        do {
+            try ear.start()
+        } catch {
+            ear.stop()
+            throw error
+        }
+        return ear
+    }
+
+    /// 117 不聋：话筒被系统停了，整个耳朵重开（后台也试：音频会话还是我们的）。重开不了：念出来、变红（深聊里照旧等亮屏提示）
+    fileprivate func rebuildEar(_ why: String, tell: Bool) {
+        guard let old = ear, !rebuilding else { return }
+        rebuilding = true
+        defer { rebuilding = false }
+        let wasDeep = deep
+        old.stop()
+        ear = nil
+        do {
+            let e = try makeEar()
+            e.setDeep(wasDeep)
+            ear = e
+            if phase == .speaking || phase == .hearing { phase = restPhase }
+            if current != nil, phase != .asking { dropAnswer() }       // 放到一半被打断的回答不接着放了
+            if tell { notice(.earBack) }
+        } catch {
+            if wasDeep {
+                cutByCall = true
+                alert = .deepCut
+                stopListening()
+                phase = .failed(CompanionTrouble.deepCut.words)
+            } else {
+                fail(.earLost, "\(why)：\(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func routeChanged(_ raw: UInt) {
+        guard ear != nil else { return }
+        let reason = AVAudioSession.RouteChangeReason(rawValue: raw)
+        guard reason == .newDeviceAvailable || reason == .oldDeviceUnavailable || reason == .override else { return }
+        // 引擎多半自己会喊「配置变了」（onLost）；1.5 秒后再看一眼，话筒没声了就重开
+        Task {
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            if let ear = self.ear, !self.rebuilding, !ear.healthy(within: 1.2) { self.rebuildEar("换了耳机", tell: false) }
         }
     }
 
@@ -176,15 +262,35 @@ final class Companion {
         app.butler.lookCheck(h)
     }
 
+    /// 117 陪玩开着大脑不下班：每 4 分钟敲一下大管家（深聊里不敲，深聊有自己的）
+    private func armPing() {
+        pingTimer?.invalidate()
+        let t = Timer(timeInterval: 240, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                guard let self, self.ear != nil, !self.deep else { return }
+                self.app?.butler.lookWarm()
+            }
+        }
+        RunLoop.main.add(t, forMode: .common)
+        pingTimer = t
+    }
+
     fileprivate func stopListening() {
         probeTimer?.invalidate()
         probeTimer = nil
+        pingTimer?.invalidate()
+        pingTimer = nil
         if deep { dropDeep() }
         ear?.stop()
         ear = nil
         if let id = current { app?.butler.forgetLook(id) }
         current = nil
         clock = nil
+        parts = PartQueue()
+        doneTotal = nil
+        preID = nil
+        preState = .none
+        app?.butler.lookOff()                             // 117：这一场结束
         if UIApplication.shared.applicationState == .background { app?.butler.stop() }
     }
 
@@ -201,6 +307,40 @@ final class Companion {
             phase = .hearing
             alert = nil
         }
+        if !deep { sendPre() }
+    }
+
+    /// 117 边说边传：他一开口就去取这一刻的截图、先寄出去（这一问将来的 id 先定下来）
+    fileprivate func sendPre() {
+        guard live, let app else { preID = nil; preState = .none; return }
+        let qid = UUID().uuidString
+        preID = qid
+        preState = .pending
+        Task {
+            let r = await LiveLink.fetch(qid)
+            var trouble: CompanionTrouble?
+            switch r {
+            case .frame(let d):
+                let path = ButlerRequest.lookPrePath(qid)
+                let req = ButlerRequest.lookPre(id: UUID().uuidString, question: qid, image: path, at: ISOTime.string(Date()),
+                                                app: ButlerService.appVersion)
+                app.butler.lookPre(req, files: [path: d])
+                if self.preID == qid { self.preState = .sent }
+                return
+            case .noFrame: trouble = .noFrame
+            case .refused: trouble = .frameRefused
+            case .down:
+                self.live = false
+                trouble = .liveDown
+            }
+            if let trouble {
+                if self.preID == qid {
+                    self.preState = .failed(trouble)
+                } else if self.current == qid {
+                    self.notice(trouble)                        // 这一问已经寄了（说是先寄了图）：少了图照样答，说一声
+                }
+            }
+        }
     }
 
     /// 他说完了（或者那一下不算一句）：回到「在听」，深聊里在等回答的回到「等」
@@ -209,7 +349,7 @@ final class Companion {
     /// 太短的一下（咔哒、咳嗽）：不算一句，记个数跟下一封信走
     private func dropped() {
         shorts += 1
-        if phase == .hearing { phase = restPhase }
+        if phase == .hearing { phase = current != nil ? .asking : restPhase }
         playPending()
     }
 
@@ -217,10 +357,16 @@ final class Companion {
     private func heard(_ wav: Data, seconds: Double, peak: Double, spokeEnd: Double) {
         if deep { return heardDeep(wav, seconds: seconds, peak: peak) }
         guard ear != nil, let app else { return }
-        let id = UUID().uuidString
-        if let old = current {                           // 上一句还在等：不要了，它的账先记上
+        let id = preID ?? UUID().uuidString               // 117：截图先寄的那一问就用那个 id
+        let st = preState
+        preID = nil
+        preState = .none
+        if let old = current {                           // 上一句还在等 / 还在放：不要了，它的账先记上
             app.butler.forgetLook(old)
+            ear?.stopPlaying()
             finishStats()
+            parts = PartQueue()
+            doneTotal = nil
         }
         current = id
         clock = LookClock(spokeEnd: spokeEnd, rec: seconds, peak: peak)
@@ -231,36 +377,43 @@ final class Companion {
             let audioPath = ButlerRequest.lookAudioPath(id)
             var files: [String: Data] = [audioPath: wav]
             var path: String?
+            var pre = false
             var trouble: CompanionTrouble?
-            if self.live {
-                switch await LiveLink.fetch(id) {
-                case .frame(let d):
-                    let p = "陪玩/\(id.prefix(8))-屏.jpg"
-                    files[p] = d
-                    path = p
-                case .noFrame: trouble = .noFrame
-                case .refused: trouble = .frameRefused
-                case .down:
-                    self.live = false
+            switch st {
+            case .sent, .pending:
+                pre = true                                  // 图已经（或正在）先寄了，大管家那头等它 1.5 秒
+            case .failed(let t):
+                trouble = t
+            case .none:
+                if self.live {                              // 开口时没取（插嘴、刚开直播）：现在取
+                    switch await LiveLink.fetch(id) {
+                    case .frame(let d):
+                        let p = "陪玩/\(id.prefix(8))-屏.jpg"
+                        files[p] = d
+                        path = p
+                    case .noFrame: trouble = .noFrame
+                    case .refused: trouble = .frameRefused
+                    case .down:
+                        self.live = false
+                        trouble = .liveDown
+                    }
+                } else {
                     trouble = .liveDown
                 }
-            } else {
-                trouble = .liveDown
             }
             guard self.current == id else { return }
             self.clock?.frame = ProcessInfo.processInfo.systemUptime
-            self.clock?.frameOK = path != nil
+            self.clock?.frameOK = pre || path != nil
             if let trouble { self.notice(trouble) }           // 少了图照样问，先说一声
             let req = ButlerRequest.look(id: id, question: "", audio: audioPath, image: path, at: ISOTime.string(Date()),
-                                         app: ButlerService.appVersion, prev: prevSend)
+                                         app: ButlerService.appVersion, prev: prevSend, pre: pre, stream: true)
             let r = await app.butler.sendLook(req, files: files)
             guard self.current == id else { return }
             self.clock?.sent = ProcessInfo.processInfo.systemUptime
             switch r {
             case .sent(true):
                 self.clock?.sentOK = true
-                try? await Task.sleep(nanoseconds: 45_000_000_000)
-                if self.current == id, self.phase == .asking { self.giveUp(id, .noAnswer) }
+                self.watch(id)
             case .sent(false):
                 self.clock?.sentOK = false
                 self.giveUp(id, .away)
@@ -275,10 +428,29 @@ final class Companion {
         }
     }
 
+    /// 117：寄出去以后盯着：一档 45 秒、档越高越久没回音（每来一句重新算），还一句都没到就念「大管家没回」；放了几句、done 没来：收尾
+    private func watch(_ id: String) {
+        deadline = Date().addingTimeInterval(LookWait.seconds(gear: gear))
+        Task {
+            while self.current == id {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                guard self.current == id, let d = self.deadline, Date() > d else { continue }
+                if self.parts.played == 0, self.phase == .asking {
+                    self.giveUp(id, .noAnswer)
+                } else if !(self.ear?.busy ?? false) {
+                    self.answerFinished()
+                }
+                return
+            }
+        }
+    }
+
     /// 这一问走不下去了：记账、红点、弹一行、念出来，念完接着听
     private func giveUp(_ id: String, _ t: CompanionTrouble) {
         app?.butler.forgetLook(id)
         current = nil
+        parts = PartQueue()
+        doneTotal = nil
         finishStats()
         alert = t
         app?.show(t.words, seconds: 5)
@@ -293,28 +465,117 @@ final class Companion {
         say(t.words, after: .nothing)
     }
 
-    /// 大管家的回答到了（ButlerService 收信时叫）
+    /// 大管家的回信到了（ButlerService 收信时叫）：117 起一句一句来（part），最后一封 done；老大管家还是一封带整段声音
     func answer(_ r: ButlerResult, audio: Data?) {
         if deepSent.contains(r.id) { return deepAnswer(r, audio: audio) }
+        if r.stage == "who" { return whoAnswer(r) }
+        if let line = VoiceprintLine.of(r.timing) {
+            voiceprintLine = line
+            vpReady = (r.timing?["vpOK"] ?? 0) > 0
+        }
         guard r.id == current, let ear else { return }        // 不是最新那一问的：不放（只要最新的）
-        current = nil
-        clock?.back = ProcessInfo.processInfo.systemUptime
+        if let g = r.timing?["gear"], g >= 1, g <= 4 { gear = Int(g) }
+        deadline = Date().addingTimeInterval(LookWait.seconds(gear: gear))
+        if clock?.back == nil { clock?.back = ProcessInfo.processInfo.systemUptime }
+        if r.stage == "part" {
+            enqueue(parts.add(Int(r.timing?["part"] ?? 0), audio ?? Data()))
+            return
+        }
+        // done（117）或者老的一封
         if let h = r.heard { lastHeard = h.isEmpty ? "（什么都没听出来）" : h }
-        let missed = (r.timing?["miss"] ?? 0) > 0
+        let timing = r.timing ?? [:]
+        if (timing["notHim"] ?? 0) > 0 {                     // 不是他的声音：不答，接着听
+            lastHeard = "（不是你的声音，没答）"
+            current = nil
+            parts = PartQueue()
+            finishStats(butler: timing)
+            if phase == .asking { phase = restPhase }
+            return
+        }
+        let total = Int(timing["parts"] ?? 0)
+        if total > 0 || parts.played > 0 {
+            doneTotal = total
+            doneTiming = timing
+            if clock?.playing != nil { finishStats(butler: timing) } else { statsLater = true }
+            partPlayed()
+            Task {                                              // 落在后面的那几句：最多再等 4 秒
+                try? await Task.sleep(nanoseconds: 4_000_000_000)
+                guard self.current == r.id else { return }
+                self.enqueue(self.parts.finish(total: total))
+                if !(self.ear?.busy ?? false) { self.answerFinished() }
+            }
+            return
+        }
+        current = nil
+        let missed = (timing["miss"] ?? 0) > 0
         if missed {
             alert = .misheard
             app?.show(CompanionTrouble.misheard.words, seconds: 4)
         }
         phase = .speaking
         let done: @Sendable () -> Void = { [weak self] in Task { @MainActor in self?.played() } }
-        let started: @Sendable () -> Void = { [weak self] in Task { @MainActor in self?.playing(r.timing ?? [:]) } }
+        let started: @Sendable () -> Void = { [weak self] in Task { @MainActor in self?.playing(timing) } }
         if let audio {
             if ear.play(audio, started: started, done: done) { return }
-            alert = .cantPlay                                   // 配好的声音坏了：弹一行，用手机自己的嗓子念回答
+            alert = .cantPlay                                   // 配好的声音坏了：弹一行
             app?.show(CompanionTrouble.cantPlay.words, seconds: 5)
         }
         let words = (r.text?.isEmpty == false ? r.text : nil) ?? (missed ? CompanionTrouble.misheard.words : CompanionTrouble.brainFailed.words)
-        ear.speak(words, voice: PhoneVoice.bestVoice("zh-CN"), started: started, done: done)
+        speakLine(words, started: started, done: done)
+    }
+
+    /// 117：按顺序到了的几句接着放
+    private func enqueue(_ items: [Data]) {
+        guard let ear, !items.isEmpty else { return }
+        for d in items {
+            let first = clock?.playing == nil
+            let started: @Sendable () -> Void = { [weak self] in Task { @MainActor in if first { self?.partStarted() } } }
+            let done: @Sendable () -> Void = { [weak self] in Task { @MainActor in self?.partPlayed() } }
+            if !ear.enqueue(d, started: started, done: done) {
+                alert = .cantPlay
+            }
+        }
+        if phase == .asking || phase == .listening { phase = .speaking }
+    }
+
+    private func partStarted() {
+        clock?.playing = ProcessInfo.processInfo.systemUptime
+        clock?.playOK = true
+        if let t = clock?.summary()["total"] { lastTotal = t }
+        if statsLater {
+            statsLater = false
+            finishStats(butler: doneTiming)
+        }
+    }
+
+    /// 放完一句：done 来了、该到的都到了、都放完了：这一问结束
+    private func partPlayed() {
+        guard current != nil, let ear, !ear.busy, let total = doneTotal, parts.next >= total else { return }
+        answerFinished()
+    }
+
+    fileprivate func answerFinished() {
+        if let id = current { app?.butler.forgetLook(id) }
+        current = nil
+        parts = PartQueue()
+        doneTotal = nil
+        if statsLater {
+            statsLater = false
+            finishStats(butler: doneTiming)
+        }
+        if ear != nil, phase == .speaking || phase == .asking { phase = restPhase }
+        playPending()
+    }
+
+    /// 放到一半不放了（插嘴、话筒重开）
+    fileprivate func dropAnswer() {
+        ear?.stopPlaying()
+        if let id = current { app?.butler.forgetLook(id) }
+        current = nil
+        parts = PartQueue()
+        doneTotal = nil
+        statsLater = false
+        finishStats()
     }
 
     fileprivate func playing(_ butler: [String: Double]) {
@@ -334,16 +595,84 @@ final class Companion {
         playPending()
     }
 
-    /// 用苹果的中文嗓子念一句。在听就走耳朵（念的时候不判开口）；耳朵没开就直接念。念完：接着听 / 不管 / 撒手话筒
+    // ---------------------------------------------------------------- 插嘴（117）
+    /// 他在回答放着的时候开口了（够响、够长）。声纹没建好：就是他（拿手机的人离话筒最近），马上停；建好了：头 1 秒寄去对声纹
+    private func barge() {
+        guard let ear else { return }
+        if vpReady {
+            ear.wantProbe()
+            return
+        }
+        stopForHim()
+    }
+
+    /// 停念、丢掉没念完的，接着录他这句当新问题（截图也先寄）
+    private func stopForHim() {
+        dropAnswer()
+        phase = .hearing
+        alert = nil
+        sendPre()
+    }
+
+    private func askWho(_ wav: Data) {
+        guard let app, ear?.busy == true else { return }
+        let id = UUID().uuidString
+        whoID = id
+        let path = ButlerRequest.lookWhoPath(id)
+        let req = ButlerRequest.lookWho(id: id, audio: path, at: ISOTime.string(Date()), app: ButlerService.appVersion)
+        Task {
+            let r = await app.butler.sendLook(req, files: [path: wav])
+            if case .sent(true) = r {
+                try? await Task.sleep(nanoseconds: 2_500_000_000)
+            }
+            if self.whoID == id {                           // 问不了 / 2.5 秒没回：当是他
+                self.whoID = nil
+                app.butler.forgetLook(id)
+                if self.ear?.busy == true { self.stopForHim() }
+            }
+        }
+    }
+
+    private func whoAnswer(_ r: ButlerResult) {
+        guard r.id == whoID else { return }
+        whoID = nil
+        app?.butler.forgetLook(r.id)
+        if (r.timing?["him"] ?? 1) > 0 {
+            if ear?.busy == true { stopForHim() }
+        } else {
+            ear?.dropCurrentClip()                          // 别人在说话：接着念，这一句录音扔掉
+        }
+    }
+
+    // ---------------------------------------------------------------- 说（117：固定的话放随 App 带的晓晓录音）
+    /// 一句固定的话的晓晓录音（不是固定的话回 nil）
+    fileprivate func line(_ words: String) -> Data? {
+        guard let name = VoiceLines.file(for: words), let url = Bundle.main.url(forResource: name, withExtension: "mp3") else { return nil }
+        return try? Data(contentsOf: url)
+    }
+
+    /// 走耳朵念一句：固定的话放晓晓录音，别的（大管家的回答字，声音坏了时）才用苹果的嗓子
+    fileprivate func speakLine(_ words: String, started: @escaping @Sendable () -> Void, done: @escaping @Sendable () -> Void) {
+        guard let ear else { return }
+        if let d = line(words), ear.play(d, started: started, done: done) { return }
+        ear.speak(words, voice: PhoneVoice.bestVoice("zh-CN"), started: started, done: done)
+    }
+
+    /// 念一句。在听就走耳朵；耳朵没开就直接放。念完：接着听 / 不管 / 撒手话筒
     fileprivate func say(_ words: String, after: After) {
-        let voice = PhoneVoice.bestVoice("zh-CN")
-        guard let ear else {
+        guard ear != nil else {
+            if let d = line(words) {
+                try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+                try? AVAudioSession.sharedInstance().setActive(true)
+                lineMouth = try? AVAudioPlayer(data: d)
+                if lineMouth?.play() == true { return }
+            }
             let u = AVSpeechUtterance(string: words)
-            u.voice = voice
+            u.voice = PhoneVoice.bestVoice("zh-CN")
             mouth.speak(u)
             return
         }
-        ear.speak(words, voice: voice, started: {}, done: { [weak self] in
+        speakLine(words, started: {}, done: { [weak self] in
             Task { @MainActor in
                 switch after {
                 case .listen: self?.played()
@@ -402,8 +731,10 @@ extension Companion {
         ear.setDeep(true)
         if phase != .speaking { phase = .listening }
         alert = nil
-        current = nil
+        if current != nil { dropAnswer() }
         clock = nil
+        preID = nil
+        preState = .none
         app?.butler.deepWarm()
         armDeepIdle()
     }
@@ -487,9 +818,10 @@ extension Companion {
         say(t.words, after: .nothing)
     }
 
-    /// 深聊的回信：ack（收到了）、end、topic、answer / failed
+    /// 深聊的回信：ack（收到了）、end、topic、gear（117 换档）、answer / failed
     fileprivate func deepAnswer(_ r: ButlerResult, audio: Data?) {
         if let h = r.heard, !h.isEmpty { lastHeard = h }
+        if let line = VoiceprintLine.of(r.timing) { voiceprintLine = line }
         switch r.stage {
         case "ack":
             topic.asked(Date())
@@ -521,6 +853,12 @@ extension Companion {
             topic.asked(Date())
             armDeepIdle()
             say((r.text?.isEmpty == false ? r.text : nil) ?? Deep.saysTopic, after: .nothing)
+        case "gear":                                       // 117：深聊里换档，念一句「三档」
+            deepSent.remove(r.id)
+            app?.butler.forgetLook(r.id)
+            armDeepIdle()
+            pending = (r, audio)
+            playPending()
         default:                                           // answer / failed
             deepSent.remove(r.id)
             app?.butler.forgetLook(r.id)
@@ -548,20 +886,15 @@ extension Companion {
             app?.show(CompanionTrouble.cantPlay.words, seconds: 5)
         }
         let words = (r.text?.isEmpty == false ? r.text : nil) ?? CompanionTrouble.deepNoAnswer.words
-        ear.speak(words, voice: PhoneVoice.bestVoice("zh-CN"), started: {}, done: done)
+        speakLine(words, started: {}, done: done)
     }
 
     // ---------------------------------------------------------------- 来电话、回到前台
-    /// 来电话把话筒打断了：挂了以后能续就续，续不上记下，下次亮屏提示
+    /// 来电话、闹钟、Siri、别的 App 把话筒打断了：挂了以后接着开；接不上整个重开（117）；还不行念出来、变红
     fileprivate func interrupted(began: Bool) {
         guard let ear, !began else { return }
         if ear.resume() { return }
-        if deep {
-            cutByCall = true
-            alert = .deepCut
-            stopListening()
-            phase = .failed(CompanionTrouble.deepCut.words)
-        }
+        rebuildEar("被打断了", tell: true)
     }
 
     fileprivate func becameActive() {
@@ -684,10 +1017,11 @@ final class Once: @unchecked Sendable {
 }
 
 // ================================================================ 耳朵和嘴：话筒、切句录音、放回答
-/// 一个 AVAudioEngine 从开到关一直跑着（后台不能重新开话筒，所以不停）：
+/// 一个 AVAudioEngine 从开到关一直跑着（后台不能随便重新开话筒，所以不停；117：系统把它停了，Companion 整个换一只新的）：
 /// - 话筒开回声消除（voice processing），别的 App 的声音在有人说话时压低（advanced ducking），自己放的回答不会被自己听进去；
-/// - 每一小块转成 16 kHz 单声道交给 ClipCutter：判开口、说完，开口前 0.3 秒一起要，最长 20 秒；说完把这一句编成 WAV 交出去（108，不再用苹果听写）；
-/// - 放回答、念一句、叮的时候不判开口（mute），放完再等 0.3 秒。
+/// - 每一小块转成 16 kHz 单声道交给 ClipCutter：判开口、说完，开口前 0.3 秒一起要，最长 20 秒；说完把这一句编成 WAV 交出去（108）；
+/// - 放回答时（117）照样判开口，但要更响、更长（插嘴，onBarge）；叮、念一句以后再等 0.3 秒；
+/// - 回答一句一句排着放（enqueue），插嘴时 stopPlaying 全停。
 final class Ear: @unchecked Sendable {
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
@@ -699,9 +1033,14 @@ final class Ear: @unchecked Sendable {
     private let lock = NSLock()
     private var cutter = ClipCutter()
     private var mutedUntil: Double = 0
-    private var playing = false
+    /// 排着、正在放的段数（0 = 没在放）
+    private var queued = 0
     private var playGen = 0
     private var running = false
+    private var lastBuffer: Double = 0
+    private var probeWanted = false
+    private var dropClip = false
+    private var configObserver: NSObjectProtocol?
     /// 回声消除开上了没有（体检用）
     private(set) var echo = false
 
@@ -709,11 +1048,31 @@ final class Ear: @unchecked Sendable {
     /// 一句说完：WAV、录了几秒、最响一块的 dB、说完的那一刻（systemUptime）
     var onClip: (@Sendable (Data, Double, Double, Double) -> Void)?
     var onDrop: (@Sendable () -> Void)?
+    /// 117：放回答时他开口了（够响、够长）
+    var onBarge: (@Sendable () -> Void)?
+    /// 117：插嘴那一句的头 1 秒（要对声纹时）
+    var onProbe: (@Sendable (Data) -> Void)?
+    /// 117：系统把引擎停了 / 换了配置（换耳机）
+    var onLost: (@Sendable (String) -> Void)?
 
     /// 门槛现在的底噪（dBFS）
     var noise: Double {
         lock.lock(); defer { lock.unlock() }
         return cutter.noise
+    }
+
+    /// 在放回答（或叮、念的一句）
+    var busy: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return queued > 0
+    }
+
+    /// 117 不聋：引擎在转、最近 within 秒里有声音块进来
+    func healthy(within: Double = 6) -> Bool {
+        lock.lock()
+        let last = lastBuffer, run = running
+        lock.unlock()
+        return run && engine.isRunning && ProcessInfo.processInfo.systemUptime - last < within
     }
 
     func start() throws {
@@ -727,7 +1086,7 @@ final class Ear: @unchecked Sendable {
                 enableAdvancedDucking: true, duckingLevel: .mid)
             echo = true
         } catch {
-            echo = false        // 没有回声消除也照样能用：放回答时本来就不听
+            echo = false        // 没有回声消除也照样能用：放回答时只认更响的插嘴
         }
         engine.attach(player)
         engine.connect(player, to: engine.mainMixerNode, format: playFormat)
@@ -736,7 +1095,12 @@ final class Ear: @unchecked Sendable {
         try engine.start()
         lock.lock()
         running = true
+        lastBuffer = ProcessInfo.processInfo.systemUptime
+        cutter.gate.strictFloor = echo ? -38 : -25        // 117：没有回声消除，自己放的声音也进话筒：插嘴要更响
         lock.unlock()
+        configObserver = NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: engine, queue: nil) { [weak self] _ in
+            self?.onLost?("话筒的配置变了")
+        }
     }
 
     /// 深聊（107）：停 1.5 秒才算说完，一句最长 60 秒；陪玩：0.8 秒、20 秒
@@ -753,6 +1117,9 @@ final class Ear: @unchecked Sendable {
         do {
             try AVAudioSession.sharedInstance().setActive(true)
             if !engine.isRunning { try engine.start() }
+            lock.lock()
+            lastBuffer = ProcessInfo.processInfo.systemUptime
+            lock.unlock()
             return true
         } catch {
             return false
@@ -760,9 +1127,13 @@ final class Ear: @unchecked Sendable {
     }
 
     func stop() {
+        if let o = configObserver { NotificationCenter.default.removeObserver(o) }
+        configObserver = nil
         lock.lock()
         running = false
         cutter = ClipCutter()
+        queued = 0
+        playGen += 1
         lock.unlock()
         player.stop()
         engine.inputNode.removeTap(onBus: 0)
@@ -771,24 +1142,53 @@ final class Ear: @unchecked Sendable {
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
+    /// 117 插嘴：这一句的头 1 秒交出去对声纹
+    func wantProbe() {
+        lock.lock()
+        probeWanted = true
+        lock.unlock()
+    }
+
+    /// 117 插嘴的是别人：这一句录完扔掉
+    func dropCurrentClip() {
+        lock.lock()
+        if cutter.speaking { dropClip = true }
+        lock.unlock()
+    }
+
     // ---------------------------------------------------------------- 听
     private func hear(_ buf: AVAudioPCMBuffer) {
         guard buf.frameLength > 0, let samples = toEar(buf), !samples.isEmpty else { return }
         let now = ProcessInfo.processInfo.systemUptime
         lock.lock()
         guard running else { lock.unlock(); return }
-        let mute = playing || now < mutedUntil
-        let ev = cutter.feed(samples, mute: mute)
+        lastBuffer = now
+        let playing = queued > 0
+        let mute = !playing && now < mutedUntil
+        let ev = cutter.feed(samples, mute: mute, strict: playing)
+        var probe: Data?
+        if probeWanted, cutter.speaking, cutter.clip.count >= ClipCutter.rate {
+            probeWanted = false
+            probe = Wav.encode(Array(cutter.clip.prefix(ClipCutter.rate)))
+        }
+        var dropThis = false
+        if case .clip? = ev { dropThis = dropClip; dropClip = false }
+        if case .tooShort? = ev { dropClip = false; probeWanted = false }
         let endSilence = cutter.gate.endSilenceMs / 1000
         let maxSeconds = cutter.maxSeconds
-        let startCB = onStart, dropCB = onDrop, clipCB = onClip
+        let startCB = onStart, dropCB = onDrop, clipCB = onClip, bargeCB = onBarge, probeCB = onProbe
         lock.unlock()
+        if let probe { probeCB?(probe) }
         switch ev {
         case .start?:
-            startCB?()
+            if playing { bargeCB?() } else { startCB?() }
         case .tooShort?:
             dropCB?()
         case .clip(let s, let secs, let peak)?:
+            if dropThis {
+                dropCB?()
+                return
+            }
             let end = secs >= maxSeconds - 0.01 ? now : now - endSilence
             clipCB?(Wav.encode(s), secs, peak, end)
         case nil:
@@ -839,31 +1239,50 @@ final class Ear: @unchecked Sendable {
             }
         }
         buf.frameLength = AVAudioFrameCount(total)
-        schedule(buf, started: {}, done: {})
+        schedule(buf, started: {}, done: {}, interrupt: true)
     }
 
-    /// 放大管家配好的 mp3。放不了（坏的）返回 false
-    func play(_ data: Data, started: @escaping @Sendable () -> Void, done: @escaping @Sendable () -> Void) -> Bool {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("yiye-answer.mp3")
+    /// mp3 → 放的格式。坏的回 nil
+    private func decode(_ data: Data) -> AVAudioPCMBuffer? {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("yiye-\(UUID().uuidString).mp3")
+        defer { try? FileManager.default.removeItem(at: url) }
         do {
             try data.write(to: url, options: .atomic)
             let f = try AVAudioFile(forReading: url)
-            guard let raw = AVAudioPCMBuffer(pcmFormat: f.processingFormat, frameCapacity: AVAudioFrameCount(f.length)) else {
-                try? FileManager.default.removeItem(at: url)
-                return false
-            }
+            guard let raw = AVAudioPCMBuffer(pcmFormat: f.processingFormat, frameCapacity: AVAudioFrameCount(f.length)) else { return nil }
             try f.read(into: raw)
-            try? FileManager.default.removeItem(at: url)
-            guard let buf = Ear.convert(raw, to: playFormat) else { return false }
-            schedule(buf, started: started, done: done)
-            return true
+            return Ear.convert(raw, to: playFormat)
         } catch {
-            try? FileManager.default.removeItem(at: url)
-            return false
+            return nil
         }
     }
 
-    /// 用苹果的中文嗓子念一句（大管家不在、没回、哪一步坏了……）。合成出不来声音就直接让系统念
+    /// 放一段 mp3（顶掉正在放的）。放不了（坏的）返回 false
+    func play(_ data: Data, started: @escaping @Sendable () -> Void, done: @escaping @Sendable () -> Void) -> Bool {
+        guard let buf = decode(data) else { return false }
+        schedule(buf, started: started, done: done, interrupt: true)
+        return true
+    }
+
+    /// 117：回答的下一句，排在正在放的后面
+    func enqueue(_ data: Data, started: @escaping @Sendable () -> Void, done: @escaping @Sendable () -> Void) -> Bool {
+        guard let buf = decode(data) else { return false }
+        schedule(buf, started: started, done: done, interrupt: false)
+        return true
+    }
+
+    /// 117 插嘴：全停，排着的也不要了。他正说着：不压门槛
+    func stopPlaying() {
+        lock.lock()
+        playGen += 1
+        queued = 0
+        mutedUntil = 0
+        lock.unlock()
+        player.stop()
+        synth.stopSpeaking(at: .immediate)
+    }
+
+    /// 用苹果的中文嗓子念一句（只给不是固定的话用：大管家配的声音坏了时的回答字）。合成出不来声音就直接让系统念
     func speak(_ words: String, voice: AVSpeechSynthesisVoice?, started: @escaping @Sendable () -> Void, done: @escaping @Sendable () -> Void) {
         let u = AVSpeechUtterance(string: words)
         u.voice = voice
@@ -876,7 +1295,7 @@ final class Ear: @unchecked Sendable {
                 let all = box.items.compactMap { Ear.convert($0, to: fmt) }
                 guard let self else { return done() }
                 if let one = Ear.join(all, fmt) {
-                    self.schedule(one, started: started, done: done)
+                    self.schedule(one, started: started, done: done, interrupt: true)
                 } else {
                     self.sayDirect(words, voice: voice)
                     started()
@@ -894,26 +1313,30 @@ final class Ear: @unchecked Sendable {
         backup.speak(u)
     }
 
-    private func schedule(_ buf: AVAudioPCMBuffer, started: @escaping @Sendable () -> Void, done: @escaping @Sendable () -> Void) {
+    /// interrupt：顶掉正在放的（叮、念的一句、老的一整段）；不顶：排在后面（回答的下一句）
+    private func schedule(_ buf: AVAudioPCMBuffer, started: @escaping @Sendable () -> Void, done: @escaping @Sendable () -> Void, interrupt: Bool) {
         lock.lock()
         guard running else { lock.unlock(); return done() }
-        playing = true
-        playGen += 1
+        if interrupt {
+            playGen += 1
+            queued = 0
+        }
+        queued += 1
         let g = playGen
         lock.unlock()
-        player.stop()                                   // 前一段（叮、念的一句）还没完就让给新的
+        if interrupt { player.stop() }
         player.scheduleBuffer(buf, at: nil, options: [], completionCallbackType: .dataPlayedBack) { [weak self] _ in
             guard let self else { return }
             self.lock.lock()
-            if self.playGen == g {                      // 被新的一段顶掉的那段不算放完
-                self.playing = false
-                self.mutedUntil = ProcessInfo.processInfo.systemUptime + 0.3
+            if self.playGen == g {                      // 被顶掉、被插嘴停掉的那几段不算放完
+                self.queued = max(0, self.queued - 1)
+                if self.queued == 0 { self.mutedUntil = ProcessInfo.processInfo.systemUptime + 0.3 }
             }
             self.lock.unlock()
             done()
         }
         if !engine.isRunning { try? engine.start() }
-        player.play()
+        if !player.isPlaying { player.play() }
         started()
     }
 
