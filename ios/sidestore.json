@@ -25,6 +25,15 @@
       ],
       "versions": [
         {
+          "version": "0.7.6",
+          "buildVersion": "16",
+          "date": "2026-11-24",
+          "localizedDescription": "0.7.6：外观可以选了。设置里新加一排「外观」：跟随系统（默认，跟你手机走）、纸（一直是亮的纸、木头底）、深色（一直是深的）。选了马上变，不用重启。",
+          "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.6/Yiye-0.7.6.ipa",
+          "size": 2419908,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.7.5",
           "buildVersion": "15",
           "date": "2026-11-24",
@@ -169,11 +178,11 @@
           "NSSpeechRecognitionUsageDescription": "Turns your voice into text right on your phone."
         }
       },
-      "version": "0.7.5",
+      "version": "0.7.6",
       "versionDate": "2026-11-24",
-      "versionDescription": "0.7.5：深聊。开着陪玩锁屏，或者点工具箱里的「深聊」，它就不截屏了，揣兜里也在听：先叫一声「大管家」再问，它查资料、想几分钟，想好了念给你，完整的存进「深聊」文件夹。说「大管家，结束」收工。",
-      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.5/Yiye-0.7.5.ipa",
-      "size": 2414193
+      "versionDescription": "0.7.6：外观可以选了。设置里新加一排「外观」：跟随系统（默认，跟你手机走）、纸（一直是亮的纸、木头底）、深色（一直是深的）。选了马上变，不用重启。",
+      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.6/Yiye-0.7.6.ipa",
+      "size": 2419908
     }
   ],
   "news": []
