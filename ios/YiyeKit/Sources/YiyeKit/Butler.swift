@@ -25,6 +25,8 @@ public struct ButlerRequest: Codable, Equatable, Sendable {
     public var timing: [String: Double]?
     /// ask=look（陪玩，108 起）：这一句的录音在信里哪个路径（files 的键，16 kHz 单声道 WAV）。有录音时 text 是空的，大管家自己认字
     public var audio: String?
+    /// ask=deep（深聊，107）：话题号。30 分钟内接着问的是同一个话题，大管家记得前面聊了什么
+    public var topic: String?
 
     /// ask：fix = 理顺（结果回 已理顺/）；speak = 配音（0.4.0 起，结果走 送来/，带 note）；word = 会了 / 不会（088，见 WordMark.swift）
     public init(id: String, note: String, kind: ButlerKind, text: String, images: [String]?, unsure: [String]?, ask: String = "fix", at: String, app: String) {
@@ -51,13 +53,19 @@ public struct ButlerResult: Codable, Equatable, Sendable {
     public var host: String?
     /// 陪玩（108）：大管家从录音里认出来的字（没听清是空串）。手机只在工具箱里显示一行，不存
     public var heard: String?
+    /// 深聊（107）：这封回信是哪一步——ack（收到了，在想）、answer（想好了：text 完整版、audio 口语版、title 一句话摘要）、
+    /// end（说了「大管家，结束」）、topic（换了话题）、failed（没想出来，念 text）
+    public var stage: String?
+    public var title: String?
     public init(v: Int = 1, id: String, note: String, ok: Bool, text: String?, changes: String?, error: String?, model: String? = nil, at: String? = nil,
-                audio: String? = nil, timing: [String: Double]? = nil, host: String? = nil, heard: String? = nil) {
+                audio: String? = nil, timing: [String: Double]? = nil, host: String? = nil, heard: String? = nil,
+                stage: String? = nil, title: String? = nil) {
         self.v = v; self.id = id; self.note = note; self.ok = ok; self.text = text; self.changes = changes; self.error = error; self.model = model; self.at = at
         self.audio = audio; self.timing = timing; self.host = host; self.heard = heard
+        self.stage = stage; self.title = title
     }
 
-    private enum CodingKeys: String, CodingKey { case v, id, note, ok, text, changes, error, model, at, audio, timing, host, heard }
+    private enum CodingKeys: String, CodingKey { case v, id, note, ok, text, changes, error, model, at, audio, timing, host, heard, stage, title }
 
     /// 新加的几个字段读不懂就当没有（timing 里混了不是数的，整封信不能因为它作废）
     public init(from decoder: Decoder) throws {
@@ -75,6 +83,8 @@ public struct ButlerResult: Codable, Equatable, Sendable {
         timing = try? c.decodeIfPresent([String: Double].self, forKey: .timing)
         host = try? c.decodeIfPresent(String.self, forKey: .host)
         heard = try? c.decodeIfPresent(String.self, forKey: .heard)
+        stage = try? c.decodeIfPresent(String.self, forKey: .stage)
+        title = try? c.decodeIfPresent(String.self, forKey: .title)
     }
 }
 

@@ -42,9 +42,11 @@ capture.shootPage	Take a photo
 common.cancel	Cancel
 common.close	Close
 common.done	Done
+companion.deepOn	Deep talk is on. Lock it, pocket it, start with “大管家”.
 companion.failed	Buddy mode didn’t start: %@
 companion.noMic	The mic is off. Turn it on in Settings > Yiye.
 companion.noPanel	Couldn’t open the broadcast panel
+companion.restart	Restart
 editor.back	Notes
 editor.more	More
 editor.original	Original photo
@@ -143,7 +145,7 @@ settings.butler	Butler
 settings.butlerAuto	Auto-send scans and voice notes
 settings.butlerNote	The butler on your PC checks scans against the photo and sends back a clean copy. It goes through an encrypted mailbox in seconds, and falls back to the mirror folder. No AI keys on this phone.
 settings.companion	Buddy
-settings.companionNote	Open the toolbox at the top left, tap Buddy, pick Yiye, start. The ding means it’s listening: use your phone as usual and just ask out loud. Your words and the screen at that moment go to your own butler, which listens, looks, and answers out loud. The dot on the toolbox: green is listening, blinking means it hears you, orange is the butler on it, red is something broke (it’ll tell you what). The red and orange dots up top are Apple’s broadcast and mic lights. Normal.
+settings.companionNote	Open the toolbox at the top left, tap Buddy, pick Yiye, start. The ding means it’s listening: use your phone as usual and just ask out loud. Your words and the screen at that moment go to your own butler, which listens, looks, and answers out loud. The dot on the toolbox: green is listening, blinking means it hears you, orange is the butler on it, red is something broke (it’ll tell you what). Lock the phone with Buddy on, or tap Deep talk in the toolbox, for deep talk: no screen, start with “大管家”, it thinks for a few minutes and reads you the answer; the full text lands in the 深聊 folder. Say “大管家，结束” to stop. The red and orange dots up top are Apple’s broadcast and mic lights. Normal.
 settings.fontSize	Text size
 settings.import	Import from folder
 settings.language	Language
@@ -174,6 +176,7 @@ theme.white	Plain
 time.yesterday	Yesterday
 toast.deleted	Deleted “%@”
 toast.undo	Undo
+tools.deep	Deep talk
 tools.title	Toolbox
 voice.cancel	Discard
 voice.denied	Yiye can’t use the mic. Turn it on in Settings.

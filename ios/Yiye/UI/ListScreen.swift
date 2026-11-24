@@ -186,6 +186,8 @@ struct ListScreen: View {
         case .settings: app.path.append(.settings)
         case .companion:
             if !broadcast.fire() { app.show(t.t("companion.noPanel")) }
+        case .deep:
+            app.companion.toggleDeep()
         }
     }
 

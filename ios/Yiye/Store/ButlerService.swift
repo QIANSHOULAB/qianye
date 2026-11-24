@@ -159,7 +159,7 @@ final class ButlerService {
             saveWords()
             return true
         case .look(let r, let audio):
-            looks.remove(r.id)
+            if r.stage != "ack" { looks.remove(r.id) }          // 深聊（107）：ack 之后同一个 id 还有一封回答
             app.companion.answer(r, audio: audio)
             return true
         case .deliver(let d, let audio):
@@ -409,6 +409,16 @@ final class ButlerService {
         if mail == nil { connectMail() }
         guard let mail, app?.demo == nil else { return }
         let req = ButlerRequest.lookCheck(id: UUID().uuidString, health: h, at: ISOTime.string(Date()), app: ButlerService.appVersion)
+        Task {
+            if let sent = try? await mail.send(.request(req), timeout: 15), !sent.pc { try? await mail.ack(sent.seq) }
+        }
+    }
+
+    /// 进了深聊（107）：叫大管家把耳朵装上（不回信）
+    func deepWarm() {
+        if mail == nil { connectMail() }
+        guard let mail, app?.demo == nil else { return }
+        let req = ButlerRequest.deepWarm(id: UUID().uuidString, at: ISOTime.string(Date()), app: ButlerService.appVersion)
         Task {
             if let sent = try? await mail.send(.request(req), timeout: 15), !sent.pc { try? await mail.ack(sent.seq) }
         }

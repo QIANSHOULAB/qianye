@@ -432,6 +432,22 @@ final class AppModel {
         show(t.f("listen.arrived", n.title.isEmpty ? t.t("note.untitled") : n.title))
     }
 
+    // ---------------------------------------------------------------- 深聊（107）
+    /// 大管家想好的完整版存成一条便签，放「深聊」文件夹；口语版的录音挂在上面，能再听
+    func addDeepNote(id: String, title: String, text: String, audio: Data?) {
+        let nid = UUID(uuidString: id) ?? UUID()
+        guard note(nid) == nil else { return }
+        let n = Note()
+        n.id = nid
+        let head = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        n.markdown = (head.isEmpty ? "" : "# \(head)\n\n") + text
+        n.folder = folderNamed("深聊")
+        context.insert(n)
+        if let audio, let rel = try? attachments.save(audio, name: "深聊-\(id.prefix(8)).mp3") { n.audioPaths = [rel] }
+        try? context.save()
+        mirror.saveSoon(n, attachments: attachments)
+    }
+
     // ---------------------------------------------------------------- 相册
     /// 相册里挑的图取出来（iCloud 照片要现下，可能要几秒）；取不出来说一声
     func loadPicked(_ item: PhotosPickerItem, _ done: @escaping (UIImage) -> Void) {

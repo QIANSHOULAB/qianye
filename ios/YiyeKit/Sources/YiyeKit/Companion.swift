@@ -291,6 +291,8 @@ public enum CompanionLight: Equatable, Sendable {
 /// 凡是会让「他说了话却什么都不发生」的地方，都弹一行字 + 用苹果的中文嗓子念出来，小圆点变红
 public enum CompanionTrouble: Equatable, Sendable, CaseIterable {
     case noMic, earFailed, noFrame, frameRefused, liveDown, noPair, away, noMail, noAnswer, cantPlay, misheard, brainFailed
+    /// 深聊（107）：10 分钟没想好；来电话把话筒打断了、续不上
+    case deepNoAnswer, deepCut
 
     /// 念的（也是弹的那行字）：短，说清哪一步坏了
     public var words: String {
@@ -307,6 +309,8 @@ public enum CompanionTrouble: Equatable, Sendable, CaseIterable {
         case .cantPlay: return "回答的声音放不出来"
         case .misheard: return "没听清，再说一遍"
         case .brainFailed: return "大管家这回没答上来"
+        case .deepNoAnswer: return "大管家没想出来，再问一次？"
+        case .deepCut: return "深聊被电话打断了，点一下重开"
         }
     }
 
@@ -369,6 +373,80 @@ extension ButlerRequest {
 
     /// 录音在信里的路径
     public static func lookAudioPath(_ id: String) -> String { "陪玩/\(id.prefix(8))-问.wav" }
+
+    /// 深聊（107）一句：只有录音（不截屏），带话题号。是不是在问大管家（「大管家」开头）由大管家认完字判，不是的当场扔
+    public static func deep(id: String, audio: String, topic: String, at: String, app: String, prev: [String: Double]? = nil) -> ButlerRequest {
+        var r = ButlerRequest(id: id, note: "", kind: .voice, text: "", images: nil, unsure: nil, ask: "deep", at: at, app: app)
+        r.audio = audio
+        r.topic = topic
+        r.timing = (prev?.isEmpty ?? true) ? nil : prev
+        return r
+    }
+
+    /// 进了深聊：叫大管家先把耳朵装上（不回信）
+    public static func deepWarm(id: String, at: String, app: String) -> ButlerRequest {
+        ButlerRequest(id: id, note: "", kind: .text, text: "", images: nil, unsure: nil, ask: "deep-warm", at: at, app: app)
+    }
+
+    /// 深聊录音在信里的路径
+    public static func deepAudioPath(_ id: String) -> String { "深聊/\(id.prefix(8))-问.wav" }
+}
+
+// ================================================================ 深聊（107）
+/// 深聊的几个数（Song 11-24 11:58：「我不需要快速回答……他可以去思考 5 分钟再回答我，但是回答的问题要有深度」）
+public enum Deep {
+    /// 说完停 1.5 秒才算一句（深问题边想边说）
+    public static let endSilenceMs: Double = 1_500
+    /// 一句最长 60 秒
+    public static let maxSeconds: Double = 60
+    /// 30 分钟一句没问（没「大管家」开头的）就退出深聊；话题号也是 30 分钟
+    public static let idle: TimeInterval = 30 * 60
+    /// 大管家收到以后 10 分钟没想好：念「大管家没想出来，再问一次？」
+    public static let answerWait: TimeInterval = 10 * 60
+    /// 信箱连不上、大管家不在：深聊里每一句都会寄（不知道是不是在问），所以这种话 10 分钟最多念一回
+    public static let troubleEvery: TimeInterval = 10 * 60
+    /// 大管家说收到了，手机马上念的
+    public static let saysGot = "收到，想好了叫你"
+    public static let saysEnd = "好，深聊结束"
+    public static let saysTopic = "好，换个话题"
+}
+
+/// 话题号：30 分钟内接着问的是同一个话题；隔了 30 分钟（或者说了「换个话题」）换一个新号
+public struct DeepTopic: Sendable, Equatable {
+    public private(set) var id: String
+    /// 上一次真的在问（大管家回了 ack）的时候
+    public private(set) var last: Date?
+
+    public init(id: String = UUID().uuidString) { self.id = id }
+
+    /// 寄一句之前取号：离上次真问超过 30 分钟就换新号
+    public mutating func current(_ now: Date, make: () -> String = { UUID().uuidString }) -> String {
+        if let last, now.timeIntervalSince(last) > Deep.idle {
+            id = make()
+            self.last = nil
+        }
+        return id
+    }
+
+    /// 大管家说这一句是在问它（ack）
+    public mutating func asked(_ now: Date) { last = now }
+
+    /// 换个话题
+    public mutating func renew(make: () -> String = { UUID().uuidString }) {
+        id = make()
+        last = nil
+    }
+}
+
+/// 深聊里只念一回的出错话：同一类 troubleEvery 之内不再念
+public struct TroubleLimiter: Sendable, Equatable {
+    public private(set) var said: [String: Date] = [:]
+    public init() {}
+    public mutating func allow(_ key: String, now: Date, every: TimeInterval = Deep.troubleEvery) -> Bool {
+        if let t = said[key], now.timeIntervalSince(t) < every { return false }
+        said[key] = now
+        return true
+    }
 }
 
 /// 一问的来回，手机这头记的（时间点是秒，ProcessInfo.systemUptime；ok 是这一步成没成，没走到是 nil）

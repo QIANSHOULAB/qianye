@@ -13,35 +13,53 @@ import YiyeKit
 ///   出错就说：凡是会让「他说了话却什么都不发生」的地方，都弹一行字、用苹果的中文嗓子念出哪一步坏了，小圆点变红。不许再有静默 return。
 ///   开听那一下「叮」一声。小圆点：在听绿，判到他在说绿色一闪一闪，等大管家橙，出错红。每次开听体检一次，工具箱「陪玩」下面显示，也寄给大管家记日志。
 /// - 截到的屏幕只在开口那一刻取一帧，录音、截图只交自己的大管家，都不存。
+/// - 107 深聊（Song 11-24 11:58「我不需要快速回答……他可以去思考 5 分钟再回答我，但是回答的问题要有深度」「锁屏以后，它就进入语音聊模式，不用去截屏」）：
+///   陪玩开着锁屏（系统停了直播）话筒不撒手，转深聊；工具箱「深聊」一格亮屏时直接进。不截屏，说完停 1.5 秒算一句，每一句录音寄给大管家，
+///   大管家认完字只认「大管家」开头的（别的当场扔，不回）；收到了回一封 ack，手机马上念「收到，想好了叫你」；想好了回口语版 mp3 + 完整文字，
+///   到了就念（他正说着就等他说完），完整文字存成「深聊」文件夹里的一条便签。说「大管家，结束」、再点一下「深聊」、30 分钟一句没问：退出，撒手话筒。
 @MainActor @Observable
 final class Companion {
     typealias Phase = CompanionPhase
 
-    private(set) var phase: Phase = .off
+    fileprivate(set) var phase: Phase = .off
     /// 直播扩展在跑（回环口子能连上）
-    private(set) var live = false
+    fileprivate(set) var live = false
     /// 上一问从说完到出声几秒
     private(set) var lastTotal: Double?
     /// 这一问哪一步出了错（念过了）：小圆点红，到他下次开口
-    private(set) var alert: CompanionTrouble?
+    fileprivate(set) var alert: CompanionTrouble?
     /// 体检那一行（工具箱「陪玩」下面）
     private(set) var healthLine: String?
     /// 上一句大管家认出来的字（工具箱「陪玩」下面，听歪了一眼看得出来）。只在内存里
-    private(set) var lastHeard: String?
+    fileprivate(set) var lastHeard: String?
 
     var light: CompanionLight? { CompanionLight.of(phase, alert: alert != nil) }
+    /// 在深聊（107）
+    fileprivate(set) var deep = false
 
     @ObservationIgnored weak var app: AppModel?
     @ObservationIgnored private let bell = LiveBell()
     @ObservationIgnored private let mouth = AVSpeechSynthesizer()
-    @ObservationIgnored private var ear: Ear?
-    @ObservationIgnored private var current: String?
-    @ObservationIgnored private var clock: LookClock?
-    @ObservationIgnored private var prev: [String: Double] = [:]
-    @ObservationIgnored private var shorts = 0
-    @ObservationIgnored private var probeTimer: Timer?
-    @ObservationIgnored private var startedAt: Date?
-    @ObservationIgnored private var batteryAtStart: Float?
+    @ObservationIgnored fileprivate var ear: Ear?
+    @ObservationIgnored fileprivate var current: String?
+    @ObservationIgnored fileprivate var clock: LookClock?
+    @ObservationIgnored fileprivate var prev: [String: Double] = [:]
+    @ObservationIgnored fileprivate var shorts = 0
+    @ObservationIgnored fileprivate var probeTimer: Timer?
+    @ObservationIgnored fileprivate var startedAt: Date?
+    @ObservationIgnored fileprivate var batteryAtStart: Float?
+    // 107 深聊
+    @ObservationIgnored fileprivate var topic = DeepTopic()
+    @ObservationIgnored fileprivate var limiter = TroubleLimiter()
+    @ObservationIgnored fileprivate var deepSent: Set<String> = []
+    @ObservationIgnored fileprivate var deepWaiting: String?
+    @ObservationIgnored fileprivate var deepIdle: Timer?
+    @ObservationIgnored fileprivate var pending: (ButlerResult, Data?)?
+    @ObservationIgnored fileprivate var lockAt: Date?
+    @ObservationIgnored fileprivate var cutByCall = false
+    @ObservationIgnored fileprivate var observers: [NSObjectProtocol] = []
+
+    enum After { case nothing, listen, stop }
 
     /// 开着陪玩、在听：后台也别断信箱
     var holdsButler: Bool { ear != nil }
@@ -49,6 +67,18 @@ final class Companion {
     func setUp() {
         bell.onRing = { [weak self] name in self?.ring(name) }
         Task { await probe() }          // 开 app 时直播要是已经在跑，接着听
+        let nc = NotificationCenter.default
+        observers.append(nc.addObserver(forName: UIApplication.protectedDataWillBecomeUnavailableNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.lockAt = Date() }            // 锁屏了：接下来直播停，是锁屏停的
+        })
+        observers.append(nc.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.becameActive() }
+        })
+        observers.append(nc.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] n in
+            let raw = (n.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt) ?? 0
+            let began = AVAudioSession.InterruptionType(rawValue: raw) == .began
+            MainActor.assumeIsolated { self?.interrupted(began: began) }
+        })
     }
 
     // ---------------------------------------------------------------- 直播在不在
@@ -67,6 +97,7 @@ final class Companion {
     private func probe() async {
         let r = await LiveLink.fetch("hello")
         if case .down = r {
+            if deep { live = false; return }            // 深聊不看直播
             if live || ear != nil { liveGone() }
             return
         }
@@ -76,20 +107,32 @@ final class Companion {
 
     private func liveGone() {
         live = false
+        if deep { return }                              // 深聊里直播停了不管
+        if ear != nil, locking {                        // 锁屏把直播停了：话筒不撒手，转深聊（107）
+            beginDeep()
+            return
+        }
         stopListening()
         phase = .off
         alert = nil
     }
 
+    /// 刚锁屏（或者正锁着）
+    private var locking: Bool {
+        if !UIApplication.shared.isProtectedDataAvailable { return true }
+        if let t = lockAt, Date().timeIntervalSince(t) < 15 { return true }
+        return false
+    }
+
     // ---------------------------------------------------------------- 听
-    private func startListening() {
+    fileprivate func startListening(deep wantDeep: Bool = false) {
         guard ear == nil, let app, app.demo == nil else { return }
         Task {
             guard await AVAudioApplication.requestRecordPermission() else {
                 self.healthLine = CompanionHealth(mic: false, live: self.live, mail: app.butler.relayUp, noise: nil, echo: false).line
                 return self.fail(.noMic, app.lang.t("companion.noMic"))
             }
-            guard self.ear == nil, self.live else { return }
+            guard self.ear == nil, self.live || wantDeep else { return }
             let ear = Ear()
             ear.onStart = { [weak self] in Task { @MainActor in self?.heardStart() } }
             ear.onClip = { [weak self] wav, secs, peak, end in
@@ -110,7 +153,11 @@ final class Companion {
             UIDevice.current.isBatteryMonitoringEnabled = true
             self.batteryAtStart = UIDevice.current.batteryLevel
             self.app?.butler.start()
-            self.app?.butler.lookWarm()
+            if wantDeep {
+                self.beginDeep()
+            } else {
+                self.app?.butler.lookWarm()
+            }
             ear.chime()                                       // 真正开始听了：叮
             self.probeTimer?.invalidate()
             let t = Timer(timeInterval: 15, repeats: true) { [weak self] _ in Task { @MainActor in await self?.probe() } }
@@ -129,9 +176,10 @@ final class Companion {
         app.butler.lookCheck(h)
     }
 
-    private func stopListening() {
+    fileprivate func stopListening() {
         probeTimer?.invalidate()
         probeTimer = nil
+        if deep { dropDeep() }
         ear?.stop()
         ear = nil
         if let id = current { app?.butler.forgetLook(id) }
@@ -145,24 +193,29 @@ final class Companion {
         stopListening()
         phase = .failed(t.words)
         if let app { app.show(app.lang.f("companion.failed", detail), seconds: 6) }
-        say(t.words, thenListen: false)
+        say(t.words, after: .nothing)
     }
 
     private func heardStart() {
-        if phase == .listening {
+        if phase == .listening || (deep && phase == .asking) {
             phase = .hearing
             alert = nil
         }
     }
 
+    /// 他说完了（或者那一下不算一句）：回到「在听」，深聊里在等回答的回到「等」
+    fileprivate var restPhase: Phase { deep && deepWaiting != nil ? .asking : .listening }
+
     /// 太短的一下（咔哒、咳嗽）：不算一句，记个数跟下一封信走
     private func dropped() {
         shorts += 1
-        if phase == .hearing { phase = .listening }
+        if phase == .hearing { phase = restPhase }
+        playPending()
     }
 
     // ---------------------------------------------------------------- 问
     private func heard(_ wav: Data, seconds: Double, peak: Double, spokeEnd: Double) {
+        if deep { return heardDeep(wav, seconds: seconds, peak: peak) }
         guard ear != nil, let app else { return }
         let id = UUID().uuidString
         if let old = current {                           // 上一句还在等：不要了，它的账先记上
@@ -230,18 +283,19 @@ final class Companion {
         alert = t
         app?.show(t.words, seconds: 5)
         phase = .speaking
-        say(t.words, thenListen: true)
+        say(t.words, after: .listen)
     }
 
     /// 这一问还接着走，只是哪一步差了点（没截到图）：红点、弹一行、念一句，不改现在在干嘛
     private func notice(_ t: CompanionTrouble) {
         alert = t
         app?.show(t.words, seconds: 5)
-        say(t.words, thenListen: false)
+        say(t.words, after: .nothing)
     }
 
     /// 大管家的回答到了（ButlerService 收信时叫）
     func answer(_ r: ButlerResult, audio: Data?) {
+        if deepSent.contains(r.id) { return deepAnswer(r, audio: audio) }
         guard r.id == current, let ear else { return }        // 不是最新那一问的：不放（只要最新的）
         current = nil
         clock?.back = ProcessInfo.processInfo.systemUptime
@@ -263,24 +317,25 @@ final class Companion {
         ear.speak(words, voice: PhoneVoice.bestVoice("zh-CN"), started: started, done: done)
     }
 
-    private func playing(_ butler: [String: Double]) {
+    fileprivate func playing(_ butler: [String: Double]) {
         clock?.playing = ProcessInfo.processInfo.systemUptime
         clock?.playOK = true
         finishStats(butler: butler)
     }
 
-    private func played() {
+    fileprivate func played() {
         if clock != nil {                                     // 放完了还没开始出声：没放出来
             clock?.playOK = false
             finishStats()
             alert = .cantPlay
             app?.show(CompanionTrouble.cantPlay.words, seconds: 5)
         }
-        if ear != nil, phase == .speaking { phase = .listening }
+        if ear != nil, phase == .speaking { phase = restPhase }
+        playPending()
     }
 
-    /// 用苹果的中文嗓子念一句。在听就走耳朵（念的时候不判开口）；耳朵没开就直接念
-    private func say(_ words: String, thenListen: Bool) {
+    /// 用苹果的中文嗓子念一句。在听就走耳朵（念的时候不判开口）；耳朵没开就直接念。念完：接着听 / 不管 / 撒手话筒
+    fileprivate func say(_ words: String, after: After) {
         let voice = PhoneVoice.bestVoice("zh-CN")
         guard let ear else {
             let u = AVSpeechUtterance(string: words)
@@ -289,8 +344,20 @@ final class Companion {
             return
         }
         ear.speak(words, voice: voice, started: {}, done: { [weak self] in
-            Task { @MainActor in if thenListen { self?.played() } }
+            Task { @MainActor in
+                switch after {
+                case .listen: self?.played()
+                case .stop: self?.stopAfterSaying()
+                case .nothing: break
+                }
+            }
         })
+    }
+
+    private func stopAfterSaying() {
+        guard !deep, !live, ear != nil else { return }
+        stopListening()
+        phase = .off
     }
 
     // ---------------------------------------------------------------- 记账（只有是 / 否和秒数，跟下一封信走）
@@ -301,7 +368,7 @@ final class Companion {
         clock = nil
     }
 
-    private func takePrev() -> [String: Double] {
+    fileprivate func takePrev() -> [String: Double] {
         var p = prev
         prev = [:]
         UIDevice.current.isBatteryMonitoringEnabled = true
@@ -312,6 +379,197 @@ final class Companion {
         if shorts > 0 { p["short"] = Double(shorts) }
         shorts = 0
         return p
+    }
+}
+
+// ================================================================ 深聊（107）
+extension Companion {
+    /// 工具箱「深聊」那一格：没在深聊就进（亮屏时开话筒，然后锁屏揣兜里），在深聊就退
+    func toggleDeep() {
+        if deep { return exitDeep(say: Deep.saysEnd) }
+        if ear != nil {
+            beginDeep()
+        } else {
+            startListening(deep: true)
+        }
+        if let app { app.show(app.lang.t("companion.deepOn"), seconds: 6) }
+    }
+
+    /// 进深聊：话筒照开着（锁屏也不撒手），不截屏、不看直播，说完停 1.5 秒算一句
+    fileprivate func beginDeep() {
+        guard let ear else { return }
+        deep = true
+        ear.setDeep(true)
+        if phase != .speaking { phase = .listening }
+        alert = nil
+        current = nil
+        clock = nil
+        app?.butler.deepWarm()
+        armDeepIdle()
+    }
+
+    /// 出深聊：直播还开着就回陪玩，不然念完一句撒手话筒
+    func exitDeep(say words: String? = nil) {
+        guard deep else { return }
+        dropDeep()
+        if live, let ear {
+            ear.setDeep(false)
+            phase = .listening
+            if let words { say(words, after: .nothing) }
+            return
+        }
+        if let words, ear != nil {
+            phase = .speaking
+            say(words, after: .stop)
+        } else {
+            stopListening()
+            phase = .off
+        }
+    }
+
+    /// 深聊的账清掉（话筒不管）
+    fileprivate func dropDeep() {
+        deep = false
+        deepIdle?.invalidate()
+        deepIdle = nil
+        deepWaiting = nil
+        pending = nil
+        for id in deepSent { app?.butler.forgetLook(id) }
+        deepSent = []
+    }
+
+    /// 30 分钟一句没问：退出深聊
+    fileprivate func armDeepIdle() {
+        deepIdle?.invalidate()
+        let t = Timer(timeInterval: Deep.idle, repeats: false) { [weak self] _ in
+            Task { @MainActor in self?.exitDeep(say: Deep.saysEnd) }
+        }
+        RunLoop.main.add(t, forMode: .common)
+        deepIdle = t
+    }
+
+    /// 深聊里说完一句：录音寄给大管家（是不是在问它，它认完字判）。寄出去就回到在听
+    fileprivate func heardDeep(_ wav: Data, seconds: Double, peak: Double) {
+        guard let app else { return }
+        let id = UUID().uuidString
+        let path = ButlerRequest.deepAudioPath(id)
+        var prev = takePrev()
+        prev["deep"] = 1
+        prev["rec"] = (seconds * 100).rounded() / 100
+        prev["peak"] = peak
+        let req = ButlerRequest.deep(id: id, audio: path, topic: topic.current(Date()), at: ISOTime.string(Date()),
+                                     app: ButlerService.appVersion, prev: prev)
+        deepSent.insert(id)
+        if phase == .hearing { phase = restPhase }
+        playPending()
+        Task {
+            let r = await app.butler.sendLook(req, files: [path: wav])
+            switch r {
+            case .sent(true): break
+            case .sent(false):
+                self.deepSent.remove(id)
+                self.deepTrouble(.away)
+            case .noPair:
+                self.deepSent.remove(id)
+                self.deepTrouble(.noPair)
+            case .failed:
+                self.deepSent.remove(id)
+                self.deepTrouble(.noMail)
+            }
+        }
+    }
+
+    /// 深聊里每一句都寄（不知道是不是在问），所以「大管家不在」「信箱连不上」这种 10 分钟最多念一回
+    fileprivate func deepTrouble(_ t: CompanionTrouble) {
+        alert = t
+        guard limiter.allow("\(t)", now: Date()) else { return }
+        app?.show(t.words, seconds: 5)
+        say(t.words, after: .nothing)
+    }
+
+    /// 深聊的回信：ack（收到了）、end、topic、answer / failed
+    fileprivate func deepAnswer(_ r: ButlerResult, audio: Data?) {
+        if let h = r.heard, !h.isEmpty { lastHeard = h }
+        switch r.stage {
+        case "ack":
+            topic.asked(Date())
+            armDeepIdle()
+            deepWaiting = r.id
+            alert = nil
+            if phase == .listening { phase = .asking }
+            say((r.text?.isEmpty == false ? r.text : nil) ?? Deep.saysGot, after: .nothing)
+            let id = r.id
+            Task {
+                try? await Task.sleep(nanoseconds: UInt64(Deep.answerWait * 1_000_000_000))
+                guard self.deep, self.deepWaiting == id else { return }
+                self.deepWaiting = nil
+                self.deepSent.remove(id)
+                self.app?.butler.forgetLook(id)
+                if self.phase == .asking { self.phase = .listening }
+                self.alert = .deepNoAnswer
+                self.app?.show(CompanionTrouble.deepNoAnswer.words, seconds: 6)
+                self.say(CompanionTrouble.deepNoAnswer.words, after: .nothing)
+            }
+        case "end":
+            deepSent.remove(r.id)
+            app?.butler.forgetLook(r.id)
+            exitDeep(say: (r.text?.isEmpty == false ? r.text : nil) ?? Deep.saysEnd)
+        case "topic":
+            deepSent.remove(r.id)
+            app?.butler.forgetLook(r.id)
+            topic.renew()
+            topic.asked(Date())
+            armDeepIdle()
+            say((r.text?.isEmpty == false ? r.text : nil) ?? Deep.saysTopic, after: .nothing)
+        default:                                           // answer / failed
+            deepSent.remove(r.id)
+            app?.butler.forgetLook(r.id)
+            if deepWaiting == r.id { deepWaiting = nil }
+            if phase == .asking { phase = .listening }
+            if r.stage == "answer", let text = r.text, !text.isEmpty {
+                app?.addDeepNote(id: r.id, title: r.title ?? "", text: text, audio: audio)
+            }
+            if r.stage != "answer" { alert = .deepNoAnswer }
+            pending = (r, audio)
+            playPending()
+        }
+    }
+
+    /// 回答到了：他没在说话就念（正说着就等他说完）
+    fileprivate func playPending() {
+        guard let p = pending, let ear, phase != .hearing else { return }
+        let (r, audio) = p
+        pending = nil
+        phase = .speaking
+        let done: @Sendable () -> Void = { [weak self] in Task { @MainActor in self?.played() } }
+        if let audio, ear.play(audio, started: {}, done: done) { return }
+        if audio != nil {
+            alert = .cantPlay
+            app?.show(CompanionTrouble.cantPlay.words, seconds: 5)
+        }
+        let words = (r.text?.isEmpty == false ? r.text : nil) ?? CompanionTrouble.deepNoAnswer.words
+        ear.speak(words, voice: PhoneVoice.bestVoice("zh-CN"), started: {}, done: done)
+    }
+
+    // ---------------------------------------------------------------- 来电话、回到前台
+    /// 来电话把话筒打断了：挂了以后能续就续，续不上记下，下次亮屏提示
+    fileprivate func interrupted(began: Bool) {
+        guard let ear, !began else { return }
+        if ear.resume() { return }
+        if deep {
+            cutByCall = true
+            alert = .deepCut
+            stopListening()
+            phase = .failed(CompanionTrouble.deepCut.words)
+        }
+    }
+
+    fileprivate func becameActive() {
+        guard cutByCall else { return }
+        cutByCall = false
+        app?.show(CompanionTrouble.deepCut.words, action: app?.lang.t("companion.restart"), seconds: 10) { [weak self] in
+            self?.startListening(deep: true)
+        }
     }
 }
 
@@ -479,6 +737,26 @@ final class Ear: @unchecked Sendable {
         lock.lock()
         running = true
         lock.unlock()
+    }
+
+    /// 深聊（107）：停 1.5 秒才算说完，一句最长 60 秒；陪玩：0.8 秒、20 秒
+    func setDeep(_ on: Bool) {
+        lock.lock()
+        cutter.gate.endSilenceMs = on ? Deep.endSilenceMs : 800
+        cutter.maxSeconds = on ? Deep.maxSeconds : 20
+        cutter.gate.maxMs = cutter.maxSeconds * 1000
+        lock.unlock()
+    }
+
+    /// 来电话打断以后接着开（后台能不能再开话筒看系统，开不了回 false）
+    func resume() -> Bool {
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+            if !engine.isRunning { try engine.start() }
+            return true
+        } catch {
+            return false
+        }
     }
 
     func stop() {
