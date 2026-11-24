@@ -25,6 +25,15 @@
       ],
       "versions": [
         {
+          "version": "0.7.3",
+          "buildVersion": "13",
+          "date": "2026-11-24",
+          "localizedDescription": "0.7.3：顶栏收拾了：左上角多个工具箱，听力、陪玩、设置都收进去，点开从上面落下一个小面板；顶栏只剩便签的话筒、相机、加号。陪玩直播中，工具箱右上角有个小圆点：绿在听，橙在忙，红出错。",
+          "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.3/Yiye-0.7.3.ipa",
+          "size": 2339558,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.7.2",
           "buildVersion": "12",
           "date": "2026-11-24",
@@ -142,11 +151,11 @@
           "NSSpeechRecognitionUsageDescription": "Turns your voice into text right on your phone."
         }
       },
-      "version": "0.7.2",
+      "version": "0.7.3",
       "versionDate": "2026-11-24",
-      "versionDescription": "0.7.2：顶栏收拾了：左上角多个工具箱，听力、陪玩、设置都收进去，点开从上面落下一个小面板；顶栏只剩便签的话筒、相机、加号。陪玩直播中，工具箱右上角有个小圆点：绿在听，橙在忙，红出错。",
-      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.2/Yiye-0.7.2.ipa",
-      "size": 2341141
+      "versionDescription": "0.7.3：顶栏收拾了：左上角多个工具箱，听力、陪玩、设置都收进去，点开从上面落下一个小面板；顶栏只剩便签的话筒、相机、加号。陪玩直播中，工具箱右上角有个小圆点：绿在听，橙在忙，红出错。",
+      "downloadURL": "https://github.com/QIANSHOULAB/qianye/releases/download/ios-v0.7.3/Yiye-0.7.3.ipa",
+      "size": 2339558
     }
   ],
   "news": []
