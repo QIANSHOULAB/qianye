@@ -9,6 +9,21 @@ app.name	Yiye
 appearance.dark	Dark
 appearance.paper	Paper
 appearance.system	System
+article.fetching	The butler is pulling the text
+article.intent	Save to Yiye
+article.intentDesc	Saves a page or some text as a note. The butler pulls the article text.
+article.needPair	Saved. The butler isn’t connected yet, so no text pull.
+article.needPairShort	The butler isn’t connected. The text as it is works too.
+article.noInput	Got no link and no text.
+article.paramText	Text
+article.paramURL	URL
+article.readAsIs	Read as is
+article.saved	Saved. The butler is pulling the text.
+article.savedText	Saved.
+article.silent	The butler hasn’t answered. The text as it is works too
+article.simplified	Simplified. Tap to listen
+article.simplify	Simplify
+article.simplifying	The butler is simplifying it, then voicing it
 batch.all	Select all
 batch.cancel	Cancel
 batch.move	Move to…

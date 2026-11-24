@@ -168,9 +168,29 @@ enum Demo {
             gone.trashed = true
             gone.trashedAt = Date().addingTimeInterval(-hours * 3600)
         }
+        // 文章便签（114）：扒好了的、正在扒的、简写好了的
+        let wslURL = "https://learn.microsoft.com/en-us/windows/wsl/about"
+        let art = add(ArticleText.compose(title: "What is Windows Subsystem for Linux",
+                                          body: "Windows Subsystem for Linux (WSL) is a feature of Windows that allows you to run a Linux environment on your Windows machine, without the need for a separate virtual machine or dual booting.\n\nWSL is designed to provide a seamless and productive experience for developers who want to use both Windows and Linux at the same time.",
+                                          url: wslURL, keepingHeadOf: ""),
+                      ago: 60 * 25, kind: "article")
+        var artState = ArticleState(); artState.url = wslURL; artState.fetch = .ready
+        art.articleState = artState
+        let artWait = add(ArticleText.initial(title: zh ? "一篇正在扒的文章" : "An article being pulled", url: "https://example.com/story"), ago: 60 * 4, kind: "article")
+        var waitState = ArticleState(); waitState.url = "https://example.com/story"; waitState.startFetch(id: UUID().uuidString, now: Date())
+        artWait.articleState = waitState
+        let artDone = add(ArticleText.compose(title: "Gold hits a record high", body: "Gold rose to a record on Tuesday.", url: "https://example.com/gold", keepingHeadOf: ""),
+                          ago: 60 * 40, kind: "article")
+        var doneState = ArticleState(); doneState.url = "https://example.com/gold"; doneState.fetch = .ready
+        doneState.startSimplify(id: UUID().uuidString, now: Date().addingTimeInterval(-600))
+        doneState.pieceArrived(request: doneState.simplifyID ?? "", note: (listenFirst ?? UUID()).uuidString)
+        artDone.articleState = doneState
         try? ctx.save()
 
         switch cfg.screen {
+        case "article": app.path = [.editor(art.id)]
+        case "article-wait": app.path = [.editor(artWait.id)]
+        case "article-done": app.path = [.editor(artDone.id)]
         case "batch":
             // 批量选：选中前三条（由列表自己读 demo.screen 进入）
             break

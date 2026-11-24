@@ -465,6 +465,66 @@ final class AppModel {
         show(mark == .known ? t.f("word.known", w) : t.f("word.learning", w), seconds: 3)
     }
 
+    // ---------------------------------------------------------------- 文章（114）
+    /// 捷径「存进一叶笺」来的：网址存成一条文章便签（第一行标题、最后一行网址）并寄给大管家扒正文；文字直接存成便签。返回回给捷径的一句话
+    func saveShared(url: String?, text: String?) async -> String {
+        switch ArticleShare.parse(url: url, text: text) {
+        case .nothing:
+            return t.t("article.noInput")
+        case .text(let s):
+            let n = Note()
+            n.markdown = s
+            context.insert(n)
+            try? context.save()
+            mirror.saveSoon(n, attachments: attachments)
+            return t.t("article.savedText")
+        case .url(let u):
+            let title = await PageTitleFetch.title(u)
+            let n = Note()
+            n.kind = "article"
+            n.markdown = ArticleText.initial(title: title, url: u)
+            context.insert(n)
+            try? context.save()
+            mirror.saveSoon(n, attachments: attachments)
+            let sent = await butler.submitArticle(n, url: u)
+            return sent ? t.t("article.saved") : t.t("article.needPair")
+        }
+    }
+
+    /// 扒正文 / 简写的回信：正文换进便签；简写出错记下原因（简写好的听力稿从「送来」另走）
+    func articleReply(_ r: ButlerResult, _ nid: UUID) {
+        guard let n = note(nid) else { return }
+        var st = n.articleState
+        if st.fetchID == r.id {
+            let body = (r.text ?? "").trimmed
+            if r.ok && body.isEmpty {
+                st.fetchReply(id: r.id, ok: false, error: "大管家没扒出正文")
+            } else if st.fetchReply(id: r.id, ok: r.ok, error: r.error) {
+                n.markdown = ArticleText.compose(title: r.title, body: body, url: st.url, keepingHeadOf: n.markdown)
+                n.unsure = ""
+                n.articleState = st
+                changed(n)
+                NotificationCenter.default.post(name: .yiyeNoteReplaced, object: n.id)
+                return
+            }
+        } else if st.simplifyID == r.id {
+            st.simplifyReply(id: r.id, ok: r.ok, error: r.error)
+        }
+        n.articleState = st
+        try? context.save()
+    }
+
+    /// 简写出来的听力送到了：挂回文章便签
+    private func linkSimplified(request: String?, note: UUID) {
+        guard let rq = request, !rq.isEmpty else { return }
+        for a in allNotes() where a.kind == "article" {
+            var st = a.articleState
+            guard st.simplifyID == rq else { continue }
+            st.pieceArrived(request: rq, note: note.uuidString)
+            a.articleState = st
+        }
+    }
+
     /// 大管家送来一篇（配好音的听力稿）：变成一条笔记，进「英语」文件夹，直接进听力（088）。
     /// 回「配音」请求的（带 note）：录音挂到那条笔记上，换掉手机念的
     func addDelivery(_ d: ButlerDelivery, audio: Data?) {
@@ -504,6 +564,7 @@ final class AppModel {
         if let at = d.at.flatMap({ ISOTime.date($0) }) { n.createdAt = at; n.modifiedAt = at }
         n.folder = folderNamed(d.folder ?? "英语")
         context.insert(n)
+        linkSimplified(request: d.request, note: id)
         if let audio, let a = d.audio {
             let ext = (a as NSString).pathExtension.lowercased()
             let name = (a as NSString).lastPathComponent.isEmpty ? Listen.deliveryName(note: id, ext: ext.isEmpty ? "mp3" : ext) : (a as NSString).lastPathComponent

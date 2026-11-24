@@ -39,6 +39,8 @@ final class Note {
     var deskAt: Date?
     /// 听力第一次完整放完一遍的时间（112）：听完满 7 天自己进废纸篓。只记第一次
     var heardAt: Date?
+    /// 文章便签（kind == "article"，114）跟大管家打交道的状态（JSON）：扒正文、简写
+    var article: String = ""
     var folder: Folder?
 
     init() {}
@@ -59,6 +61,11 @@ final class Note {
     var markTable: [String: [ListenMark]] {
         get { Listen.decode(marks) }
         set { marks = Listen.encode(newValue) }
+    }
+
+    var articleState: ArticleState {
+        get { ArticleState.decode(article) }
+        set { article = newValue.encoded() }
     }
 
     var butlerState: ButlerNoteState {

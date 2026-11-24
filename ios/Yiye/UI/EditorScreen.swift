@@ -65,6 +65,8 @@ struct EditorScreen: View {
             .background(PaperBackground(tint: note?.tint ?? .white))
             .lightIf(note?.tint.keepsLight == true)
 
+            if let note, note.kind == "article" { ArticleBar(note: note) }
+
             MarkdownBar(focused: focused, apply: { controller.apply($0) },
                         insertItem: $insertItem,
                         gap: app.settings.imageGap,

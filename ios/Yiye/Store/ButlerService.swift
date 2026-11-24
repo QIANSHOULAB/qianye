@@ -145,12 +145,18 @@ final class ButlerService {
         guard let app else { return false }
         var waiting: [String: UUID] = [:]
         var dubbing: [String: UUID] = [:]
+        var articles: [String: UUID] = [:]
         for n in app.allNotes() {
             let s = n.butlerState
             if s.phase == .waiting, let rid = s.requestID { waiting[rid] = n.id }
             if let rid = n.dubRequest { dubbing[rid] = n.id }
+            if n.kind == "article" {
+                let a = n.articleState
+                if a.fetch == .fetching, let f = a.fetchID { articles[f] = n.id }
+                if a.simplify == .working, let f = a.simplifyID { articles[f] = n.id }
+            }
         }
-        var action = MailAction.decide(env, waiting: waiting, dubbing: dubbing, words: words.requestIDs, looks: looks, keeps: Set(keepWait.keys))
+        var action = MailAction.decide(env, waiting: waiting, dubbing: dubbing, words: words.requestIDs, looks: looks, keeps: Set(keepWait.keys), articles: Set(articles.keys))
         if action == .later, let ch = app.mirror.channel, let a = env.delivery?.audio {
             // 信里没带录音：去 iCloud 镜像里找（后台读，占位的要等它下载）
             let data: Data? = await withCheckedContinuation { c in
@@ -175,6 +181,9 @@ final class ButlerService {
             return true
         case .keep(let r):
             keepReply(r)
+            return true
+        case .article(let r):
+            if let nid = articles[r.id] { app.articleReply(r, nid) }
             return true
         case .deliver(let d, let audio):
             app.addDelivery(d, audio: audio)
@@ -452,6 +461,72 @@ final class ButlerService {
     private func saveKeepWait() {
         guard app?.demo == nil else { return }
         UserDefaults.standard.set(keepWait, forKey: "yiye.keepWait")
+    }
+
+    // ---------------------------------------------------------------- 文章（114）
+    /// 把一条文章便签的网址寄给大管家扒正文（只走信箱；大管家不在，信在信箱里等它）。没配对、寄不出去：记下原因，按钮照样能用。返回寄出去没有
+    func submitArticle(_ n: Note, url: String) async -> Bool {
+        guard let app else { return false }
+        if mail == nil { connectMail() }
+        var st = n.articleState
+        st.url = url
+        guard let mail else {
+            st.fetch = .failed
+            st.fetchError = app.lang.t("article.needPairShort")
+            n.articleState = st
+            try? app.context.save()
+            return false
+        }
+        let id = UUID().uuidString
+        st.startFetch(id: id, now: Date())
+        n.articleState = st
+        try? app.context.save()
+        let req = ButlerRequest.article(id: id, note: n.id.uuidString, url: url, at: ISOTime.string(Date()), app: ButlerService.appVersion)
+        do {
+            let sent = try await mail.send(.request(req), timeout: 15)
+            rememberSeq(id, sent.seq)
+            return true
+        } catch {
+            var s2 = n.articleState
+            if s2.fetchID == id {
+                s2.fetch = .failed
+                s2.fetchError = (error as? MailError)?.errorDescription ?? error.localizedDescription
+                n.articleState = s2
+                try? app.context.save()
+            }
+            return false
+        }
+    }
+
+    /// 简写：便签全文寄给大管家，回来的是一到三条听力（从「送来」，带 request）
+    func submitSimplify(_ n: Note) async {
+        guard let app else { return }
+        if mail == nil { connectMail() }
+        var st = n.articleState
+        guard let mail else {
+            st.simplify = .failed
+            st.simplifyError = app.lang.t("article.needPairShort")
+            n.articleState = st
+            try? app.context.save()
+            return
+        }
+        let id = UUID().uuidString
+        st.startSimplify(id: id, now: Date())
+        n.articleState = st
+        try? app.context.save()
+        let req = ButlerRequest.simplify(id: id, note: n.id.uuidString, text: n.markdown, at: ISOTime.string(Date()), app: ButlerService.appVersion)
+        do {
+            let sent = try await mail.send(.request(req), timeout: 15)
+            rememberSeq(id, sent.seq)
+        } catch {
+            var s2 = n.articleState
+            if s2.simplifyID == id {
+                s2.simplify = .failed
+                s2.simplifyError = (error as? MailError)?.errorDescription ?? error.localizedDescription
+                n.articleState = s2
+                try? app.context.save()
+            }
+        }
     }
 
     // ---------------------------------------------------------------- 陪玩（100）
