@@ -31,6 +31,8 @@ final class Settings {
     var imageGap: Bool { didSet { save("yiye.imageGap", imageGap) } }
     /// 088：老的听力稿补进听力，跑过了
     var listenBackfilled: Bool { didSet { save("yiye.listenBackfill088", listenBackfilled) } }
+    /// 111：老的「思想排泄物」夹子打开「抄一份到电脑」，跑过了
+    var deskMigrated: Bool { didSet { save("yiye.deskMigrated111", deskMigrated) } }
 
     init(persist: Bool) {
         self.persist = persist
@@ -47,6 +49,7 @@ final class Settings {
         useFallbackCamera = persist ? d.bool(forKey: "yiye.fallbackCam") : false
         imageGap = persist ? (d.object(forKey: "yiye.imageGap") as? Bool ?? true) : true
         listenBackfilled = persist ? d.bool(forKey: "yiye.listenBackfill088") : true
+        deskMigrated = persist ? d.bool(forKey: "yiye.deskMigrated111") : true
     }
 
     private func save(_ key: String, _ v: Any) {

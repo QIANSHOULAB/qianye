@@ -33,6 +33,10 @@ final class Note {
     var butler: String = ""
     /// 左滑删了、还能撤销的
     var trashed: Bool = false
+    /// 扔进废纸篓的时间（111）：留 3 天，到点真删。老数据没有，开 app 时补成现在
+    var trashedAt: Date?
+    /// 电脑确认收到的那版 modifiedAt（111）：跟 modifiedAt 不一样就该再寄给电脑
+    var deskAt: Date?
     var folder: Folder?
 
     init() {}
@@ -88,11 +92,14 @@ final class Folder {
     var name: String = ""
     var createdAt: Date = Date()
     var order: Int = 0
+    /// 抄一份到电脑（111）：夹子里的便签改完就寄给大管家，电脑落成 md
+    var toDesk: Bool = false
     @Relationship(deleteRule: .nullify, inverse: \Note.folder)
     var notes: [Note]? = []
 
     init(name: String, order: Int) {
         self.name = name
         self.order = order
+        self.toDesk = KeepPlan.isDeskFolderName(name)
     }
 }

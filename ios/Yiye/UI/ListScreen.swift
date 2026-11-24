@@ -1,9 +1,11 @@
 import SwiftUI
 import SwiftData
 import PhotosUI
+import UIKit
 import YiyeKit
 
-/// 列表：一条笔记一张纸条（第一行当标题，下面一两行摘要，加时间）。置顶的在最上面。左滑删除带撤销
+/// 列表：一条笔记一张纸条（第一行当标题，下面一两行摘要，加时间）。置顶的在最上面。
+/// 右滑扔进废纸篓（留 3 天，底下给撤销）；左滑置顶、小耳机；长按一条进批量选，手指不抬往上往下划，划过的都选上。
 struct ListScreen: View {
     @Environment(AppModel.self) private var app
     @Query(filter: #Predicate<Note> { $0.trashed == false }, sort: \Note.modifiedAt, order: .reverse) private var notes: [Note]
@@ -18,6 +20,19 @@ struct ListScreen: View {
     /// 工具箱面板开着
     @State private var showTools = false
     @State private var broadcast = BroadcastTrigger()
+    // ---- 批量选（111）
+    @State private var selecting = false
+    @State private var selected: Set<UUID> = []
+    /// 批量选时每条纸条在列表里的位置（只在批量选时收，平时滚动不用算）
+    @State private var rowFrames: [UUID: CGRect] = [:]
+    @State private var listHeight: CGFloat = 0
+    /// 长按之后手指还没抬：哪一条按下的、手指在哪（GestureState：抬手或被打断自动变回 nil）
+    @GestureState private var touch: SelTouch? = nil
+    @State private var dragBase: Set<UUID> = []
+    @State private var dragAnchor = 0
+    @State private var dragY: CGFloat = 0
+    /// 手指靠近上下边缘：-1 往上滚、1 往下滚、0 不滚
+    @State private var autoScroll = 0
 
     private var t: Lang { app.lang }
 
@@ -37,6 +52,9 @@ struct ListScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            if selecting {
+                selectionBar
+            } else {
             SmartBar {
                 ToolboxButton(trigger: broadcast) {
                     withAnimation(.easeOut(duration: 0.2)) { showTools.toggle() }
@@ -79,6 +97,7 @@ struct ListScreen: View {
                 .buttonStyle(SmartButtonStyle())
                 .accessibilityLabel(t.t("list.new"))
             }
+            }
 
             SearchField(text: $query, placeholder: t.t("list.search"))
 
@@ -93,47 +112,48 @@ struct ListScreen: View {
             if shown.isEmpty {
                 EmptyList(searching: !query.trimmed.isEmpty, newNote: { app.newNote() }, camera: { startCamera() })
             } else {
-                List {
-                    ForEach(shown) { n in
-                        Button { app.path.append(.editor(n.id)) } label: { NoteStrip(note: n) }
-                            .buttonStyle(StripButtonStyle())
-                            .listRowInsets(EdgeInsets(top: 5, leading: 12, bottom: 5, trailing: 12))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) { app.delete(n) } label: { Label(t.t("note.delete"), systemImage: "trash") }
-                                // 删除旁边一个小耳机：点了才进听力（Song 11-21：没点的不要进去）
-                                Button { app.toggleListen(n) } label: {
-                                    Label(n.inListen ? t.t("listen.remove") : t.t("listen.add"), systemImage: n.inListen ? "minus.circle" : "headphones")
-                                }
-                                .tint(n.inListen ? Color(Ink.text3) : Color(Ink.accent))
-                            }
-                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                                Button { togglePin(n) } label: { Label(n.pinned ? t.t("note.unpin") : t.t("note.pin"), systemImage: n.pinned ? "pin.slash" : "pin") }
-                                    .tint(Color(Ink.accent))
-                            }
-                            .contextMenu {
-                                Button { togglePin(n) } label: { Label(n.pinned ? t.t("note.unpin") : t.t("note.pin"), systemImage: "pin") }
-                                Menu {
-                                    Button(t.t("list.all")) { move(n, to: nil) }
-                                    ForEach(folders) { f in Button(f.name) { move(n, to: f) } }
-                                } label: { Label(t.t("note.move"), systemImage: "folder") }
-                                Button { app.toggleListen(n) } label: {
-                                    Label(n.inListen ? t.t("listen.remove") : t.t("listen.add"), systemImage: "headphones")
-                                }
-                                Button(role: .destructive) { app.delete(n) } label: { Label(t.t("note.delete"), systemImage: "trash") }
-                            }
+                ScrollViewReader { proxy in
+                    List {
+                        ForEach(shown) { n in
+                            row(n)
+                        }
+                        Color.clear.frame(height: selecting ? 90 : 40).listRowBackground(Color.clear).listRowSeparator(.hidden)
                     }
-                    Color.clear.frame(height: 40).listRowBackground(Color.clear).listRowSeparator(.hidden)
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .scrollDismissesKeyboard(.immediately)
+                    .scrollDisabled(touch != nil)
+                    .coordinateSpace(name: "noteList")
+                    .onPreferenceChange(RowFrames.self) { rowFrames = $0 }
+                    .background(GeometryReader { g in Color.clear.onAppear { listHeight = g.size.height }.onChange(of: g.size.height) { _, h in listHeight = h } })
+                    .onChange(of: touch) { old, new in
+                        guard let new else { endTouch(); return }
+                        if old == nil { startTouch(new.id) }
+                        if let y = new.y { moveTouch(y) }
+                    }
+                    .task(id: autoScroll) {
+                        guard autoScroll != 0 else { return }
+                        while !Task.isCancelled && autoScroll != 0 {
+                            scrollStep(proxy)
+                            try? await Task.sleep(nanoseconds: 140_000_000)
+                            if touch != nil { moveTouch(dragY) }
+                        }
+                    }
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .scrollDismissesKeyboard(.immediately)
+                .overlay(alignment: .bottom) {
+                    if selecting { batchActions }
+                }
             }
         }
         .background(DeskBackground())
         .task { if app.demo?.screen == "folders" { showFolders = true } }      // 截图用：直接开着文件夹面板（排序那排叶子）
         .task { if app.demo?.screen == "toolbox" { showTools = true } }      // 截图用：直接开着工具箱
+        .task {                                                              // 截图用：批量选里已经选了三条
+            guard app.demo?.screen == "batch" else { return }
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            selecting = true
+            selected = Set(shown.prefix(3).map(\.id))
+        }
         .overlay {
             if showTools {
                 ToolboxPanel(pick: openTool, dismiss: closeTools)
@@ -174,6 +194,167 @@ struct ListScreen: View {
 
     private func startCamera() { showCamera = true }
 
+    // ---------------------------------------------------------------- 一条纸条（111）
+    @ViewBuilder
+    private func row(_ n: Note) -> some View {
+        let on = selected.contains(n.id)
+        Button {
+            if selecting { toggle(n.id) } else { app.path.append(.editor(n.id)) }
+        } label: {
+            HStack(spacing: 10) {
+                if selecting {
+                    Image(systemName: on ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 22))
+                        .foregroundStyle(Color(on ? Ink.accent : Ink.text3))
+                        .transition(.move(edge: .leading).combined(with: .opacity))
+                }
+                NoteStrip(note: n)
+            }
+        }
+        .buttonStyle(StripButtonStyle())
+        .highPriorityGesture(
+            LongPressGesture(minimumDuration: 0.4)
+                .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .named("noteList")))
+                .updating($touch) { value, state, _ in
+                    if case .second(true, let drag) = value { state = SelTouch(id: n.id, y: drag.map { $0.location.y }) }
+                }
+        )
+        .background(GeometryReader { g in
+            Color.clear.preference(key: RowFrames.self, value: selecting ? [n.id: g.frame(in: .named("noteList"))] : [:])
+        })
+        .accessibilityAddTraits(on ? .isSelected : [])
+        .listRowInsets(EdgeInsets(top: 5, leading: 12, bottom: 5, trailing: 12))
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            if !selecting {
+                Button(role: .destructive) { app.delete(n) } label: { Label(t.t("trash.swipe"), systemImage: "trash") }
+                    .tint(.red)
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if !selecting {
+                Button { togglePin(n) } label: { Label(n.pinned ? t.t("note.unpin") : t.t("note.pin"), systemImage: n.pinned ? "pin.slash" : "pin") }
+                    .tint(Color(Ink.accent))
+                // 小耳机：点了才进听力（Song 11-21：没点的不要进去）
+                Button { app.toggleListen(n) } label: {
+                    Label(n.inListen ? t.t("listen.remove") : t.t("listen.add"), systemImage: n.inListen ? "minus.circle" : "headphones")
+                }
+                .tint(n.inListen ? Color(Ink.text3) : Color(Ink.accent))
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------- 批量选（111）
+    private var selectionBar: some View {
+        SmartBar {
+            EmptyView()
+        } center: {
+            BarTitle(text: t.f("batch.selected", selected.count))
+        } right: {
+            Button(t.t("batch.all")) {
+                selected = Set(shown.map(\.id))
+                haptic()
+            }
+            .buttonStyle(PlainTextButtonStyle())
+            Button(t.t("batch.cancel")) { endSelecting() }
+                .buttonStyle(PlainTextButtonStyle())
+        }
+    }
+
+    private var batchActions: some View {
+        HStack(spacing: 12) {
+            Button { trashSelected() } label: {
+                Label(t.t("batch.trash"), systemImage: "trash").frame(maxWidth: .infinity)
+            }
+            .buttonStyle(SmartButtonStyle())
+            .disabled(selected.isEmpty)
+            Menu {
+                Button(t.t("list.all")) { moveSelected(to: nil) }
+                ForEach(movableFolders) { f in Button(f.name) { moveSelected(to: f) } }
+            } label: {
+                Label(t.t("batch.move"), systemImage: "folder").frame(maxWidth: .infinity)
+            }
+            .menuStyle(.button)
+            .buttonStyle(SmartButtonStyle())
+            .disabled(selected.isEmpty)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(Color(Ink.paper).opacity(0.96).overlay(alignment: .top) { Rectangle().fill(Color(Ink.rule)).frame(height: 0.5) })
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    /// 挪到…里不列只装听力的夹子（里面的便签全在听力里）
+    private var movableFolders: [Folder] {
+        folders.filter { f in
+            let inside = notes.filter { $0.folder?.id == f.id }
+            return inside.isEmpty || inside.contains { !$0.inListen }
+        }
+    }
+
+    private func haptic() { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
+
+    private func toggle(_ id: UUID) {
+        if selected.contains(id) { selected.remove(id) } else { selected.insert(id) }
+        haptic()
+    }
+
+    private func startTouch(_ id: UUID) {
+        if !selecting { withAnimation(.easeOut(duration: 0.2)) { selecting = true } }
+        dragBase = selected
+        let ids = shown.map(\.id)
+        dragAnchor = ids.firstIndex(of: id) ?? 0
+        if !selected.contains(id) { selected.insert(id); haptic() }
+    }
+
+    /// 手指在 y：划过的从按下那条到这一条都选上；往回划，退掉的不选
+    private func moveTouch(_ y: CGFloat) {
+        dragY = y
+        let ids = shown.map(\.id)
+        let seen = ids.enumerated().compactMap { i, id in rowFrames[id].map { (i, $0) } }
+        guard let at = BatchSelect.index(atY: Double(y), frames: seen.map { (minY: Double($0.1.minY), maxY: Double($0.1.maxY)) }) else { return }
+        let current = seen[at].0
+        let next = BatchSelect.selection(base: dragBase, order: ids, anchor: dragAnchor, current: current)
+        if next != selected {
+            if next.count > selected.count { haptic() }
+            selected = next
+        }
+        autoScroll = y < 90 ? -1 : (y > listHeight - 90 ? 1 : 0)
+    }
+
+    private func endTouch() { autoScroll = 0 }
+
+    /// 手指在边缘时，列表往那边滚一条
+    private func scrollStep(_ proxy: ScrollViewProxy) {
+        let ids = shown.map(\.id)
+        let visible = ids.enumerated().filter { rowFrames[$0.element] != nil }
+        guard let first = visible.first, let last = visible.last else { return }
+        if autoScroll > 0, last.offset + 1 < ids.count {
+            withAnimation(.easeOut(duration: 0.12)) { proxy.scrollTo(ids[last.offset + 1], anchor: .bottom) }
+        } else if autoScroll < 0, first.offset > 0 {
+            withAnimation(.easeOut(duration: 0.12)) { proxy.scrollTo(ids[first.offset - 1], anchor: .top) }
+        }
+    }
+
+    private func endSelecting() {
+        withAnimation(.easeOut(duration: 0.2)) { selecting = false }
+        selected = []
+        rowFrames = [:]
+        autoScroll = 0
+    }
+
+    private func trashSelected() {
+        let picked = shown.filter { selected.contains($0.id) }
+        endSelecting()
+        app.deleteMany(picked)
+    }
+
+    private func moveSelected(to f: Folder?) {
+        for n in shown where selected.contains(n.id) { n.folder = f; app.changed(n) }
+        endSelecting()
+    }
+
     private func closeTools() {
         withAnimation(.easeOut(duration: 0.2)) { showTools = false }
     }
@@ -196,9 +377,18 @@ struct ListScreen: View {
         app.changed(n)
     }
 
-    private func move(_ n: Note, to f: Folder?) {
-        n.folder = f
-        app.changed(n)
+}
+
+/// 长按之后手指还没抬：按的是哪条、手指在哪（y 在列表里的位置）
+struct SelTouch: Equatable {
+    var id: UUID
+    var y: CGFloat?
+}
+
+struct RowFrames: PreferenceKey {
+    static var defaultValue: [UUID: CGRect] = [:]
+    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
+        value.merge(nextValue()) { $1 }
     }
 }
 

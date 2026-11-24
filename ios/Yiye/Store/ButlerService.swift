@@ -34,6 +34,12 @@ final class ButlerService {
     @ObservationIgnored private var wordSending: Set<String> = []
     /// 陪玩（100）：在等回答的请求 id
     @ObservationIgnored private var looks: Set<String> = []
+    /// 信箱说电脑（desk）在线（111：只寄给电脑，掌机不存文件）
+    private(set) var deskOn = false
+    /// 抄到电脑（111）：寄出去、回信还没来的「便签 → 寄的那版 modifiedAt、寄的时间」
+    @ObservationIgnored private var keepInflight: [UUID: (modified: Date, sentAt: Date)] = [:]
+    /// 请求 id → 「便签 id|寄的那版 modifiedAt（秒数）」，存起来：app 被杀了回信来了也认得
+    @ObservationIgnored private var keepWait: [String: String] = (UserDefaults.standard.dictionary(forKey: "yiye.keepWait") as? [String: String]) ?? [:]
 
     enum LookSent: Equatable { case sent(Bool), noPair, failed(String) }
 
@@ -64,6 +70,10 @@ final class ButlerService {
         }, onDown: { [weak self] _ in
             Task { @MainActor in self?.relayDown() }
         })
+        s.onText = { [weak self] text in
+            guard let pcs = KeepPlan.machines(in: text) else { return }
+            Task { @MainActor in self?.setMachines(pcs) }
+        }
         socket = s
         s.start()
     }
@@ -76,6 +86,7 @@ final class ButlerService {
 
     private func relayDown() {
         relayUp = false
+        deskOn = false
         refreshPresence()
     }
 
@@ -139,7 +150,7 @@ final class ButlerService {
             if s.phase == .waiting, let rid = s.requestID { waiting[rid] = n.id }
             if let rid = n.dubRequest { dubbing[rid] = n.id }
         }
-        var action = MailAction.decide(env, waiting: waiting, dubbing: dubbing, words: words.requestIDs, looks: looks)
+        var action = MailAction.decide(env, waiting: waiting, dubbing: dubbing, words: words.requestIDs, looks: looks, keeps: Set(keepWait.keys))
         if action == .later, let ch = app.mirror.channel, let a = env.delivery?.audio {
             // 信里没带录音：去 iCloud 镜像里找（后台读，占位的要等它下载）
             let data: Data? = await withCheckedContinuation { c in
@@ -161,6 +172,9 @@ final class ButlerService {
         case .look(let r, let audio):
             if r.stage != "ack" { looks.remove(r.id) }          // 深聊（107）：ack 之后同一个 id 还有一封回答
             app.companion.answer(r, audio: audio)
+            return true
+        case .keep(let r):
+            keepReply(r)
             return true
         case .deliver(let d, let audio):
             app.addDelivery(d, audio: audio)
@@ -375,6 +389,71 @@ final class ButlerService {
         UserDefaults.standard.set(words.encoded(), forKey: ButlerService.wordsKey)
     }
 
+    // ---------------------------------------------------------------- 思想排泄物抄到电脑（111）
+    /// 信箱报哪几台大管家在线：pcs 里有 desk 才寄。刚变成在线，马上把攒着的寄出去
+    private func setMachines(_ pcs: [String]) {
+        let was = deskOn
+        deskOn = pcs.contains("desk")
+        if deskOn && !was { keepFlush() }
+    }
+
+    /// 该抄给电脑的寄出去。force：马上寄的（刚离开写字页）；all：退后台前，全部马上寄。
+    /// 写字页里正开着的那条，停手 60 秒才寄；同一版寄出去了回信没来，不重复寄；不显示寄没寄
+    func keepFlush(force: Set<UUID> = [], all: Bool = false) {
+        guard let app, app.demo == nil, mail != nil, deskOn else { return }
+        let cands = app.keepCandidates()
+        var editing: UUID?
+        if case .editor(let id)? = app.path.last { editing = id }
+        let forced = all ? Set(cands.map(\.id)) : force
+        let ids = KeepPlan.due(cands, now: Date(), desk: deskOn, editing: editing, force: forced, inflight: keepInflight)
+        for id in ids { sendKeep(id) }
+    }
+
+    private func sendKeep(_ id: UUID) {
+        guard let app, let mail, let n = app.note(id), let f = n.folder else { return }
+        let rid = UUID().uuidString
+        let modified = n.modifiedAt
+        let req = ButlerRequest.keep(id: rid, note: n.id.uuidString, folder: f.name, text: n.markdown,
+                                     created: ISOTime.string(n.createdAt), modified: ISOTime.string(modified),
+                                     at: ISOTime.string(Date()), app: ButlerService.appVersion)
+        keepInflight[id] = (modified, Date())
+        keepWait[rid] = "\(id.uuidString)|\(modified.timeIntervalSince1970)"
+        if keepWait.count > 60 {
+            for k in keepWait.keys.sorted().prefix(keepWait.count - 60) { keepWait[k] = nil }
+        }
+        saveKeepWait()
+        Task {
+            do {
+                _ = try await mail.send(.request(req), timeout: 20)
+            } catch {
+                self.keepWait[rid] = nil
+                self.keepInflight[id] = nil
+                self.saveKeepWait()
+            }
+        }
+    }
+
+    /// 回信：电脑回 ok 才记「电脑那份是这一版」；掌机回 desk-only、出错的都不算，过两分钟再寄
+    private func keepReply(_ r: ButlerResult) {
+        let rid = r.re ?? r.id
+        guard let app, let v = keepWait.removeValue(forKey: rid) else { return }
+        saveKeepWait()
+        let parts = v.split(separator: "|")
+        guard parts.count == 2, let nid = UUID(uuidString: String(parts[0])), let ts = Double(String(parts[1])) else { return }
+        let sent = Date(timeIntervalSince1970: ts)
+        guard KeepPlan.reached(ok: r.ok, host: r.host) else { return }
+        if let n = app.note(nid) {
+            n.deskAt = KeepPlan.newDeskAt(current: n.deskAt, sent: sent)
+            try? app.context.save()
+        }
+        if let f = keepInflight[nid], abs(f.modified.timeIntervalSince(sent)) < 0.001 { keepInflight[nid] = nil }
+    }
+
+    private func saveKeepWait() {
+        guard app?.demo == nil else { return }
+        UserDefaults.standard.set(keepWait, forKey: "yiye.keepWait")
+    }
+
     // ---------------------------------------------------------------- 陪玩（100）
     /// 问一句：只走信箱（晚到的回答没用，不走 iCloud）。信箱说两台大管家都不在：当场撤回，回 .sent(false)
     func sendLook(_ req: ButlerRequest, files: [String: Data]) async -> LookSent {
@@ -431,6 +510,7 @@ final class ButlerService {
     func look() {
         guard let app else { return }
         checkPairing()
+        keepFlush()
         if !words.items.isEmpty { flushWords() }
         guard !looking, let channel = app.mirror.channel else {
             if !app.mirror.isOn {

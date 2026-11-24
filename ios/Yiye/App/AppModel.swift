@@ -95,6 +95,7 @@ final class AppModel {
             mirror.restore()
             showMirrorPrompt = !settings.mirrorAsked && !mirror.isOn
             purgeTrashed()
+            migrateDeskFolders()
             backfillListen()
         }
         butler.start()
@@ -104,10 +105,12 @@ final class AppModel {
     func scenePhase(_ p: ScenePhase) {
         switch p {
         case .active:
+            if demo == nil { purgeTrashed() }
             butler.start()
         case .background:
-            if !companion.holdsButler { butler.stop() }     // 陪玩在听：信箱不断（后台音频让 app 一直醒着）
             try? context.save()
+            butler.keepFlush(all: true)                      // 111：退到后台前，该抄给电脑的马上寄（写字页里的也算）
+            if !companion.holdsButler { butler.stop() }     // 陪玩在听：信箱不断（后台音频让 app 一直醒着）
         default: break
         }
     }
@@ -207,26 +210,87 @@ final class AppModel {
         mirror.saveSoon(n, attachments: attachments)
     }
 
-    /// 左滑删除：先藏起来，给「撤销」；过一会儿真删
-    func delete(_ n: Note) {
-        n.trashed = true
+    /// 删 = 进废纸篓，留 3 天（111）。右滑、批量选、写字页的删都走这儿；底下 5 秒给「撤销」
+    func delete(_ n: Note) { deleteMany([n]) }
+
+    func deleteMany(_ notes: [Note]) {
+        guard !notes.isEmpty else { return }
+        let now = Date()
+        for n in notes {
+            n.trashed = true
+            n.trashedAt = now
+            mirror.trash(n.id)
+        }
         try? context.save()
-        mirror.trash(n.id)
-        let id = n.id
-        let title = n.title.isEmpty ? t.t("note.untitled") : n.title
-        show(t.f("toast.deleted", title), action: t.t("toast.undo"), seconds: 5) { [weak self] in
-            guard let self, let n = self.note(id) else { return }
-            n.trashed = false
-            try? self.context.save()
-            self.mirror.restoreFromTrash(id)
+        let ids = notes.map(\.id)
+        let text: String
+        if notes.count == 1 {
+            let n = notes[0]
+            text = t.f("trash.toast", n.title.isEmpty ? t.t("note.untitled") : n.title)
+        } else {
+            text = t.f("trash.toastMany", notes.count)
+        }
+        show(text, action: t.t("toast.undo"), seconds: 5) { [weak self] in
+            guard let self else { return }
+            self.putBack(ids)
             self.toast = nil
         }
     }
 
-    /// 上次藏起来没撤销的，启动时真删
-    func purgeTrashed() {
-        for n in allNotes() where n.trashed { context.delete(n) }
+    /// 放回去：回原来的文件夹（扔的时候没动过 folder）；镜像里那份也挪回来
+    func putBack(_ ids: [UUID]) {
+        for id in ids {
+            guard let n = note(id) else { continue }
+            n.trashed = false
+            n.trashedAt = nil
+            mirror.restoreFromTrash(id)
+        }
         try? context.save()
+    }
+
+    /// 现在就删：真删，镜像里那份也删（他自己划的，不再问）
+    func purgeNow(_ n: Note) {
+        let id = n.id
+        context.delete(n)
+        try? context.save()
+        mirror.purge(id)
+    }
+
+    /// 废纸篓里超过 3 天的真删；扔了但没写时间的（老数据）补成现在。开 app、回到前台时跑
+    func purgeTrashed() {
+        let now = Date()
+        var gone: [UUID] = []
+        for n in allNotes() where n.trashed {
+            n.trashedAt = TrashRule.backfill(trashed: true, trashedAt: n.trashedAt, now: now)
+            if let at = n.trashedAt, TrashRule.isExpired(trashedAt: at, now: now) {
+                gone.append(n.id)
+                context.delete(n)
+            }
+        }
+        try? context.save()
+        for id in gone { mirror.purge(id) }
+    }
+
+    /// 111 装新版第一次开：名字叫「思想排泄物」的夹子打开「抄一份到电脑」。只跑一次（以后他自己关了就不再替他开）
+    func migrateDeskFolders() {
+        guard !settings.deskMigrated else { return }
+        let all = (try? context.fetch(FetchDescriptor<Folder>())) ?? []
+        for f in all where KeepPlan.isDeskFolderName(f.name) { f.toDesk = true }
+        try? context.save()
+        settings.deskMigrated = true
+    }
+
+    /// 111：开了「抄一份到电脑」的夹子里的便签（空的不算），看电脑那份是不是最新一版
+    func keepCandidates() -> [KeepCandidate] {
+        allNotes().compactMap { n in
+            guard let f = n.folder, f.toDesk, !n.markdown.trimmed.isEmpty else { return nil }
+            return KeepCandidate(id: n.id, folder: f.name, folderToDesk: true, trashed: n.trashed, modifiedAt: n.modifiedAt, deskAt: n.deskAt)
+        }
+    }
+
+    /// 111：超过 24 小时还没到电脑的，按夹子数（设置页那行小字）
+    func keepStale() -> [KeepPlan.Stale] {
+        KeepPlan.stale(keepCandidates(), now: Date())
     }
 
     /// 离开写字页：空的就不留
@@ -239,6 +303,7 @@ final class AppModel {
             mirror.saveNow(n, attachments: attachments)
         }
         if freshNoteID == n.id { freshNoteID = nil }
+        butler.keepFlush(force: [n.id])                          // 111：离开写字页，改完的马上抄给电脑
     }
 
     // ---------------------------------------------------------------- 录一段

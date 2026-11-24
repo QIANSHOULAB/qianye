@@ -6,27 +6,35 @@ NSPhotoLibraryAddUsageDescription	把笔记做成的图存进相册。
 NSSpeechRecognitionUsageDescription	在手机上把你说的话转成字，不上传。
 album.failed	这张图没取出来：%@
 app.name	一叶笺
+appearance.dark	深色
+appearance.paper	纸
+appearance.system	跟随系统
+batch.all	全选
+batch.cancel	取消
+batch.move	挪到…
+batch.selected	选了 %lld 条
+batch.trash	扔
 busy.album	从相册取图…
 busy.import	从文件夹往回搬…
 busy.ocr	认字中，你去摸会儿鱼…
 busy.speak	一句一句念，稍等…
-butler.absent	大管家还没连上：掌机装好 iCloud、登录同一个 Apple ID 就连上了
+butler.absent	大管家还没到岗：电脑上装好 iCloud、登同一个 Apple ID，它就来了。
 butler.applied	大管家改了 %lld 处
-butler.away	大管家不在线，上次在线 %@
-butler.awayNever	大管家还没连上信箱：掌机开着、大管家开着就连上了
+butler.away	大管家开小差了，上次露面 %@
+butler.awayNever	大管家还没来报到：电脑开着、大管家开着，它就来了。
 butler.failed	大管家这回没理成
 butler.more	还有 %lld 处
-butler.needMirror	先在设置里配上大管家的信箱（扫掌机屏幕上的码），或者选一个镜像文件夹。
+butler.needMirror	先给大管家留个门：设置里扫码配信箱，或者选个镜像文件夹。
 butler.needMirrorShort	先配信箱，或者选镜像文件夹
 butler.no	不要
-butler.offer	大管家理好了，点一下换上
+butler.offer	大管家誊好了，点一下换上。
 butler.ok	知道了
 butler.online	大管家在线
 butler.queued	排着队，等大管家
-butler.queuedSeen	排着队，等大管家（上次在线 %@）
+butler.queuedSeen	排队等大管家（上次露面 %@）
 butler.retry	再交一次
 butler.revert	换回原文
-butler.seen	大管家 %lld 分钟前来过
+butler.seen	大管家 %lld 分钟前来巡过
 butler.sentAt	交出去 %@
 butler.short.offer	理好了
 butler.short.queued	排队
@@ -44,7 +52,7 @@ common.close	关
 common.done	好了
 companion.deepOn	深聊开了：锁屏揣兜里，开口先叫「大管家」
 companion.failed	陪玩没开起来：%@
-companion.noMic	麦克风没开：iPhone 设置 › 一叶笺 里打开
+companion.noMic	一叶笺借不到话筒：设置 › 一叶笺 里打开。
 companion.noPanel	直播面板叫不出来
 companion.restart	重开
 editor.back	便签
@@ -55,40 +63,41 @@ editor.paper	换纸
 editor.toButler	交给大管家
 folders.add	建
 folders.delete	删掉文件夹
-folders.deleted	文件夹「%@」删了，里面的笔记回到全部便签
+folders.deleted	文件夹「%@」拆了，里面的笔记回到全部便签。
 folders.namePlaceholder	起个名
 folders.new	新建文件夹
 folders.title	文件夹
+folders.toDesk	抄一份到电脑
 font.large	大
 font.medium	中
 font.small	小
 import.done	搬回来 %lld 条，更新 %lld 条。
-import.pending	还有 %lld 条在 iCloud 里没下完，过会儿再导一次。
+import.pending	还有 %lld 条在 iCloud 里磨蹭，过会儿再搬一次。
 lang.system	跟系统
 list.all	全部便签
-list.empty	一张纸都还没有。写一条，拍一页，或者说一段。
+list.empty	一片叶子都还没有。写一句、拍一页、说两句，随便喂它点什么。
 list.new	写一条
 list.noHit	没搜到
 list.search	搜索
 listen.add	放进听力
 listen.added	放进听力了
-listen.addedPhone	放进听力了。大管家没连上，先用手机的声音念。
+listen.addedPhone	进听力了。大管家不在，先拿手机的嗓子凑合念。
 listen.always	一直
-listen.arrived	大管家送来一篇：%@。听力里排好了。
+listen.arrived	大管家送来一篇：%@。听力里排好队了。
 listen.close	关
 listen.dub	交大管家配音
 listen.dubEmpty	这条没字，配不了音。
-listen.dubFailed	大管家这回没配成，可以再交一次。
+listen.dubFailed	大管家这回嗓子卡了，再交一次试试。
 listen.dubFailedWhy	大管家没配成：%@
-listen.dubQueued	排上了，大管家连上就配。
-listen.dubSent	交给大管家了，配好音自己回到这条。
+listen.dubQueued	排上了，大管家一上线就开嗓。
+listen.dubSent	交给大管家了，配完音自己回到这条。
 listen.dubbed	大管家配好音了：%@
-listen.empty	还没有听力稿。列表里左滑一条点小耳机，就放进来了。
+listen.empty	听力还是空的。列表里左滑一条、点小耳机，就塞进来了。
 listen.loopOne	单句循环
 listen.next	下一篇
 listen.nextSentence	下一句
 listen.noAudio	还没声音 · 点一下先用手机念
-listen.noTiming	这篇没有分句的时间，点句子跳不过去。
+listen.noTiming	这篇没标句子时间，点哪句都跳不过去。
 listen.pass	第 %lld 遍
 listen.prev	上一篇
 listen.prevSentence	上一句
@@ -97,8 +106,8 @@ listen.removed	从听力拿掉了，笔记还在
 listen.showText	看原文
 listen.speak	念出来
 listen.speakFailed	没念成：%@
-listen.spoken	念好了，点上面的播放就能听。
-listen.spokenBasic	念好了。想念得更像真人：iPhone 的 Settings > Accessibility > Spoken Content > Voices > English，下一个 Premium 的声音。
+listen.spoken	念好了，点上面的播放。
+listen.spokenBasic	念好了。嫌这嗓子像机器人？Settings › Accessibility › Spoken Content › Voices › English，下一个 Premium 的。
 listen.text	文
 listen.times1	1 遍
 listen.times2	2 遍
@@ -106,8 +115,8 @@ listen.times3	3 遍
 listen.times5	5 遍
 listen.title	听力
 listen.today	今天
-listen.waitDub	等大管家配音 · 交出去 %@
-listen.waitDubAway	等大管家配音 · 大管家还没连上
+listen.waitDub	等大管家开嗓 · 交出去 %@
+listen.waitDubAway	等大管家开嗓 · 它还没上线
 md.bold	粗体
 md.center	居中
 md.done	收起键盘
@@ -118,7 +127,7 @@ md.quote	引用
 md.spacing	图片间距
 md.spacingGap	图片上下空一格
 md.spacingSnug	图片靠拢
-mirror.ask	每条笔记在 iCloud 云盘也存一份：换手机不丢，大管家也从那儿拿活。
+mirror.ask	每条笔记在 iCloud 云盘也存一份：换手机不丢，大管家也从那儿领活。
 mirror.choose	选文件夹
 mirror.failed	这个文件夹用不了：%@
 mirror.icloud	iCloud 云盘
@@ -131,43 +140,44 @@ note.pin	置顶
 note.unpin	取消置顶
 note.untitled	无题
 ocr.failed	没认出来：%@
-ocr.nothing	这张图上没找到字。拍正一点、亮一点再来。
+ocr.nothing	这张图上一个字都没逮到。拍正点、亮点，再来。
 pair.bad	这不是大管家的配对码
-pair.done	配好了：以后交给大管家几秒就到
-pair.noCamera	相机用不了：设置里给一叶笺开一下相机
+pair.done	接上头了，大管家以后几秒就到。
+pair.noCamera	相机没给：设置里给一叶笺开一下。
 pair.scanTitle	对准掌机屏幕上的码
 paper.blue	天青
 paper.green	豆青
 paper.pink	藕粉
 paper.white	素白
 paper.yellow	米黄
+settings.appearance	外观
 settings.butler	大管家
 settings.butlerAuto	拍照、录音的自动交给大管家
-settings.butlerNote	手写认不准的字，掌机上的大管家对着原图理顺再送回来。走 Cloudflare 信箱，几秒就到，信两头加密；信箱连不上才走镜像文件夹。手机上不存任何 AI 钥匙。
+settings.butlerNote	手写认歪的字，交给大管家对着原图理顺，几秒后送回一份干净的。走加密信箱，两头上锁；信箱断了就走镜像文件夹。手机里一把 AI 钥匙都不放。
 settings.companion	陪玩
-settings.companionNote	左上角工具箱里点「陪玩」，弹苹果的直播面板，选一叶笺，点开始。听到「叮」就是在听了：手机随便用，开口就问，它把你这句话和那一刻的屏幕交给自己的大管家，大管家听、看、用声音答你。工具箱右上角的小圆点：绿是在听，一闪一闪是听到你在说，橙是大管家在忙，红是哪儿坏了（它会念出来）。开着陪玩锁屏，或者点工具箱里的「深聊」，就转成深聊：不截屏，先叫「大管家」再问，它想几分钟再念给你，完整的存进「深聊」文件夹；说「大管家，结束」就收。屏幕上方的红点、橙点是苹果的直播和麦克风提示，正常。
+settings.companionNote	工具箱里点「陪玩」，苹果弹出直播面板，选一叶笺，开始。听到「叮」就是它在听了，手机该干嘛干嘛，开口就问：它截下你问的那一屏，交给自家大管家，再用嘴回你。工具箱上的小点：绿＝在听，绿闪＝听见你了，橙＝大管家在想，红＝坏了（它会说坏在哪）。想深聊：陪玩开着锁屏，或点工具箱里的「深聊」，不截屏了，叫一声「大管家」再问，它想几分钟念给你，全文存进「深聊」文件夹；说「大管家，结束」收工。屏幕顶上的红点橙点是苹果在报备，别慌。
+settings.deskStale	「%1$@」有 %2$lld 条还没到电脑
 settings.fontSize	字号
 settings.import	从文件夹导入
 settings.language	语言
 settings.mirror	镜像文件夹
 settings.mirrorChange	换一个
-settings.mirrorNote	每存一次往里写一个 .md，图片进「附件」，删掉的进「废纸篓」。以后换正式版，从这儿一条不落搬回来。
-settings.pairOff	信箱还没配：掌机配好会自己配上；等不及就扫掌机屏幕上的码。
-settings.pairOn	信箱配好了：交给大管家的几秒就到，信两头加密。
+settings.mirrorNote	这是后备箱：每存一次落一个 .md，图片进「附件」，删掉的进「废纸篓」。哪天换版本，从这儿原封不动搬回来。
+settings.pairOff	还没接上头。大管家那边配好会自己连；等不及就扫它屏幕上的码。
+settings.pairOn	接上头了：交给大管家的东西几秒就到，路上全程加密。
 settings.pairPaste	粘贴配对码
 settings.pairScan	扫码配对
 settings.title	设置
 settings.version	版本
 settings.voice	录一段
-settings.voiceNote	说的话在手机上转成字，不上传。侧键一按就录：iPhone 的 Settings > Action Button > Shortcut，选一叶笺下面的「录一段」（手机是英文就叫 Record a voice note）。
+settings.voiceNote	说的话就在手机里变成字，不出门。想按侧键就录：Settings › Action Button › Shortcut › 一叶笺 › 录一段（英文系统叫 Record a voice note）。
 share.mark	一叶笺
-share.noPermission	没有存照片的权限：设置 > 隐私与安全性 > 照片 里给一叶笺开一下。
+share.noPermission	没给存照片的权限：Settings › Privacy & Security › Photos 里给一叶笺开一下。
 share.save	保存相册
 share.saveFailed	没存上：%@
 share.saved	存进相册了
 share.share	分享
 share.title	分享成图
-sort.created	按新建
 sort.new	新改的在前
 sort.old	老的在前
 sort.title	排序
@@ -178,18 +188,27 @@ toast.deleted	删了「%@」
 toast.undo	撤销
 tools.deep	深聊
 tools.title	工具箱
+trash.days	还剩 %lld 天
+trash.deleteNow	现在就删
+trash.putBack	放回
+trash.swipe	扔
+trash.title	废纸篓
+trash.toast	「%@」进废纸篓了，3 天后化掉
+trash.toastMany	扔了 %lld 条，3 天后化掉
+trash.today	今天化掉
+trash.tomorrow	明天化掉
 voice.cancel	不要了
-voice.denied	一叶笺用不了话筒。去设置里给它开一下。
+voice.denied	一叶笺借不到话筒，去设置里开一下。
 voice.done	说完了
 voice.failed	录不了：%@
 voice.intent	录一段
 voice.intentDesc	打开一叶笺，直接开录。
 voice.listening	说吧，我听着。
-voice.model	第一次用，在下语音模型，下完就好…
-voice.noLang	这台手机不认这个语言，这回只录音。
+voice.model	第一次用，正在搬语音模型，搬完就好…
+voice.noLang	这台手机听不懂这门语言，这回只录音。
 voice.noModel	这回只录音，不转字：%@
-voice.noSpeech	没开语音识别权限，这回只录音。设置里能开。
-voice.noText	录音存好了，这回没转出字。
+voice.noSpeech	没给语音识别权限，这回只录音。设置里能开。
+voice.noText	录音存好了，这回一个字都没认出来。
 voice.openSettings	去设置
 voice.pause	暂停
 voice.play	播放
@@ -197,6 +216,6 @@ voice.preparing	话筒准备中…
 voice.saving	收个尾…
 voice.title	录一段
 word.known	「%@」毕业，简讯不再讲
-word.learning	「%@」留级，简讯接着讲
+word.learning	「%@」留级，简讯接着补课
 word.markKnown	会了
 word.markLearning	不会

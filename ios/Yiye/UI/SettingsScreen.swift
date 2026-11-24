@@ -92,6 +92,13 @@ struct SettingsScreen: View {
                                 Button(t.t("settings.pairPaste")) { pastePairing() }
                                     .buttonStyle(PlainTextButtonStyle())
                             }
+                            // 111：抄给电脑的便签超过 24 小时还没到，一行小字；到了就消失
+                            ForEach(app.keepStale(), id: \.folder) { st in
+                                Text(t.f("settings.deskStale", st.folder, st.count))
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(Color(Ink.text3))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
                             Toggle(isOn: $settings.butlerAutoPhoto) {
                                 Text(t.t("settings.butlerAuto")).font(.system(size: 16)).foregroundStyle(Color(Ink.text))
                             }

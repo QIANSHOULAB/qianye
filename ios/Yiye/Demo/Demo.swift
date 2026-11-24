@@ -148,9 +148,27 @@ enum Demo {
         waiting.createdAt = now.addingTimeInterval(-60 * 8)
         waiting.inListen = true
         waiting.dub = "\(UUID().uuidString)|\(ISOTime.string(now.addingTimeInterval(-60 * 6)))"
+        // 思想排泄物（抄一份到电脑，开着）：两条
+        let thoughts = Folder(name: "思想排泄物", order: 3)
+        ctx.insert(thoughts)
+        _ = add(zh ? "# 要是下班路上能把想到的全吐出来\n不整理，先丢在这儿。" : "# What if I could dump every thought on the way home\nNo sorting. Just drop it here.",
+                ago: 60 * 50, folder: thoughts)
+        _ = add(zh ? "# 工厂的灯为什么总是太白\n换一盏暖的试试。" : "# Why is the factory light always too white\nTry a warmer one.",
+                ago: 60 * 60 * 30, folder: thoughts)
+        // 废纸篓：三条，剩的天数不一样（后天、明天、今天化掉）
+        for (k, hours) in [(0, 20.0), (1, 36.0), (2, 62.0)] {
+            let gone = add(zh ? ["# 旧的采购单\n牛奶 3 盒", "# 作废的会议\n改到下周", "# 草稿\n随手写的"][k]
+                              : ["# Old shopping list\nMilk x3", "# Cancelled meeting\nMoved to next week", "# Scrap\nJust a doodle"][k],
+                           ago: 60 * 60 * 80, folder: home)
+            gone.trashed = true
+            gone.trashedAt = Date().addingTimeInterval(-hours * 3600)
+        }
         try? ctx.save()
 
         switch cfg.screen {
+        case "batch":
+            // 批量选：选中前三条（由列表自己读 demo.screen 进入）
+            break
         case "editor": app.path = [.editor(plain.id)]
         case "markdown": app.path = [.editor(mdNote.id)]
         case "share-note", "share-white", "butler": app.path = [.editor(photo.id)]

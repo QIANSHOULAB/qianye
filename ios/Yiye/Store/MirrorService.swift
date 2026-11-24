@@ -201,6 +201,12 @@ final class MirrorService {
         queue.async { try? folder.trash(id) }
     }
 
+    /// 真删：镜像废纸篓里那份也删
+    func purge(_ id: UUID) {
+        guard let folder else { return }
+        queue.async { folder.purge(id) }
+    }
+
     func restoreFromTrash(_ id: UUID) {
         guard let folder else { return }
         queue.async { try? folder.restore(id) }

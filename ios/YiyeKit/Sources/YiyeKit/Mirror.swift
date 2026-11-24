@@ -163,6 +163,11 @@ public final class MirrorFolder {
         }
     }
 
+    /// 真删（111：废纸篓留满 3 天、或者「现在就删」）：把废纸篓里这条的所有份删掉
+    public func purge(_ id: UUID) {
+        for f in files(for: id, in: trashDir) { try? fs.remove(f) }
+    }
+
     /// 撤销删除：从废纸篓挪回来（最近那份）
     public func restore(_ id: UUID) throws {
         guard let f = files(for: id, in: trashDir).sorted(by: { (fs.modified($0) ?? .distantPast) > (fs.modified($1) ?? .distantPast) }).first else { return }

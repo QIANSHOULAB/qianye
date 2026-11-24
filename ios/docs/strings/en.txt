@@ -1,32 +1,40 @@
-CFBundleDisplayName	Yiye
-CFBundleName	Yiye
+CFBundleDisplayName	一叶笺
+CFBundleName	一叶笺
 NSCameraUsageDescription	Snap a page and Yiye turns the writing into text, right on your phone.
 NSMicrophoneUsageDescription	Records what you say and keeps it with the note.
 NSPhotoLibraryAddUsageDescription	Saves the pictures you make from notes to your Photos.
 NSSpeechRecognitionUsageDescription	Turns your voice into text right on your phone.
 album.failed	Couldn’t get that photo: %@
 app.name	Yiye
+appearance.dark	Dark
+appearance.paper	Paper
+appearance.system	System
+batch.all	Select all
+batch.cancel	Cancel
+batch.move	Move to…
+batch.selected	%lld selected
+batch.trash	Trash
 busy.album	Getting the photo…
 busy.import	Bringing your notes home…
 busy.ocr	Squinting at your handwriting…
 busy.speak	Reading it aloud…
-butler.absent	Butler not connected yet. It connects once the PC has iCloud, signed in with this Apple ID.
+butler.absent	The butler hasn't clocked in. Get iCloud on the PC with this Apple ID and it'll show up.
 butler.applied	The butler fixed %lld spots
-butler.away	Butler offline, last online %@
-butler.awayNever	The butler hasn’t connected yet. It will once the PC is on.
+butler.away	The butler's gone AWOL. Last seen %@
+butler.awayNever	The butler hasn't reported in. Turn on the PC and the butler, and it will.
 butler.failed	The butler hit a snag
 butler.more	%lld more
-butler.needMirror	Pair with the butler in Settings (scan the code on the PC), or pick a mirror folder first.
+butler.needMirror	Leave the butler a way in first: scan to pair in Settings, or pick a mirror folder.
 butler.needMirrorShort	Pair first, or pick a mirror folder
 butler.no	Skip
-butler.offer	Butler’s copy is ready. Tap to swap it in.
+butler.offer	The butler's clean copy is ready. Tap to swap it in.
 butler.ok	Got it
 butler.online	Butler is online
 butler.queued	Queued for the butler
-butler.queuedSeen	Queued for the butler (last online %@)
+butler.queuedSeen	In line for the butler (last seen %@)
 butler.retry	Try again
 butler.revert	Restore original
-butler.seen	Butler last seen %lld min ago
+butler.seen	The butler swung by %lld min ago
 butler.sentAt	sent %@
 butler.short.offer	Ready
 butler.short.queued	Queued
@@ -44,7 +52,7 @@ common.close	Close
 common.done	Done
 companion.deepOn	Deep talk is on. Lock it, pocket it, start with “大管家”.
 companion.failed	Buddy mode didn’t start: %@
-companion.noMic	The mic is off. Turn it on in Settings > Yiye.
+companion.noMic	一叶笺 can't borrow the mic. Allow it in Settings › 一叶笺.
 companion.noPanel	Couldn’t open the broadcast panel
 companion.restart	Restart
 editor.back	Notes
@@ -55,40 +63,41 @@ editor.paper	Paper
 editor.toButler	Send to the butler
 folders.add	Add
 folders.delete	Delete folder
-folders.deleted	Deleted “%@”. Its notes are back in All Notes.
+folders.deleted	Folder “%@” is gone. Its notes went back to All Notes.
 folders.namePlaceholder	Folder name
 folders.new	New folder
 folders.title	Folders
+folders.toDesk	Copy to PC
 font.large	Large
 font.medium	Medium
 font.small	Small
 import.done	Imported %lld, updated %lld.
-import.pending	 %lld still coming down from iCloud. Try again in a bit.
+import.pending	%lld still dawdling in iCloud. Try again in a bit.
 lang.system	System
 list.all	All Notes
-list.empty	A blank desk. Write a note, scan a page, or just talk.
+list.empty	Not a single leaf yet. Write, snap or talk — feed it something.
 list.new	New note
 list.noHit	No matches
 list.search	Search
 listen.add	Add to Listening
 listen.added	Added to Listening
-listen.addedPhone	Added. The butler’s offline, so your phone reads it for now.
+listen.addedPhone	Added. The butler's out, so your phone's voice fills in for now.
 listen.always	Loop
-listen.arrived	Fresh from the butler: %@. It’s waiting in Listening.
+listen.arrived	Fresh from the butler: %@. Queued in Listening.
 listen.close	Close
 listen.dub	Have the butler voice it
 listen.dubEmpty	This note is empty. Nothing to voice.
-listen.dubFailed	The butler couldn’t voice it this time. Try again.
+listen.dubFailed	The butler choked on this one. Send it again.
 listen.dubFailedWhy	The butler couldn’t voice it: %@
-listen.dubQueued	Queued. The butler will voice it once it’s connected.
-listen.dubSent	Sent to the butler. The voice lands back in this note.
+listen.dubQueued	Queued. The butler voices it the moment it's back.
+listen.dubSent	Sent to the butler. The audio lands back on this note.
 listen.dubbed	The butler voiced “%@”
-listen.empty	Nothing here yet. Swipe left on a note and tap the headphones to add it.
+listen.empty	Nothing to listen to yet. Swipe left on a note, tap the headphones, done.
 listen.loopOne	Loop sentence
 listen.next	Next
 listen.nextSentence	Next sentence
 listen.noAudio	No audio yet · tap to have your phone read it
-listen.noTiming	No sentence timing for this one, so tapping a line won’t jump.
+listen.noTiming	No sentence timing on this one, so tapping a line won't jump.
 listen.pass	pass %lld
 listen.prev	Previous
 listen.prevSentence	Previous sentence
@@ -97,8 +106,8 @@ listen.removed	Removed from Listening. The note stays.
 listen.showText	Show text
 listen.speak	Read aloud
 listen.speakFailed	Couldn’t read it: %@
-listen.spoken	Done. Tap play at the top to listen.
-listen.spokenBasic	Done. For a more natural voice, download a Premium English voice in Settings > Accessibility > Spoken Content > Voices.
+listen.spoken	Done. Hit play up top.
+listen.spokenBasic	Done. Sounds like a robot? Settings › Accessibility › Spoken Content › Voices › English — grab a Premium one.
 listen.text	Text
 listen.times1	1×
 listen.times2	2×
@@ -106,8 +115,8 @@ listen.times3	3×
 listen.times5	5×
 listen.title	Listening
 listen.today	Today
-listen.waitDub	Waiting for the butler · sent %@
-listen.waitDubAway	Waiting for the butler · not connected yet
+listen.waitDub	Waiting on the butler · sent %@
+listen.waitDubAway	Waiting on the butler · it's offline
 md.bold	Bold
 md.center	Center
 md.done	Hide keyboard
@@ -118,7 +127,7 @@ md.quote	Quote
 md.spacing	Photo spacing
 md.spacingGap	A blank line around photos
 md.spacingSnug	Photos close together
-mirror.ask	Keep a copy of every note in iCloud Drive. Survives new phones, and the butler works from there.
+mirror.ask	Keep a copy of every note in iCloud Drive: survives a new phone, and the butler picks up work there.
 mirror.choose	Choose folder
 mirror.failed	Can’t use that folder: %@
 mirror.icloud	iCloud Drive
@@ -131,43 +140,44 @@ note.pin	Pin
 note.unpin	Unpin
 note.untitled	Untitled
 ocr.failed	Couldn’t read it: %@
-ocr.nothing	No text in that one. Try a straighter, brighter shot.
+ocr.nothing	Not a single word in that one. Straighter, brighter, again.
 pair.bad	That’s not a butler pairing code.
-pair.done	Paired. Notes now reach the butler in seconds.
-pair.noCamera	Camera’s off for Yiye. Turn it on in Settings.
+pair.done	Linked. The butler's now seconds away.
+pair.noCamera	No camera access. Turn it on for 一叶笺 in Settings.
 pair.scanTitle	Point at the code on the PC’s screen
 paper.blue	Sky
 paper.green	Sage
 paper.pink	Blush
 paper.white	White
 paper.yellow	Cream
+settings.appearance	Appearance
 settings.butler	Butler
 settings.butlerAuto	Auto-send scans and voice notes
-settings.butlerNote	The butler on your PC checks scans against the photo and sends back a clean copy. It goes through an encrypted mailbox in seconds, and falls back to the mirror folder. No AI keys on this phone.
+settings.butlerNote	Scribbles the phone misreads go to your butler, who checks them against the photo and sends back a clean copy in seconds. Encrypted mailbox, locked at both ends; if it's down, the mirror folder takes over. Zero AI keys on this phone.
 settings.companion	Buddy
-settings.companionNote	Open the toolbox at the top left, tap Buddy, pick Yiye, start. The ding means it’s listening: use your phone as usual and just ask out loud. Your words and the screen at that moment go to your own butler, which listens, looks, and answers out loud. The dot on the toolbox: green is listening, blinking means it hears you, orange is the butler on it, red is something broke (it’ll tell you what). Lock the phone with Buddy on, or tap Deep talk in the toolbox, for deep talk: no screen, start with “大管家”, it thinks for a few minutes and reads you the answer; the full text lands in the 深聊 folder. Say “大管家，结束” to stop. The red and orange dots up top are Apple’s broadcast and mic lights. Normal.
+settings.companionNote	Toolbox, tap Buddy, Apple pops a broadcast panel, pick 一叶笺, start. A ding means it's listening: use your phone as usual and just ask out loud. It grabs the screen you asked about, hands it to your own butler, and answers out loud. Dots on the toolbox: green = listening, blinking = heard you, orange = butler's thinking, red = broke (it'll say what). Deep talk: lock the phone with Buddy on, or tap Deep talk in the toolbox. No screen, say “butler” first, it thinks a few minutes and reads you the answer; the full text lands in the 深聊 folder. Say “butler, done” to stop. The red and orange dots up top are Apple's broadcast lights. Relax.
+settings.deskStale	%2$lld notes in “%1$@” haven’t reached the PC
 settings.fontSize	Text size
 settings.import	Import from folder
 settings.language	Language
 settings.mirror	Mirror folder
 settings.mirrorChange	Change
-settings.mirrorNote	Every save writes a .md file here. Photos go in 附件, deleted notes in 废纸篓. Switch to another build later and everything moves back from here.
-settings.pairOff	Not paired yet. It pairs itself once the PC is set up, or scan the code on the PC’s screen.
-settings.pairOn	Paired. Notes reach the butler in seconds, encrypted end to end.
+settings.mirrorNote	The trunk: every save drops a .md here, photos go in 附件, deleted notes in 废纸篓. Switch builds someday and it all moves back from here, untouched.
+settings.pairOff	Not connected yet. It links itself once the butler's set up — or scan the code on its screen.
+settings.pairOn	Connected. Stuff reaches the butler in seconds, encrypted the whole way.
 settings.pairPaste	Paste code
 settings.pairScan	Scan to pair
 settings.title	Settings
 settings.version	Version
 settings.voice	Voice notes
-settings.voiceNote	Your voice turns into text on this phone. Nothing is uploaded. To record with the Action Button: Settings > Action Button > Shortcut > Yiye “Record a voice note”.
+settings.voiceNote	Speech turns into text right here on the phone. Nothing leaves. Side-button recording: Settings › Action Button › Shortcut › 一叶笺 › Record a voice note.
 share.mark	Yiye
-share.noPermission	No access to Photos. Turn it on in Settings > Privacy & Security > Photos.
+share.noPermission	Can't save to Photos. Allow it in Settings › Privacy & Security › Photos.
 share.save	Save
 share.saveFailed	Didn’t save: %@
 share.saved	Saved to Photos
 share.share	Share
 share.title	Share as image
-sort.created	Date created
 sort.new	Newest edits
 sort.old	Oldest edits
 sort.title	Sort
@@ -178,18 +188,27 @@ toast.deleted	Deleted “%@”
 toast.undo	Undo
 tools.deep	Deep talk
 tools.title	Toolbox
+trash.days	%lld days left
+trash.deleteNow	Delete now
+trash.putBack	Put back
+trash.swipe	Trash
+trash.title	Trash
+trash.toast	“%@” is in the trash. Gone in 3 days.
+trash.toastMany	%lld notes in the trash. Gone in 3 days.
+trash.today	Gone today
+trash.tomorrow	Gone tomorrow
 voice.cancel	Discard
-voice.denied	Yiye can’t use the mic. Turn it on in Settings.
+voice.denied	一叶笺 can't borrow the mic. Allow it in Settings.
 voice.done	Done
 voice.failed	Couldn’t record: %@
 voice.intent	Record a voice note
 voice.intentDesc	Opens Yiye and starts recording.
 voice.listening	Go ahead, I’m listening.
-voice.model	First time: fetching the speech model…
-voice.noLang	This phone can’t transcribe that language. Recording audio only.
+voice.model	First run: hauling in the speech model…
+voice.noLang	This phone doesn't speak that language. Audio only this time.
 voice.noModel	Recording audio only this time: %@
-voice.noSpeech	Speech recognition is off, so audio only. You can turn it on in Settings.
-voice.noText	Audio saved. No words came through this time.
+voice.noSpeech	Speech recognition's off, so audio only. Settings can fix that.
+voice.noText	Audio saved. Not a single word came through.
 voice.openSettings	Open Settings
 voice.pause	Pause
 voice.play	Play
@@ -197,6 +216,6 @@ voice.preparing	Warming up the mic…
 voice.saving	Wrapping up…
 voice.title	Voice note
 word.known	“%@” graduated. No more lectures.
-word.learning	“%@” stays in class. More examples coming.
+word.learning	“%@” repeats a grade. More lessons in the brief.
 word.markKnown	Got it
 word.markLearning	Not yet
