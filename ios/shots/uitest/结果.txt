@@ -1,29 +1,29 @@
 # UI 测试：有红的（xcodebuild 退出码 65）
 
--[YiyeUITests.CallTests testAskThenHangUpByWords]' failed (113.856 seconds).
--[YiyeUITests.CallTests testHangUpButton]' passed (13.756 seconds).
--[YiyeUITests.CallTests testOtherWordsWithHangDontHangUp]' passed (39.218 seconds).
--[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting]' passed (33.298 seconds).
--[YiyeUITests.ListGestureTests testListeningOpensText]' passed (15.715 seconds).
--[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (27.915 seconds).
--[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (14.178 seconds).
--[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (15.921 seconds).
--[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects]' passed (28.769 seconds).
--[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange]' passed (24.126 seconds).
--[YiyeUITests.ListGestureTests testSweepMiddleScrollsNotSelects]' passed (35.489 seconds).
--[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (16.385 seconds).
--[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (17.034 seconds).
--[YiyeUITests.ListGestureTests testTapOpensNote]' passed (10.198 seconds).
--[YiyeUITests.ListenLoopTests testLoopOnlyPickedDay]' passed (47.442 seconds).
--[YiyeUITests.ShutongTalkTests testTalkDoUndoThenBye]' passed (24.932 seconds).
--[YiyeUITests.ShutongTalkTests testTrashSayNo]' passed (19.852 seconds).
--[YiyeUITests.ShutongTalkTests testTrashSayYes]' passed (17.693 seconds).
--[YiyeUITests.ShutongTalkTests testTrashSilenceKeeps]' passed (16.954 seconds).
--[YiyeUITests.ShutongTests testChatReceiptThenUndo]' passed (24.912 seconds).
--[YiyeUITests.ShutongTests testNewVoiceNoteTidiedWithOriginalWords]' passed (17.616 seconds).
+-[YiyeUITests.CallTests testAskThenHangUpByWords]' failed (38.721 seconds).
+-[YiyeUITests.CallTests testHangUpButton]' passed (11.789 seconds).
+-[YiyeUITests.CallTests testOtherWordsWithHangDontHangUp]' passed (78.946 seconds).
+-[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting]' passed (29.297 seconds).
+-[YiyeUITests.ListGestureTests testListeningOpensText]' passed (23.208 seconds).
+-[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (25.797 seconds).
+-[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (11.733 seconds).
+-[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (18.393 seconds).
+-[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects]' passed (28.944 seconds).
+-[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange]' passed (19.441 seconds).
+-[YiyeUITests.ListGestureTests testSweepMiddleScrollsNotSelects]' passed (28.242 seconds).
+-[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (19.899 seconds).
+-[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (18.365 seconds).
+-[YiyeUITests.ListGestureTests testTapOpensNote]' passed (10.994 seconds).
+-[YiyeUITests.ListenLoopTests testLoopOnlyPickedDay]' passed (39.587 seconds).
+-[YiyeUITests.ShutongTalkTests testTalkDoUndoThenBye]' passed (25.623 seconds).
+-[YiyeUITests.ShutongTalkTests testTrashSayNo]' passed (25.570 seconds).
+-[YiyeUITests.ShutongTalkTests testTrashSayYes]' passed (22.330 seconds).
+-[YiyeUITests.ShutongTalkTests testTrashSilenceKeeps]' passed (20.107 seconds).
+-[YiyeUITests.ShutongTests testChatReceiptThenUndo]' passed (25.811 seconds).
+-[YiyeUITests.ShutongTests testNewVoiceNoteTidiedWithOriginalWords]' passed (17.289 seconds).
 
-CallTests.swift:54: error: -[YiyeUITests.CallTests testAskThenHangUpByWords] : XCTAssertTrue failed - 139-03-没在想：问了一句应该「在想」
+CallTests.swift:68: error: -[YiyeUITests.CallTests testAskThenHangUpByWords] : XCTAssertTrue failed - 139-06-没说挂了：挂了应该弹「Hung up」
 
-	 Executed 21 tests, with 1 failure (0 unexpected) in 575.260 (575.304) seconds
-	 Executed 21 tests, with 1 failure (0 unexpected) in 575.260 (575.316) seconds
+	 Executed 21 tests, with 1 failure (0 unexpected) in 540.085 (540.113) seconds
+	 Executed 21 tests, with 1 failure (0 unexpected) in 540.085 (540.115) seconds
 ** TEST FAILED **
