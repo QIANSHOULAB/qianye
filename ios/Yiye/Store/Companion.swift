@@ -1068,7 +1068,7 @@ extension Companion {
         if let f = firstSound { parts.append(String(format: "说完到第一声 %.1f 秒", f)) }
         if let s = spokeEnd { parts.append(String(format: "说挂掉到挂断 %.1f 秒", beepAt - s)) }
         if !parts.isEmpty { callTimes = "电话：" + parts.joined(separator: " · ") }
-        app?.show(app?.lang.t("call.hungUp") ?? "", seconds: 3)
+        app?.show(app?.lang.t("call.hungUp") ?? "", seconds: 5)
     }
 
     /// 挂了以后才到的回答：不念，存进深聊，下次接通先提一句
@@ -1129,7 +1129,7 @@ extension Companion {
                 deep = false
                 phase = .off
                 callTimes = "电话：说挂掉到挂断 0.0 秒（模拟器）"
-                app?.show(app?.lang.t("call.hungUp") ?? "", seconds: 3)
+                app?.show(app?.lang.t("call.hungUp") ?? "", seconds: 5)
                 return
             }
             lastHeard = s
