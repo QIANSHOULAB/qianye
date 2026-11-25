@@ -1,29 +1,28 @@
-# UI 测试：有红的（xcodebuild 退出码 65）
+# UI 测试：全绿
 
--[YiyeUITests.CallTests testAskThenHangUpByWords]' failed (117.450 seconds).
--[YiyeUITests.CallTests testHangUpButton]' passed (12.400 seconds).
--[YiyeUITests.CallTests testOtherWordsWithHangDontHangUp]' passed (16.289 seconds).
--[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting]' passed (25.026 seconds).
--[YiyeUITests.ListGestureTests testListeningOpensText]' passed (13.858 seconds).
--[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (26.679 seconds).
--[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (12.666 seconds).
--[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (16.197 seconds).
--[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects]' passed (28.575 seconds).
--[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange]' passed (24.359 seconds).
--[YiyeUITests.ListGestureTests testSweepMiddleScrollsNotSelects]' passed (24.479 seconds).
--[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (16.963 seconds).
--[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (17.769 seconds).
--[YiyeUITests.ListGestureTests testTapOpensNote]' passed (9.063 seconds).
--[YiyeUITests.ListenLoopTests testLoopOnlyPickedDay]' passed (38.107 seconds).
--[YiyeUITests.ShutongTalkTests testTalkDoUndoThenBye]' passed (41.743 seconds).
--[YiyeUITests.ShutongTalkTests testTrashSayNo]' passed (20.435 seconds).
--[YiyeUITests.ShutongTalkTests testTrashSayYes]' passed (20.488 seconds).
--[YiyeUITests.ShutongTalkTests testTrashSilenceKeeps]' passed (21.903 seconds).
--[YiyeUITests.ShutongTests testChatReceiptThenUndo]' passed (26.928 seconds).
--[YiyeUITests.ShutongTests testNewVoiceNoteTidiedWithOriginalWords]' passed (19.066 seconds).
+-[YiyeUITests.CallTests testAskThenHangUpByWords]' passed (86.027 seconds).
+-[YiyeUITests.CallTests testHangUpButton]' passed (10.581 seconds).
+-[YiyeUITests.CallTests testOtherWordsWithHangDontHangUp]' passed (28.680 seconds).
+-[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting]' passed (29.622 seconds).
+-[YiyeUITests.ListGestureTests testListeningOpensText]' passed (13.125 seconds).
+-[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (26.958 seconds).
+-[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (14.150 seconds).
+-[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (16.624 seconds).
+-[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects]' passed (31.071 seconds).
+-[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange]' passed (26.110 seconds).
+-[YiyeUITests.ListGestureTests testSweepMiddleScrollsNotSelects]' passed (25.173 seconds).
+-[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (17.774 seconds).
+-[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (17.055 seconds).
+-[YiyeUITests.ListGestureTests testTapOpensNote]' passed (19.962 seconds).
+-[YiyeUITests.ListenLoopTests testLoopOnlyPickedDay]' passed (37.364 seconds).
+-[YiyeUITests.ShutongTalkTests testTalkDoUndoThenBye]' passed (27.262 seconds).
+-[YiyeUITests.ShutongTalkTests testTrashSayNo]' passed (25.184 seconds).
+-[YiyeUITests.ShutongTalkTests testTrashSayYes]' passed (25.318 seconds).
+-[YiyeUITests.ShutongTalkTests testTrashSilenceKeeps]' passed (21.439 seconds).
+-[YiyeUITests.ShutongTests testChatReceiptThenUndo]' passed (26.993 seconds).
+-[YiyeUITests.ShutongTests testNewVoiceNoteTidiedWithOriginalWords]' passed (20.849 seconds).
 
-CallTests.swift:55: error: -[YiyeUITests.CallTests testAskThenHangUpByWords] : XCTAssertTrue failed - 139-03-没在想：问了一句应该「在想」
 
-	 Executed 21 tests, with 1 failure (0 unexpected) in 550.444 (550.469) seconds
-	 Executed 21 tests, with 1 failure (0 unexpected) in 550.444 (550.473) seconds
-** TEST FAILED **
+	 Executed 21 tests, with 0 failures (0 unexpected) in 547.320 (547.348) seconds
+	 Executed 21 tests, with 0 failures (0 unexpected) in 547.320 (547.351) seconds
+** TEST SUCCEEDED **
