@@ -69,7 +69,12 @@ final class Companion {
     @ObservationIgnored fileprivate var pingTimer: Timer?
     @ObservationIgnored fileprivate var whoID: String?
     @ObservationIgnored fileprivate var vpReady = false
-    @ObservationIgnored fileprivate var rebuilding = false
+    /// 170：管这一场的耳朵（开、该重开才重开、开不起来再试、回声消除的退路、一分钟里重开太多回就停）
+    @ObservationIgnored fileprivate var keeper: EarKeeper<Ear>?
+    /// 170：这一回重开好了要不要说一声「话筒刚才断了，又接上了」
+    @ObservationIgnored fileprivate var tellBack = false
+    /// 在开 / 在重开耳朵
+    fileprivate var rebuilding: Bool { keeper?.busy ?? false }
     // 107 深聊
     @ObservationIgnored fileprivate var topic = DeepTopic()
     @ObservationIgnored fileprivate var limiter = TroubleLimiter()
@@ -99,8 +104,11 @@ final class Companion {
     /// 117：开口那一刻的截图先寄了没有
     enum PreState { case none, pending, sent, failed(CompanionTrouble) }
 
-    /// 开着陪玩、在听：后台也别断信箱
-    var holdsButler: Bool { ear != nil }
+    /// 开着陪玩、在听（170：在重开耳朵也算）：后台也别断信箱
+    var holdsButler: Bool { ear != nil || keeper != nil }
+
+    /// 170 诊断：现在是哪个入口
+    var diagEntry: EarDiag.Entry { callOn ? .call : deep ? .deep : (ear != nil || keeper != nil) ? .companion : .none }
 
     func setUp() {
         bell.onRing = { [weak self] name in self?.ring(name) }
@@ -149,11 +157,11 @@ final class Companion {
         let r = await LiveLink.fetch("hello")
         if case .down = r {
             if deep { live = false; return }            // 深聊不看直播
-            if live || ear != nil { liveGone() }
+            if live || ear != nil || keeper != nil { liveGone() }
             return
         }
         live = true
-        if ear == nil, !heldOff { startListening() }      // 139：陪玩开着时说了挂断词：整个陪玩停，直播还开着也不自己接着听
+        if ear == nil, keeper == nil, !heldOff { startListening() }      // 139：陪玩开着时说了挂断词：整个陪玩停，直播还开着也不自己接着听
     }
 
     private func liveGone() {
@@ -177,19 +185,31 @@ final class Companion {
 
     // ---------------------------------------------------------------- 听
     fileprivate func startListening(deep wantDeep: Bool = false, call: Bool = false) {
-        guard ear == nil, let app, app.demo == nil else { return }
+        guard ear == nil, keeper == nil, let app, app.demo == nil else { return }
         Task {
             guard await AVAudioApplication.requestRecordPermission() else {
                 self.healthLine = CompanionHealth(mic: false, live: self.live, mail: app.butler.relayUp, noise: nil, echo: false).line
                 return self.fail(.noMic, app.lang.t("companion.noMic"))
             }
-            guard self.ear == nil, self.live || wantDeep else { return }
+            guard self.ear == nil, self.keeper == nil, self.live || wantDeep else { return }
+            // 170：开耳朵在后台队列上做（不卡界面）；开不起来隔一会再试，最多 3 次，回声消除开不了就不开
+            let k = self.makeKeeper(call: call)
+            self.keeper = k
             let ear: Ear
             do {
-                ear = try self.makeEar(call: call)
+                ear = try await k.open()
             } catch {
-                return self.fail(.earFailed, error.localizedDescription)
+                guard self.keeper === k else { return }         // 开到一半被关了
+                self.keeper = nil
+                Ear.releaseSession()
+                let detail = EarText.detail(error)
+                EarText.log("开话筒", detail)
+                EarDiagSender.shared.send(EarDiag(kind: .failed, entry: wantDeep ? (call ? .call : .deep) : .companion,
+                                                  line: "开话筒：\(detail)", code: (error as NSError).code, rebuilds: 0, ignored: 0,
+                                                  echo: !k.rules.echoOff))
+                return self.fail(.earFailed, detail)
             }
+            guard self.keeper === k else { Ear.release(ear); return }
             self.ear = ear
             self.phase = .listening
             self.alert = nil
@@ -220,9 +240,23 @@ final class Companion {
         }
     }
 
-    /// 一只耳朵：话筒、门槛、嘴。开不起来抛错
-    private func makeEar(call: Bool = false) throws -> Ear {
-        let ear = Ear(call: call)
+    /// 170：这一场的耳朵管家。开、撒手都在耳朵队列上；「配置变了」交给它判（刚开的头 1.5 秒不算、引擎还在跑不动）
+    private func makeKeeper(call: Bool) -> EarKeeper<Ear> {
+        let k = EarKeeper<Ear>(.init(make: { [weak self] echo in
+            guard let self else { throw CancellationError() }
+            return try await self.makeEar(call: call, echo: echo)
+        }, release: { e, keep in
+            await Ear.later { e.stop(keepSession: keep) }
+        }, running: { $0.healthy(within: 1.0) }, startedAt: { $0.startedAt }))
+        k.onRebuilding = { [weak self] _ in self?.ear = nil }
+        k.onRebuilt = { [weak self] e, why, took in self?.rebuilt(e, why: why, took: took) }
+        k.onGaveUp = { [weak self] why, err in self?.gaveUp(why, err) }
+        return k
+    }
+
+    /// 一只耳朵：话筒、门槛、嘴。开不起来抛错（170：在耳朵队列上开）
+    private func makeEar(call: Bool, echo: Bool) async throws -> Ear {
+        let ear = Ear(call: call, echo: echo)
         ear.onStart = { [weak self] in Task { @MainActor in self?.heardStart() } }
         ear.onClip = { [weak self] wav, secs, peak, end in
             Task { @MainActor in self?.heard(wav, seconds: secs, peak: peak, spokeEnd: end) }
@@ -230,40 +264,58 @@ final class Companion {
         ear.onDrop = { [weak self] in Task { @MainActor in self?.dropped() } }
         ear.onBarge = { [weak self] in Task { @MainActor in self?.barge() } }
         ear.onProbe = { [weak self] wav in Task { @MainActor in self?.askWho(wav) } }
-        ear.onLost = { [weak self] why in Task { @MainActor in self?.rebuildEar(why, tell: false) } }
+        ear.onLost = { [weak self, weak ear] why in
+            Task { @MainActor in
+                guard let self, let ear else { return }
+                self.keeper?.configChanged(ear, why: why)        // 170：先等一等、看一眼，真停了才重开
+            }
+        }
         do {
-            try ear.start()
+            try await Ear.run { try ear.start() }
         } catch {
-            ear.stop()
+            await Ear.later { ear.stop(keepSession: true) }
             throw error
         }
         return ear
     }
 
-    /// 117 不聋：话筒被系统停了，整个耳朵重开（后台也试：音频会话还是我们的）。重开不了：念出来、变红（深聊里照旧等亮屏提示）
+    /// 117 不聋：话筒被系统停了，整个耳朵重开（后台也试：音频会话还是我们的）。重开不了：念出来、变红（深聊里照旧等亮屏提示）。
+    /// 170：重开交给 keeper：换一只新的、开不起来隔一会再试（最多 3 次）、一分钟里重开太多回就停下报错，不再在主线程上转圈
     fileprivate func rebuildEar(_ why: String, tell: Bool) {
-        guard let old = ear, !rebuilding else { return }
-        rebuilding = true
-        defer { rebuilding = false }
-        let wasDeep = deep
-        old.stop()
-        ear = nil
-        do {
-            let e = try makeEar(call: old.call)
-            e.setDeep(wasDeep)
-            ear = e
-            if phase == .speaking || phase == .hearing { phase = restPhase }
-            if current != nil, phase != .asking { dropAnswer() }       // 放到一半被打断的回答不接着放了
-            if tell { notice(.earBack) }
-        } catch {
-            if wasDeep {
-                cutByCall = true
-                alert = .deepCut
-                stopListening()
-                phase = .failed(CompanionTrouble.deepCut.words)
-            } else {
-                fail(.earLost, "\(why)：\(error.localizedDescription)")
-            }
+        guard let k = keeper, !k.busy, ear != nil else { return }
+        tellBack = tell
+        Task { await k.rebuild(why) }
+    }
+
+    /// 170：重开好了
+    private func rebuilt(_ e: Ear, why: String, took: Double) {
+        e.setDeep(deep)
+        ear = e
+        if phase == .speaking || phase == .hearing { phase = restPhase }
+        if current != nil, phase != .asking { dropAnswer() }       // 放到一半被打断的回答不接着放了
+        if tellBack { notice(.earBack) }
+        tellBack = false
+        if let k = keeper {
+            EarDiagSender.shared.send(EarDiag(kind: .rebuilt, entry: diagEntry, line: why, rebuilds: k.rules.rebuilds,
+                                              ignored: k.rules.ignored, echo: e.echo, took: took))
+        }
+    }
+
+    /// 170：重开不成（3 次都开不起来，或者一分钟里重开太多回）：念出来、变红；错误码写全
+    private func gaveUp(_ why: String, _ err: Error?) {
+        let k = keeper
+        let detail = err.map { EarText.detail($0) } ?? "一分钟里重开了 \(k?.rules.rebuilds ?? 0) 回还是不稳，先停了"
+        EarText.log(why, detail)
+        EarDiagSender.shared.send(EarDiag(kind: err == nil ? .gaveUp : .failed, entry: diagEntry, line: "\(why)：\(detail)",
+                                          code: err.map { ($0 as NSError).code }, rebuilds: k?.rules.rebuilds ?? 0,
+                                          ignored: k?.rules.ignored ?? 0, echo: !(k?.rules.echoOff ?? false)))
+        if deep {
+            cutByCall = true
+            alert = .deepCut
+            stopListening()
+            phase = .failed(CompanionTrouble.deepCut.words)
+        } else {
+            fail(.earLost, "\(why)：\(detail)")
         }
     }
 
@@ -307,8 +359,11 @@ final class Companion {
         pingTimer?.invalidate()
         pingTimer = nil
         if deep { dropDeep() }
-        ear?.stop()
+        let k = keeper
+        keeper = nil
+        let old = k?.close() ?? ear                      // 170：在重开的那只也一起停
         ear = nil
+        if let old { Ear.release(old) }
         if let id = current { app?.butler.forgetLook(id) }
         current = nil
         clock = nil
@@ -695,15 +750,24 @@ final class Companion {
     /// 念一句。在听就走耳朵；耳朵没开就直接放。念完：接着听 / 不管 / 撒手话筒
     fileprivate func say(_ words: String, after: After) {
         guard ear != nil else {
-            if let d = line(words) {
-                try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
-                try? AVAudioSession.sharedInstance().setActive(true)
-                lineMouth = try? AVAudioPlayer(data: d)
-                if lineMouth?.play() == true { return }
+            // 170：耳朵刚停（在耳朵队列上停、放掉会话）：开放的会话也排在那条队列上，停完再开，念的这句不会被放会话掐掉
+            let d = line(words)
+            Ear.queue.async {
+                if d != nil {
+                    try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+                    try? AVAudioSession.sharedInstance().setActive(true)
+                }
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    if let d {
+                        self.lineMouth = try? AVAudioPlayer(data: d)
+                        if self.lineMouth?.play() == true { return }
+                    }
+                    let u = AVSpeechUtterance(string: words)
+                    u.voice = PhoneVoice.bestVoice("zh-CN")
+                    self.mouth.speak(u)
+                }
             }
-            let u = AVSpeechUtterance(string: words)
-            u.voice = PhoneVoice.bestVoice("zh-CN")
-            mouth.speak(u)
             return
         }
         speakLine(words, started: {}, done: { [weak self] in
@@ -1257,6 +1321,10 @@ final class Once: @unchecked Sendable {
 final class Ear: @unchecked Sendable {
     /// 139：电话耳朵（不跟别家的声音混：歌停，挂了接着放；戴蓝牙耳机用耳机的麦）
     let call: Bool
+    /// 170：这只开不开回声消除（开了出事的退路：不开，陪玩照样能用）
+    let wantEcho: Bool
+    /// 170：开起来的那一刻（systemUptime）；头 1.5 秒里来的「配置变了」不算掉线
+    private(set) var startedAt: Double = 0
     private var deaf = false
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
@@ -1290,7 +1358,35 @@ final class Ear: @unchecked Sendable {
     /// 117：系统把引擎停了 / 换了配置（换耳机）
     var onLost: (@Sendable (String) -> Void)?
 
-    init(call: Bool = false) { self.call = call }
+    init(call: Bool = false, echo: Bool = true) { self.call = call; self.wantEcho = echo }
+
+    /// 170：开、停耳朵都放在这条后台队列上（setActive、开回声消除、起引擎一回几百毫秒到一秒多，以前在主线程上做，界面跟着卡）。
+    /// 一条串行队列：停老的、开新的不会交叉
+    static let queue = DispatchQueue(label: "lab.qianshou.yiye.ear", qos: .userInitiated)
+
+    /// 在耳朵队列上做一件会抛错的事，等它做完
+    static func run<T>(_ f: @escaping @Sendable () throws -> T) async throws -> T {
+        try await withCheckedThrowingContinuation { (c: CheckedContinuation<T, Error>) in
+            queue.async { c.resume(with: Result { try f() }) }
+        }
+    }
+
+    /// 在耳朵队列上做一件不抛错的事，等它做完
+    static func later(_ f: @escaping @Sendable () -> Void) async {
+        await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
+            queue.async { f(); c.resume() }
+        }
+    }
+
+    /// 这一场结束：在耳朵队列上停掉、放掉会话（不在主线程上等；后面要念一句的，也排到这条队列上开会话，不会跟放会话撞上）
+    static func release(_ ear: Ear) {
+        queue.async { ear.stop() }
+    }
+
+    /// 170：开不起来以后会话还开着：放掉（别家的歌接着放）
+    static func releaseSession() {
+        queue.async { try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation) }
+    }
 
     /// 门槛现在的底噪（dBFS）
     var noise: Double {
@@ -1323,16 +1419,23 @@ final class Ear: @unchecked Sendable {
         }
         try s.setActive(true)
         let input = engine.inputNode
-        do {
-            try input.setVoiceProcessingEnabled(true)
-            if !call {
-                input.voiceProcessingOtherAudioDuckingConfiguration = AVAudioVoiceProcessingOtherAudioDuckingConfiguration(
-                    enableAdvancedDucking: true, duckingLevel: .mid)
+        if wantEcho {
+            do {
+                try input.setVoiceProcessingEnabled(true)
+                if !call {
+                    input.voiceProcessingOtherAudioDuckingConfiguration = AVAudioVoiceProcessingOtherAudioDuckingConfiguration(
+                        enableAdvancedDucking: true, duckingLevel: .mid)
+                }
+                echo = true
+            } catch {
+                echo = false        // 没有回声消除也照样能用：放回答时只认更响的插嘴
             }
-            echo = true
-        } catch {
-            echo = false        // 没有回声消除也照样能用：放回答时只认更响的插嘴
+        } else {
+            echo = false            // 170 退路：这一场回声消除一开就出事，不开了
         }
+        // 170：话筒这会儿没有格式（换路由换到一半、模拟器没话筒）：装 tap 会直接崩，先当开不起来
+        let inFormat = input.outputFormat(forBus: 0)
+        guard inFormat.sampleRate > 0, inFormat.channelCount > 0 else { throw EarError.noInput(inFormat.sampleRate, Int(inFormat.channelCount)) }
         engine.attach(player)
         engine.connect(player, to: engine.mainMixerNode, format: playFormat)
         input.installTap(onBus: 0, bufferSize: 1024, format: nil) { [weak self] buf, _ in self?.hear(buf) }
@@ -1341,6 +1444,7 @@ final class Ear: @unchecked Sendable {
         lock.lock()
         running = true
         lastBuffer = ProcessInfo.processInfo.systemUptime
+        startedAt = lastBuffer
         cutter.gate.strictFloor = echo ? -38 : -25        // 117：没有回声消除，自己放的声音也进话筒：插嘴要更响
         lock.unlock()
         configObserver = NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: engine, queue: nil) { [weak self] _ in
@@ -1371,7 +1475,8 @@ final class Ear: @unchecked Sendable {
         }
     }
 
-    func stop() {
+    /// keepSession（170）：重开时不放掉音频会话（一放一开，系统又改一遍格式、又喊「配置变了」）
+    func stop(keepSession: Bool = false) {
         if let o = configObserver { NotificationCenter.default.removeObserver(o) }
         configObserver = nil
         lock.lock()
@@ -1384,7 +1489,16 @@ final class Ear: @unchecked Sendable {
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
         synth.stopSpeaking(at: .immediate)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        if !keepSession { try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation) }
+    }
+
+    enum EarError: LocalizedError {
+        case noInput(Double, Int)
+        var errorDescription: String? {
+            switch self {
+            case .noInput(let rate, let ch): return "话筒这会儿没有声音格式（\(Int(rate)) Hz、\(ch) 声道）"
+            }
+        }
     }
 
     /// 139 挂了：话筒马上不听（引擎还转着，把嘟嘟放完）

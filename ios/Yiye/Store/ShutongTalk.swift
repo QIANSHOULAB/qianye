@@ -35,7 +35,10 @@ final class ShutongTalker {
     @ObservationIgnored private var nodTask: Task<Void, Never>?
     @ObservationIgnored private var vpReady = false
     @ObservationIgnored private var whoID: String?
-    @ObservationIgnored private var rebuilding = false
+    /// 170：这一场的耳朵管家（跟陪玩同一套：「配置变了」先等一等再看、开不起来再试、回声消除退路、重开太多回就停）
+    @ObservationIgnored private var keeper: EarKeeper<Ear>?
+    @ObservationIgnored private var tellBack = false
+    private var rebuilding: Bool { keeper?.busy ?? false }
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
     /// 念完这一句以后接着干的（念完问句开始等点头、念完「好，回去打字」退出）
     @ObservationIgnored private var afterSpeak: (() -> Void)?
@@ -63,11 +66,21 @@ final class ShutongTalker {
         }
         Task {
             guard await AVAudioApplication.requestRecordPermission() else { app.show(self.t("shutong.micDenied")); return }
-            guard self.phase == .off else { return }
+            guard self.phase == .off, self.keeper == nil else { return }
+            let k = self.makeKeeper()
+            self.keeper = k
             do {
-                self.ear = try self.makeEar()
+                let e = try await k.open()                       // 170：在耳朵队列上开（不卡界面），最多试 3 次
+                guard self.keeper === k, self.phase == .off else { Ear.release(e); return }
+                self.ear = e
             } catch {
-                app.show(app.lang.f("shutong.micFailed", error.localizedDescription))
+                guard self.keeper === k else { return }
+                self.keeper = nil
+                Ear.releaseSession()
+                let detail = EarText.detail(error)
+                EarText.log("小书童开话筒", detail)
+                EarDiagSender.shared.send(EarDiag(kind: .failed, entry: .shutong, line: "开话筒：\(detail)", code: (error as NSError).code))
+                app.show(app.lang.f("shutong.micFailed", detail))
                 return
             }
             self.phase = .listening
@@ -114,8 +127,11 @@ final class ShutongTalker {
         afterSpeak = nil
         for o in observers { NotificationCenter.default.removeObserver(o) }
         observers = []
-        ear?.stop()
+        let k = keeper
+        keeper = nil
+        let old = k?.close() ?? ear                          // 170：在重开的那只也一起停
         ear = nil
+        if let old { Ear.release(old) }
         if let cur = current {
             app?.butler.forgetTalk(cur.rid)
             m.talkSet(cur.line, state: "failed")
@@ -131,6 +147,11 @@ final class ShutongTalker {
 
     /// 锁屏、切走（AppModel 在退到后台时叫）：停，回来接着打字
     func wentAway() {
+        if !on, let k = keeper {                                // 170：话筒还在开（没开好）就切走了：不开了
+            keeper = nil
+            if let e = k.close() { Ear.release(e) }
+            return
+        }
         guard on else { return }
         teardown()
         m.talkNote(t("shutong.talkAway"))
@@ -145,18 +166,56 @@ final class ShutongTalker {
     }
 
     // ---------------------------------------------------------------- 耳朵
-    private func makeEar() throws -> Ear {
-        let ear = Ear()
+    /// 170：耳朵管家（跟陪玩同一套）
+    private func makeKeeper() -> EarKeeper<Ear> {
+        let k = EarKeeper<Ear>(.init(make: { [weak self] echo in
+            guard let self else { throw CancellationError() }
+            return try await self.makeEar(echo: echo)
+        }, release: { e, keep in
+            await Ear.later { e.stop(keepSession: keep) }
+        }, running: { $0.healthy(within: 1.0) }, startedAt: { $0.startedAt }))
+        k.onRebuilding = { [weak self] _ in self?.ear = nil }
+        k.onRebuilt = { [weak self] e, why, took in
+            guard let self else { return }
+            self.ear = e
+            if self.phase == .speaking || self.phase == .hearing { self.phase = .listening }
+            if self.tellBack { self.speakFixed(CompanionTrouble.earBack.words) }
+            self.tellBack = false
+            if let k = self.keeper {
+                EarDiagSender.shared.send(EarDiag(kind: .rebuilt, entry: .shutong, line: why, rebuilds: k.rules.rebuilds,
+                                                  ignored: k.rules.ignored, echo: e.echo, took: took))
+            }
+        }
+        k.onGaveUp = { [weak self] why, err in
+            guard let self else { return }
+            let detail = err.map { EarText.detail($0) } ?? "一分钟里重开了 \(self.keeper?.rules.rebuilds ?? 0) 回还是不稳，先停了"
+            EarText.log(why, detail)
+            EarDiagSender.shared.send(EarDiag(kind: err == nil ? .gaveUp : .failed, entry: .shutong, line: "\(why)：\(detail)",
+                                              code: err.map { ($0 as NSError).code }, rebuilds: self.keeper?.rules.rebuilds ?? 0,
+                                              ignored: self.keeper?.rules.ignored ?? 0, echo: !(self.keeper?.rules.echoOff ?? false)))
+            self.app?.show(CompanionTrouble.earLost.words + "：" + why + "：" + detail, seconds: 6)
+            self.teardown()
+        }
+        return k
+    }
+
+    private func makeEar(echo: Bool) async throws -> Ear {
+        let ear = Ear(echo: echo)
         ear.onStart = { [weak self] in Task { @MainActor in self?.heardStart() } }
         ear.onClip = { [weak self] wav, secs, _, end in Task { @MainActor in self?.heard(wav, seconds: secs, spokeEnd: end) } }
         ear.onDrop = { [weak self] in Task { @MainActor in self?.dropped() } }
         ear.onBarge = { [weak self] in Task { @MainActor in self?.barge() } }
         ear.onProbe = { [weak self] wav in Task { @MainActor in self?.askWho(wav) } }
-        ear.onLost = { [weak self] why in Task { @MainActor in self?.rebuild(why, tell: false) } }
+        ear.onLost = { [weak self, weak ear] why in
+            Task { @MainActor in
+                guard let self, let ear else { return }
+                self.keeper?.configChanged(ear, why: why)        // 170：先等一等、看一眼，真停了才重开
+            }
+        }
         do {
-            try ear.start()
+            try await Ear.run { try ear.start() }
         } catch {
-            ear.stop()
+            await Ear.later { ear.stop(keepSession: true) }
             throw error
         }
         return ear
@@ -164,19 +223,9 @@ final class ShutongTalker {
 
     /// 不聋：话筒被系统停了（来电、Siri、换耳机、媒体服务重置）：整只耳朵重开；重开不了念出来、退出
     private func rebuild(_ why: String, tell: Bool) {
-        guard let old = ear, !rebuilding else { return }
-        rebuilding = true
-        defer { rebuilding = false }
-        old.stop()
-        ear = nil
-        do {
-            ear = try makeEar()
-            if phase == .speaking || phase == .hearing { phase = .listening }
-            if tell { speakFixed(CompanionTrouble.earBack.words) }
-        } catch {
-            app?.show(CompanionTrouble.earLost.words + "：" + error.localizedDescription, seconds: 6)
-            teardown()
-        }
+        guard let k = keeper, !k.busy, ear != nil else { return }
+        tellBack = tell
+        Task { await k.rebuild(why) }
     }
 
     private func observe() {

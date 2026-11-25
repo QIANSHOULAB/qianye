@@ -726,6 +726,15 @@ final class ButlerService {
         }
     }
 
+    /// 170 诊断：说话的功能出错、界面卡了：一封 look-check（diag=1），大管家记日志、存 logs/yiye-diag.jsonl，不回信。
+    /// 大管家不在线也留在信箱里（不撤），等它上线再看
+    func sendDiag(_ d: EarDiag) {
+        if mail == nil { connectMail() }
+        guard let mail, app?.demo == nil else { return }
+        let req = ButlerRequest.yiyeDiag(id: UUID().uuidString, diag: d, at: ISOTime.string(Date()), app: ButlerService.appVersion)
+        Task { _ = try? await mail.send(.request(req), timeout: 15) }
+    }
+
     /// 进了深聊（107）：叫大管家把耳朵装上（不回信）
     func deepWarm() {
         if mail == nil { connectMail() }

@@ -91,6 +91,7 @@ final class AppModel {
         companion.app = self
         ShutongModel.shared.app = self                      // 136 书童
         ShutongTalker.shared.app = self                     // 137 书童开口说
+        EarDiagSender.shared.app = self                     // 170 说话出错、界面卡：诊断寄给大管家
         if let demo {
             Demo.seed(self, demo)
         } else {
@@ -113,7 +114,9 @@ final class AppModel {
         case .active:
             if demo == nil { purgeTrashed(); cleanHeard(); ShutongModel.shared.showUnread() }   // 158：大管家的话没看的先弹
             butler.start()
+            if demo == nil { StallWatch.shared.start() }    // 170：界面卡没卡
         case .background:
+            StallWatch.shared.stop()
             ShutongTalker.shared.wentAway()                  // 137：切走了，开口说停（回来接着打字）
             try? context.save()
             butler.keepFlush(all: true)                      // 111：退到后台前，该抄给电脑的马上寄（写字页里的也算）
