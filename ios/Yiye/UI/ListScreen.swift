@@ -983,12 +983,38 @@ final class NoteListSwipe: UIPanGestureRecognizer, UIGestureRecognizerDelegate {
     func gestureRecognizerShouldBegin(_ g: UIGestureRecognizer) -> Bool {
         guard g === self, let cv = list else { return true }
         let tr = translation(in: cv)
-        guard SwipeTrash.begins(dx: Double(tr.x), dy: Double(tr.y), selecting: selecting, swipeOpen: Self.swipeOpen(cv)) else { return false }
+        let open = Self.swipeOpen(cv)
+        guard SwipeTrash.begins(dx: Double(tr.x), dy: Double(tr.y), selecting: selecting, swipeOpen: open) else {
+            debug(String(format: "no: dx %.0f dy %.0f sel %d open %d", tr.x, tr.y, selecting ? 1 : 0, open ? 1 : 0))
+            return false
+        }
         let p = location(in: cv)
-        guard let c = cellAt(CGPoint(x: p.x - tr.x, y: p.y - tr.y)), let id = RowTagView.find(in: c)?.noteID else { return false }
+        guard let c = cellAt(CGPoint(x: p.x - tr.x, y: p.y - tr.y)), let id = RowTagView.find(in: c)?.noteID else { debug("no: cell"); return false }
         cell = c
         noteID = id
+        debug("begin")
         return true
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesBegan(touches, with: event)
+        debug("touch")
+    }
+
+    /// UI 测试看得到的一行（只在 -YiyeDemo 下）：这个识别器最近一次为什么起 / 不起手
+    private static var tag: UILabel?
+    private func debug(_ why: String) {
+        guard UserDefaults.standard.bool(forKey: "YiyeDemo"), let w = list?.window else { return }
+        if Self.tag == nil || Self.tag?.window !== w {
+            let l = UILabel(frame: CGRect(x: 0, y: 0, width: 2, height: 2))
+            l.alpha = 0.02
+            l.isUserInteractionEnabled = false
+            l.accessibilityIdentifier = "swipe.debug"
+            w.addSubview(l)
+            Self.tag = l
+        }
+        Self.tag?.text = why
+        Self.tag?.accessibilityLabel = why
     }
 
     /// 截图用（Demo 画面 swipe-in / swipe-out）：第二条纸条停在拖到一半（YiyeSwipeDemo = 纸条宽的几成）的样子
@@ -1035,6 +1061,7 @@ final class NoteListSwipe: UIPanGestureRecognizer, UIGestureRecognizerDelegate {
         case .changed:
             follow(c, dx)
         case .ended:
+            debug(String(format: "ended dx %.0f of %.0f", dx, c.bounds.width))
             if track.release(Double(dx)) { flyOut(c) } else { snapBack(c) }
         default:
             snapBack(c)

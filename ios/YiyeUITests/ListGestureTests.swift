@@ -94,9 +94,9 @@ final class ListGestureTests: XCTestCase {
         launch()
         let r = row("Tomorrow")
         drag(r, 0.8)                                        // 160：拖过七成松手就扔，不点任何按钮
-        check(r.waitForNonExistence(timeout: 4), "03-右滑八成没扔掉", "拖到八成松手以后这条还在列表里")
+        check(r.waitForNonExistence(timeout: 4), "03-右滑八成没扔掉", "拖到八成松手以后这条还在列表里（\(lastSwipe)）")
         let undo = app.buttons["Undo"]
-        check(undo.waitForExistence(timeout: 3), "03-没有撤销", "扔了以后底下没出「Undo」")
+        check(undo.waitForExistence(timeout: 3), "03-没有撤销", "扔了以后底下没出「Undo」（右滑：\(lastSwipe)）")
         undo.tap()
         check(row("Tomorrow").waitForExistence(timeout: 4), "03-撤销没拿回来", "点了 Undo 这条没回来")
     }
@@ -150,7 +150,13 @@ final class ListGestureTests: XCTestCase {
         let from = r.coordinate(withNormalizedOffset: CGVector(dx: fromX, dy: 0.5))
         let to = from.withOffset(CGVector(dx: r.frame.width * frac, dy: 0))
         from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .slow, thenHoldForDuration: 0.2)
+        lastSwipe = app.staticTexts["swipe.debug"].exists ? app.staticTexts["swipe.debug"].label : "（右滑识别器一次都没碰到）"
+        print("160 swipe: \(lastSwipe)")
     }
+
+    /// 右滑识别器最近一次为什么起 / 不起手（App 里只在 -YiyeDemo 下记）
+    private var lastSwipe = ""
+
 
     private func spot(_ r: XCUIElement, x: CGFloat = 24, mid: Bool = false) -> XCUICoordinate {
         mid ? r.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5))
@@ -235,7 +241,7 @@ final class ListGestureTests: XCTestCase {
         launch()
         let r = row("Tomorrow")
         drag(r, 0.55)
-        check(r.waitForExistence(timeout: 2) && r.exists, "160-1-五成五扔了", "拖到五成五松手，这条不该扔")
+        check(r.waitForExistence(timeout: 2) && r.exists, "160-1-五成五扔了", "拖到五成五松手，这条不该扔（右滑：\(lastSwipe)）")
         check(!app.buttons["Trash"].exists, "160-2-停成了半开", "线内松手应该弹回去，不该露出「Trash」等着点")
         sleep(1)
         check(r.isHittable, "160-3-没弹回来", "线内松手以后这条点不着（没弹回原位）")
