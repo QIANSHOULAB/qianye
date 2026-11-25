@@ -1,18 +1,22 @@
-# UI 测试：全绿
+# UI 测试：有红的（xcodebuild 退出码 65）
 
--[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting]' passed (35.093 seconds).
--[YiyeUITests.ListGestureTests testListeningOpensText]' passed (19.198 seconds).
--[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (30.366 seconds).
--[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (16.624 seconds).
--[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (85.307 seconds).
--[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects]' passed (29.698 seconds).
--[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange]' passed (27.149 seconds).
--[YiyeUITests.ListGestureTests testSweepMiddleScrollsNotSelects]' passed (27.057 seconds).
--[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (16.725 seconds).
--[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (17.017 seconds).
--[YiyeUITests.ListGestureTests testTapOpensNote]' passed (16.181 seconds).
+-[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting]' passed (53.646 seconds).
+-[YiyeUITests.ListGestureTests testListeningOpensText]' passed (11.556 seconds).
+-[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (27.924 seconds).
+-[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (20.088 seconds).
+-[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (16.951 seconds).
+-[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects]' passed (29.481 seconds).
+-[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange]' passed (20.425 seconds).
+-[YiyeUITests.ListGestureTests testSweepMiddleScrollsNotSelects]' passed (26.029 seconds).
+-[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (16.906 seconds).
+-[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (17.564 seconds).
+-[YiyeUITests.ListGestureTests testTapOpensNote]' passed (11.292 seconds).
+-[YiyeUITests.ShutongTests testChatReceiptThenUndo]' failed (21.688 seconds).
+-[YiyeUITests.ShutongTests testNewVoiceNoteTidiedWithOriginalWords]' failed (23.525 seconds).
 
+ShutongTests.swift:62: error: -[YiyeUITests.ShutongTests testChatReceiptThenUndo] : XCTAssertTrue failed - S1-标题没改：列表里没有书童起的标题「Lunch with the team」
+ShutongTests.swift:76: error: -[YiyeUITests.ShutongTests testNewVoiceNoteTidiedWithOriginalWords] : XCTAssertTrue failed - S2-没收拾：新录的语音便签没被收拾成「Coolant and the new blade」
 
-	 Executed 11 tests, with 0 failures (0 unexpected) in 320.416 (320.428) seconds
-	 Executed 11 tests, with 0 failures (0 unexpected) in 320.416 (320.434) seconds
-** TEST SUCCEEDED **
+	 Executed 13 tests, with 2 failures (0 unexpected) in 297.075 (297.091) seconds
+	 Executed 13 tests, with 2 failures (0 unexpected) in 297.075 (297.099) seconds
+** TEST FAILED **
