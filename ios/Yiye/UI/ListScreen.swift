@@ -60,6 +60,10 @@ struct ListScreen: View {
                 ToolboxButton(trigger: broadcast) {
                     withAnimation(.easeOut(duration: 0.2)) { showTools.toggle() }
                 }
+                // 136 书童：一点，从下面升起半屏聊天窗
+                Button { ShutongModel.shared.open = true } label: { Image(systemName: "studentdesk") }
+                    .buttonStyle(SmartButtonStyle())
+                    .accessibilityLabel(t.t("shutong.name"))
             } center: {
                 Button { showFolders = true } label: {
                     HStack(spacing: 5) {
@@ -101,6 +105,11 @@ struct ListScreen: View {
             }
 
             SearchField(text: $query, placeholder: t.t("list.search"))
+
+            if !selecting, let slip = ShutongModel.shared.slip {              // 136：周日的清理建议，不点就当没看见
+                ShutongSlip(slip: slip)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
 
             if app.showMirrorPrompt {
                 MirrorPrompt(choose: { showMirrorPicker = true }, skip: {
@@ -358,6 +367,8 @@ struct ListScreen: View {
             app.companion.toggleDeep()
         case .dove:
             DoveModel.shared.open = true             // 128：飞鸽传书（RootView 里的 sheet）
+        case .shutong:
+            ShutongModel.shared.open = true          // 136：书童（RootView 里的 sheet）
         }
     }
 

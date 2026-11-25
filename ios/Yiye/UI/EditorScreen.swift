@@ -14,6 +14,8 @@ struct EditorScreen: View {
     @State private var showCamera = false
     /// 原图从顶栏下面展开，占上半屏（123）
     @State private var showPanel = false
+    /// 原话（136 书童收拾之前那一版）从顶栏下面展开
+    @State private var showSpoken = false
     /// 相册里挑的：插进正文的图 / 要认字的图
     @State private var insertItem: PhotosPickerItem?
     @State private var ocrItem: PhotosPickerItem?
@@ -28,7 +30,7 @@ struct EditorScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            SmartBar(centerInset: note?.originalPaths.isEmpty == false ? 150 : 104) {
+            SmartBar(centerInset: barInset) {
                 Button { close() } label: {
                     HStack(spacing: 2) {
                         Image(systemName: "chevron.left").font(.system(size: 14, weight: .semibold))
@@ -52,6 +54,13 @@ struct EditorScreen: View {
                         .accessibilityLabel(t.t("editor.original"))
                         .accessibilityAddTraits(showPanel ? .isSelected : [])
                 }
+                // 书童收拾过的语音便签：一个「原话」按钮，点一下看原样，能一键换回（136）
+                if note?.spoken.isEmpty == false {
+                    Button { withAnimation(.easeOut(duration: 0.24)) { showSpoken.toggle() } } label: { Image(systemName: "quote.bubble") }
+                        .buttonStyle(SmartButtonStyle(prominent: showSpoken))
+                        .accessibilityLabel(t.t("editor.spoken"))
+                        .accessibilityAddTraits(showSpoken ? .isSelected : [])
+                }
                 Button { flush(); showShare = true } label: { Image(systemName: "paperplane") }
                     .buttonStyle(SmartButtonStyle())
                     .accessibilityLabel(t.t("share.title"))
@@ -60,6 +69,11 @@ struct EditorScreen: View {
 
             if showPanel, let note, !note.originalPaths.isEmpty {
                 OriginalPanel(paths: note.originalPaths, compact: focused)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+
+            if showSpoken, let note, !note.spoken.isEmpty {
+                SpokenPanel(note: note, compact: focused, swapBack: useSpoken)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
 
@@ -182,6 +196,12 @@ struct EditorScreen: View {
                 controller.focus()
             }
         }
+        if app.demo?.screen == "spoken" {                                                            // 截图用：原话展开
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                withAnimation { showSpoken = true }
+            }
+        }
         if let d = app.demo, ["original", "original-focus", "markdown-focus"].contains(d.screen) {     // 截图用
             let screen = d.screen
             Task { @MainActor in
@@ -227,6 +247,24 @@ struct EditorScreen: View {
         note.markdown = cur.markdown
         note.unsure = unsure
         app.changed(note)
+    }
+
+    /// 顶栏中间日期左右让出多少：右边按钮越多让得越多
+    private var barInset: CGFloat {
+        var n = 0
+        if note?.originalPaths.isEmpty == false { n += 1 }
+        if note?.spoken.isEmpty == false { n += 1 }
+        return n == 0 ? 104 : (n == 1 ? 150 : 190)
+    }
+
+    /// 换回原话（136）：正文换成书童收拾之前那一版
+    private func useSpoken() {
+        guard let note, !note.spoken.isEmpty else { return }
+        flush()
+        note.markdown = note.spoken
+        note.unsure = ""
+        app.changed(note)
+        controller.load(markdown: note.markdown, unsure: [])
     }
 
     private func close() {

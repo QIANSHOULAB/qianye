@@ -36,6 +36,8 @@ final class ButlerService {
     @ObservationIgnored private var looks: Set<String> = []
     /// 飞鸽传书（128）：在等回信的请求 id（只在内存里）
     @ObservationIgnored private var doves: Set<String> = []
+    /// 书童（136）：在等回信的请求 id（app 被杀过也认：回信带 stage=shutong）
+    @ObservationIgnored private var shutongs: Set<String> = []
     /// 备用信箱（130）：谷歌那根管子
     let backup = BackupCoordinator()
     /// 办过的信封号（两条管子可能各来一份：只办一次）
@@ -176,7 +178,8 @@ final class ButlerService {
                 if a.simplify == .working, let f = a.simplifyID { articles[f] = n.id }
             }
         }
-        var action = MailAction.decide(env, waiting: waiting, dubbing: dubbing, words: words.requestIDs, looks: looks, keeps: Set(keepWait.keys), articles: Set(articles.keys), doves: doves)
+        var action = MailAction.decide(env, waiting: waiting, dubbing: dubbing, words: words.requestIDs, looks: looks, keeps: Set(keepWait.keys), articles: Set(articles.keys), doves: doves,
+                                       shutongs: shutongs.union(ShutongModel.shared.waitingIDs))
         if action == .later, let ch = app.mirror.channel, let a = env.delivery?.audio {
             // 信里没带录音：去 iCloud 镜像里找（后台读，占位的要等它下载）
             let data: Data? = await withCheckedContinuation { c in
@@ -215,6 +218,10 @@ final class ButlerService {
             return true
         case .article(let r):
             if let nid = articles[r.id] { app.articleReply(r, nid) }
+            return true
+        case .shutong(let r):                               // 136 书童：动作、一句话；按住说话认出的字
+            shutongs.remove(r.id)
+            ShutongModel.shared.answer(r)
             return true
         case .deliver(let d, let audio):
             app.addDelivery(d, audio: audio)
@@ -617,6 +624,22 @@ final class ButlerService {
         }
     }
 
+    // ---------------------------------------------------------------- 书童（136）
+    /// 寄一封书童的请求（只走信箱：大管家不在，信在信箱里等它，不撤回）。sent(false) = 信箱说两台大管家都不在
+    func sendShutong(_ req: ButlerRequest, files: [String: Data] = [:]) async -> LookSent {
+        if mail == nil { connectMail() }
+        guard let mail else { return .noPair }
+        shutongs.insert(req.id)
+        do {
+            let sent = try await mail.send(.request(req, files: files), timeout: 20)
+            rememberSeq(req.id, sent.seq)
+            return .sent(sent.pc)
+        } catch {
+            shutongs.remove(req.id)
+            return .failed((error as? MailError)?.errorDescription ?? error.localizedDescription)
+        }
+    }
+
     // ---------------------------------------------------------------- 陪玩（100）
     /// 问一句：只走信箱（晚到的回答没用，不走 iCloud）。信箱说两台大管家都不在：当场撤回，回 .sent(false)
     func sendLook(_ req: ButlerRequest, files: [String: Data]) async -> LookSent {
@@ -690,6 +713,7 @@ final class ButlerService {
     /// 看一眼：配对、心跳、在等的结果、送来的
     func look() {
         guard let app else { return }
+        ShutongModel.shared.tick()                          // 136：新便签该收拾的寄出去
         backup.hub.tick()
         checkPairing()
         keepFlush()

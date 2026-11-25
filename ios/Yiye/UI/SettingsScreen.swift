@@ -114,6 +114,21 @@ struct SettingsScreen: View {
                                 .font(.system(size: 13))
                                 .foregroundStyle(Color(Ink.text3))
                                 .fixedSize(horizontal: false, vertical: true)
+                            // 136 书童
+                            Toggle(isOn: $settings.shutongAuto) {
+                                Text(t.t("settings.shutongAuto")).font(.system(size: 16)).foregroundStyle(Color(Ink.text))
+                            }
+                            .tint(Color(Ink.accent))
+                            .frame(minHeight: 44)
+                            Text(t.t("settings.shutongAutoHint"))
+                                .font(.system(size: 13))
+                                .foregroundStyle(Color(Ink.text3))
+                                .fixedSize(horizontal: false, vertical: true)
+                            Button(t.t("shutong.clear")) {
+                                ShutongModel.shared.clearChat()
+                                app.show(t.t("shutong.cleared"))
+                            }
+                            .buttonStyle(PlainTextButtonStyle(color: Ink.text2))
                         }
                     }
 

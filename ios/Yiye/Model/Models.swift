@@ -41,6 +41,10 @@ final class Note {
     var heardAt: Date?
     /// 文章便签（kind == "article"，114）跟大管家打交道的状态（JSON）：扒正文、简写
     var article: String = ""
+    /// 原话（136 书童）：收拾口语之前那一版，一个字不丢。空 = 没收拾过
+    var spoken: String = ""
+    /// 跟书童打交道的状态（136，JSON，ShutongNoteState）：等着收拾 / 寄出去了 / 收拾过
+    var shutong: String = ""
     var folder: Folder?
 
     init() {}
@@ -66,6 +70,11 @@ final class Note {
     var articleState: ArticleState {
         get { ArticleState.decode(article) }
         set { article = newValue.encoded() }
+    }
+
+    var shutongState: ShutongNoteState {
+        get { ShutongNoteState.decode(shutong) }
+        set { shutong = newValue.encoded() }
     }
 
     var butlerState: ButlerNoteState {
@@ -104,6 +113,8 @@ final class Folder {
     var order: Int = 0
     /// 抄一份到电脑（111）：夹子里的便签改完就寄给大管家，电脑落成 md
     var toDesk: Bool = false
+    /// 书童建的（136）：自动建的超过 10 个就不再自己建
+    var auto: Bool = false
     @Relationship(deleteRule: .nullify, inverse: \Note.folder)
     var notes: [Note]? = []
 

@@ -35,6 +35,10 @@ final class Settings {
     var deskMigrated: Bool { didSet { save("yiye.deskMigrated111", deskMigrated) } }
     /// 112：整串循环（最后一条放完回到第一条）。默认关，记住
     var listenLoopAll: Bool { didSet { save("yiye.listenLoopAll", listenLoopAll) } }
+    /// 136：书童自己收拾新便签（默认开）
+    var shutongAuto: Bool { didSet { save("yiye.shutongAuto", shutongAuto) } }
+    /// 136：每周日的清理建议上次是哪一周问的（"2026-W48"）、那张纸条他关了没有
+    var shutongSweepWeek: String { didSet { save("yiye.shutongSweepWeek", shutongSweepWeek) } }
 
     init(persist: Bool) {
         self.persist = persist
@@ -53,6 +57,8 @@ final class Settings {
         listenBackfilled = persist ? d.bool(forKey: "yiye.listenBackfill088") : true
         deskMigrated = persist ? d.bool(forKey: "yiye.deskMigrated111") : true
         listenLoopAll = persist ? d.bool(forKey: "yiye.listenLoopAll") : false
+        shutongAuto = persist ? (d.object(forKey: "yiye.shutongAuto") as? Bool ?? true) : true
+        shutongSweepWeek = persist ? (d.string(forKey: "yiye.shutongSweepWeek") ?? "") : ""
     }
 
     private func save(_ key: String, _ v: Any) {

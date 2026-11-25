@@ -81,11 +81,14 @@ dove.sending	Dove taking off…
 dove.title	Dove Post
 dove.waiting	The dove is out. Waiting for the butler to write back.
 editor.back	Notes
+editor.isSpoken	This is the original.
 editor.more	More
 editor.original	Original photo
 editor.originalMissing	The original photo isn’t on this phone.
 editor.paper	Paper
+editor.spoken	Original words
 editor.toButler	Send to the butler
+editor.useSpoken	Use original words
 folders.add	Add
 folders.delete	Delete folder
 folders.deleted	Folder “%@” is gone. Its notes went back to All Notes.
@@ -203,6 +206,8 @@ settings.pairOff	Not connected yet. It links itself once the butler's set up —
 settings.pairOn	Connected. Stuff reaches the butler in seconds, encrypted the whole way.
 settings.pairPaste	Paste code
 settings.pairScan	Scan to pair
+settings.shutongAuto	Scribe tidies new notes
+settings.shutongAutoHint	Voice notes lose the ums, get a title and a folder; the original words stay. Typed and photo notes just get a title and a folder.
 settings.theme	Color
 settings.title	Settings
 settings.version	Version
@@ -215,6 +220,48 @@ share.saveFailed	Didn’t save: %@
 share.saved	Saved to Photos
 share.share	Share
 share.title	Share as image
+shutong.auto	New note
+shutong.brainFailed	The scribe fumbled that one.
+shutong.cancelled	Skipped
+shutong.clear	Clear scribe chat
+shutong.cleared	Chat cleared.
+shutong.confirm	These need your nod first:
+shutong.doIt	Do it
+shutong.done	Done
+shutong.folderCap	I’ve made 10 folders already, so this one stays in All Notes. Say the word if you want another.
+shutong.hearOffline	The butler’s away. Type it for now.
+shutong.hearTimeout	That took too long. Try again or type.
+shutong.hearing	The butler’s listening…
+shutong.hint	Your scribe, at your service. Say how to tidy: “put the machine stuff together”, “clean up a bit”. New notes get tidied on their own.
+shutong.hold	Hold to talk
+shutong.keptAfterEdit	%lld notes you edited later were left as they are.
+shutong.makeFolder	New folder: %@
+shutong.mergeInto	Merge: %1$@ → %2$@
+shutong.micBusy	Buddy mode has the mic. Turn it off first.
+shutong.micDenied	No mic access. Settings › 一叶笺 › Microphone.
+shutong.micFailed	Mic didn’t start: %@
+shutong.moveTo	Move: %1$@ → %2$@
+shutong.name	Scribe
+shutong.never	Never mind
+shutong.noAnswer	No answer. The butler may be away.
+shutong.noPair	Not paired with the butler yet. No brain, no scribe.
+shutong.notHeard	Didn’t catch that.
+shutong.nothingLeft	All crossed out. Nothing changed.
+shutong.placeholder	Tell the scribe…
+shutong.queued	The butler’s away. Your note’s in the mailbox.
+shutong.renameTo	Rename: %1$@ → %2$@
+shutong.retry	Ask again
+shutong.send	Send
+shutong.sendFailed	Couldn’t send: %@
+shutong.skipped	Skipped %lld: %@
+shutong.slipCount	%lld notes
+shutong.slipOpen	Review
+shutong.sweepTitle	The scribe thinks these can go
+shutong.thinking	Thinking…
+shutong.tidyOne	Tidy: %@
+shutong.trashIt	Toss them
+shutong.undo	Undo this batch
+shutong.undone	Undone. Like it never happened.
 sort.new	Newest edits
 sort.old	Oldest edits
 sort.title	Sort
@@ -225,6 +272,7 @@ toast.deleted	Deleted “%@”
 toast.undo	Undo
 tools.deep	Deep talk
 tools.dove	Dove Post
+tools.shutong	Scribe
 tools.title	Toolbox
 trash.days	%lld days left
 trash.deleteNow	Delete now

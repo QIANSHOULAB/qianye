@@ -89,6 +89,7 @@ final class AppModel {
         didStart = true
         butler.app = self
         companion.app = self
+        ShutongModel.shared.app = self                      // 136 书童
         if let demo {
             Demo.seed(self, demo)
         } else {
@@ -151,6 +152,7 @@ final class AppModel {
     func newNote() {
         let n = Note()
         n.folder = folder(UUID(uuidString: settings.folderID))
+        ShutongModel.shared.enqueue(n)                       // 136：离开写字页以后书童起标题、放文件夹（空的照旧不留）
         context.insert(n)
         try? context.save()
         freshNoteID = n.id
@@ -182,6 +184,7 @@ final class AppModel {
             n.markdown = x.markdown
             n.unsure = RangeCodec.encode(x.unsure)
             n.folder = folder(UUID(uuidString: settings.folderID))
+            ShutongModel.shared.enqueue(n)                   // 136：新便签一存下就收拾
             context.insert(n)
         }
         // 原件存成附件（不进正文），「看原图」能看
@@ -200,9 +203,12 @@ final class AppModel {
         n.modifiedAt = Date()
         try? context.save()
         mirror.saveSoon(n, attachments: attachments)
-        if (x.kind == .photo || x.kind == .voice) && settings.butlerAutoPhoto && !n.markdown.trimmed.isEmpty {
+        // 136：书童开着时，新的语音便签交给书童收拾（去口水、起标题、进文件夹，原话留着），不再走理顺；拍照的照旧理顺
+        let shutongTakes = x.kind == .voice && existing == nil && settings.shutongAuto && n.shutongState.phase == "queued"
+        if (x.kind == .photo || x.kind == .voice) && settings.butlerAutoPhoto && !n.markdown.trimmed.isEmpty && !shutongTakes {
             butler.submit(n)
         }
+        if shutongTakes { ShutongModel.shared.tick() }
         if open && existing == nil { path.append(.editor(n.id)) }
         return n
     }

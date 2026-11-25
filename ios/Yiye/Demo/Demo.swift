@@ -188,6 +188,28 @@ enum Demo {
         doneState.startSimplify(id: UUID().uuidString, now: Date().addingTimeInterval(-600))
         doneState.pieceArrived(request: doneState.simplifyID ?? "", note: (listenFirst ?? UUID()).uuidString)
         artDone.articleState = doneState
+        // 136 书童：收拾过的语音便签（原话留着）；UI 测试用的一条刚录完、等着收拾的。
+        // 只在这几个画面加，别的画面列表的顺序不变（133、135 的手势测试按行数数）
+        var tidiedID: UUID?
+        if cfg.screen == "spoken" {
+            let tidied = add(zh ? "# 下周的料\n周三前把 45 号钢的料单报给采购。\n顺便问一下刀片到了没有。"
+                                : "# Next week's stock\nSend the 45 steel order to purchasing by Wednesday.\nAsk if the inserts came in.",
+                             ago: 60 * 30, folder: work, kind: "voice")
+            tidied.spoken = zh ? "那个，就是，下周的料啊，周三前，周三之前吧，把 45 号钢的料单报给采购，嗯，然后顺便问一下刀片到了没有"
+                               : "So, um, next week's stock, by Wednesday, Wednesday-ish, send the 45 steel order to purchasing, and uh, ask if the inserts came in"
+            var tst = ShutongNoteState()
+            tst.phase = "done"
+            tidied.shutongState = tst
+            tidiedID = tidied.id
+        }
+        if cfg.screen == "shutong-auto" {
+            let raw = add(zh ? "嗯那个就是，B 线那个冷却液，冷却液快没了啊，晚班记得加一下。然后呢 3 号机下午换刀，换完以后记一下那个 VMC-850 的件数，对。"
+                             : "Um so, line B, the coolant, the coolant is low, night shift should top it up. And uh #3 gets a new blade this afternoon, after that log the VMC-850 count, yeah.",
+                          ago: 30, kind: "voice")
+            var q = ShutongNoteState()
+            q.phase = "queued"
+            raw.shutongState = q
+        }
         try? ctx.save()
 
         switch cfg.screen {
@@ -210,6 +232,7 @@ enum Demo {
             app.listening = ListenOpen(startNote: listenFirst)
         case "listen-text": app.listening = ListenOpen(startNote: listenFirst, showText: true)
         case "voice-note": app.path = [.editor(voice.id)]
+        case "spoken": if let id = tidiedID { app.path = [.editor(id)] }
         case "ocr":
             let name = zh ? "ocr-demo-zh" : "ocr-demo-en"
             if let url = Bundle.main.url(forResource: name, withExtension: "jpg"), let img = UIImage(contentsOfFile: url.path) {

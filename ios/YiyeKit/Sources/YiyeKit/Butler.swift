@@ -42,6 +42,8 @@ public struct ButlerRequest: Codable, Equatable, Sendable {
     public var name: String?
     /// ask=fb-config-ok（130）：收到了备用信箱配置，of 是那封配置的 id
     public var of: String?
+    /// ask=shutong（136 书童）：目录、文件夹、全文、聊天的前几句（见 Shutong136.swift）
+    public var shutong: ShutongAsk?
 
     /// ask：fix = 理顺（结果回 已理顺/）；speak = 配音（0.4.0 起，结果走 送来/，带 note）；word = 会了 / 不会（088，见 WordMark.swift）
     public init(id: String, note: String, kind: ButlerKind, text: String, images: [String]?, unsure: [String]?, ask: String = "fix", at: String, app: String) {
@@ -76,16 +78,19 @@ public struct ButlerResult: Codable, Equatable, Sendable {
     public var re: String?
     public var file: String?
     public var why: String?
+    /// 书童（136）：一句人话 + 一串动作 + 要看全文的便签（stage = shutong）
+    public var shutong: ShutongReply?
     public init(v: Int = 1, id: String, note: String, ok: Bool, text: String?, changes: String?, error: String?, model: String? = nil, at: String? = nil,
                 audio: String? = nil, timing: [String: Double]? = nil, host: String? = nil, heard: String? = nil,
-                stage: String? = nil, title: String? = nil, re: String? = nil, file: String? = nil, why: String? = nil) {
+                stage: String? = nil, title: String? = nil, re: String? = nil, file: String? = nil, why: String? = nil, shutong: ShutongReply? = nil) {
         self.v = v; self.id = id; self.note = note; self.ok = ok; self.text = text; self.changes = changes; self.error = error; self.model = model; self.at = at
         self.audio = audio; self.timing = timing; self.host = host; self.heard = heard
         self.stage = stage; self.title = title
         self.re = re; self.file = file; self.why = why
+        self.shutong = shutong
     }
 
-    private enum CodingKeys: String, CodingKey { case v, id, note, ok, text, changes, error, model, at, audio, timing, host, heard, stage, title, re, file, why }
+    private enum CodingKeys: String, CodingKey { case v, id, note, ok, text, changes, error, model, at, audio, timing, host, heard, stage, title, re, file, why, shutong }
 
     /// 新加的几个字段读不懂就当没有（timing 里混了不是数的，整封信不能因为它作废）
     public init(from decoder: Decoder) throws {
@@ -108,6 +113,7 @@ public struct ButlerResult: Codable, Equatable, Sendable {
         re = try? c.decodeIfPresent(String.self, forKey: .re)
         file = try? c.decodeIfPresent(String.self, forKey: .file)
         why = try? c.decodeIfPresent(String.self, forKey: .why)
+        shutong = try? c.decodeIfPresent(ShutongReply.self, forKey: .shutong)
     }
 }
 
