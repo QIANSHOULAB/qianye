@@ -349,6 +349,8 @@ public enum MailAction: Equatable, Sendable {
     case fbConfig(FbConfigLetter)
     /// 书童的回信（136）：动作、一句话；按住说话认出来的字（stage = shutong / shutong-hear）
     case shutong(ButlerResult)
+    /// 书童开口说的回信（137）：cmd、动作、配好音的一句（stage = talk）；插嘴时对声纹的回信（stage = who，id 是开口说寄的）
+    case talk(ButlerResult, audio: Data?)
     /// 送来的听力稿 / 配好的音
     case deliver(ButlerDelivery, audio: Data?)
     /// 送来的录音信里没带、本地也没有：先别 ack，下回再拿
@@ -360,11 +362,12 @@ public enum MailAction: Equatable, Sendable {
     /// localAudio：信里没带录音时去 iCloud 找
     public static func decide(_ env: MailEnvelope, waiting: [String: UUID], dubbing: [String: UUID], words: Set<String> = [],
                               looks: Set<String> = [], keeps: Set<String> = [], articles: Set<String> = [], doves: Set<String> = [],
-                              shutongs: Set<String> = [], localAudio: (String) -> Data? = { _ in nil }) -> MailAction {
+                              shutongs: Set<String> = [], talks: Set<String> = [], localAudio: (String) -> Data? = { _ in nil }) -> MailAction {
         switch env.kind {
         case .result:
             guard let r = env.result else { return .drop("result 没有 data") }
             if doves.contains(r.id) || r.stage == "key" { return .dove(r) }
+            if talks.contains(r.id) || r.stage == "talk" { return .talk(r, audio: r.audio.flatMap { env.files[$0] }) }
             if shutongs.contains(r.id) || r.stage == "shutong" || r.stage == "shutong-hear" { return .shutong(r) }
             if looks.contains(r.id) { return .look(r, audio: r.audio.flatMap { env.files[$0] }) }
             if keeps.contains(r.re ?? r.id) { return .keep(r) }

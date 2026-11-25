@@ -13,6 +13,7 @@ public enum VoiceLines {
     public static var all: [String] {
         var out = CompanionTrouble.allCases.map(\.words)
         out += [Deep.saysGot, Deep.saysEnd, Deep.saysTopic]
+        out += TalkSays.all                                   // 137 书童开口说
         var seen = Set<String>()
         return out.filter { seen.insert($0).inserted }
     }

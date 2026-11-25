@@ -257,6 +257,20 @@ shutong.skipped	%lld 个动作没做：%@
 shutong.slipCount	%lld 条
 shutong.slipOpen	过目
 shutong.sweepTitle	书童觉得这几条可以扔了
+shutong.talk	开口说
+shutong.talkAway	切走了，开口说先挂了
+shutong.talkBusy	陪玩开着，先关掉陪玩
+shutong.talkEnd	挂了
+shutong.talkFake	假装说一句
+shutong.talkFix	改字
+shutong.talkFixGo	照这个办
+shutong.talkFixTitle	听歪了？改对，照这个办
+shutong.talkHearing	你说，我听着…
+shutong.talkListening	在听。说完停一下；说「好了」就挂
+shutong.talkMissed	（没听清）
+shutong.talkSaid	说的
+shutong.talkSpeaking	书童在说，插嘴它就闭嘴
+shutong.talkThinking	书童在琢磨…
 shutong.thinking	书童在琢磨…
 shutong.tidyOne	收拾：%@
 shutong.trashIt	照扔

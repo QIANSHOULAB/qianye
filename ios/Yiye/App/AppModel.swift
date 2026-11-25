@@ -90,6 +90,7 @@ final class AppModel {
         butler.app = self
         companion.app = self
         ShutongModel.shared.app = self                      // 136 书童
+        ShutongTalker.shared.app = self                     // 137 书童开口说
         if let demo {
             Demo.seed(self, demo)
         } else {
@@ -113,6 +114,7 @@ final class AppModel {
             if demo == nil { purgeTrashed(); cleanHeard() }
             butler.start()
         case .background:
+            ShutongTalker.shared.wentAway()                  // 137：切走了，开口说停（回来接着打字）
             try? context.save()
             butler.keepFlush(all: true)                      // 111：退到后台前，该抄给电脑的马上寄（写字页里的也算）
             if !companion.holdsButler { butler.stop() }     // 陪玩在听：信箱不断（后台音频让 app 一直醒着）

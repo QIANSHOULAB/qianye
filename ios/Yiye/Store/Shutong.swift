@@ -117,13 +117,13 @@ final class ShutongModel {
                     manualPaper: n.pinnedTint != nil, pinnedBy: n.shutongState.pinnedBy)
     }
 
-    private func allFolders() -> [Folder] {
+    func allFolders() -> [Folder] {
         guard let app else { return [] }
         return ((try? app.context.fetch(FetchDescriptor<Folder>(sortBy: [SortDescriptor(\.order)]))) ?? []).filter { !$0.isListenOnly }
     }
 
     /// 现在的样子：便签（听力不算，扔了的也带上：撤销要放回）、文件夹名、书童自己建过几个
-    private func world() -> (notes: [String: ShutongNote], folders: [String], auto: Int) {
+    func world() -> (notes: [String: ShutongNote], folders: [String], auto: Int) {
         guard let app else { return ([:], [], 0) }
         var notes: [String: ShutongNote] = [:]
         for n in app.allNotes() where n.kind != "listen" { notes[n.id.uuidString] = snap(n) }
@@ -137,18 +137,18 @@ final class ShutongModel {
                     locked: n.pinnedTint != nil || (n.pinned && !n.shutongState.pinnedBy))
     }
 
-    private func folderInfo() -> [ShutongFolderInfo] {
+    func folderInfo() -> [ShutongFolderInfo] {
         allFolders().map { f in
             let live = (f.notes ?? []).filter { !$0.trashed }.sorted { $0.modifiedAt > $1.modifiedAt }
             return ShutongFolderInfo(name: f.name, auto: f.auto, count: live.count, samples: live.prefix(5).map(\.title))
         }
     }
 
-    private func history() -> [ShutongTalk] {
+    func history() -> [ShutongTalk] {
         lines.filter { $0.who == "he" || $0.who == "say" }.suffix(10).map { ShutongTalk(who: $0.who == "he" ? "he" : "shutong", text: String($0.text.prefix(400))) }
     }
 
-    private func catalog() -> [ShutongCard] {
+    func catalog() -> [ShutongCard] {
         guard let app else { return [] }
         return app.allNotes().filter { !$0.trashed && $0.kind != "listen" }.sorted { $0.modifiedAt > $1.modifiedAt }
             .prefix(ShutongModel.catalogMax).map { card($0) }
@@ -274,7 +274,7 @@ final class ShutongModel {
         let picked = (l.acts ?? []).enumerated().filter { !l.struck.contains($0.offset) }.map(\.element)
         lines[i].state = "done"
         let (notes, folders, auto) = world()
-        let c = ShutongPlan.check(picked, notes: notes, folders: folders, autoFolders: auto, mode: l.mode)
+        let c = ShutongPlan.check(picked, notes: notes, folders: folders, autoFolders: auto, mode: l.mode == "talk" ? "chat" : l.mode)
         if !c.ok.isEmpty { doBatch(c.ok, auto: false) } else { lines.append(ShutongLine(who: "note", text: t("shutong.nothingLeft"))) }
         save()
     }
@@ -383,7 +383,7 @@ final class ShutongModel {
         act(rep.acts ?? [], mode: "chat", say: (rep.say ?? r.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
-    private func fullTexts(_ ids: [String]) -> [String: String] {
+    func fullTexts(_ ids: [String]) -> [String: String] {
         guard let app else { return [:] }
         var out: [String: String] = [:]
         for s in ids.prefix(20) {
@@ -552,7 +552,7 @@ final class ShutongModel {
 
     // ---------------------------------------------------------------- 按住说话（SenseVoice 在大管家那头认）
     func startRecording() {
-        guard let app, !recording, !hearing else { return }
+        guard let app, !recording, !hearing, !ShutongTalker.shared.on else { return }
         if app.companion.holdsButler { app.show(t("shutong.micBusy")); return }
         AVAudioApplication.requestRecordPermission { ok in
             Task { @MainActor in
@@ -616,6 +616,121 @@ final class ShutongModel {
         let h = (r.heard ?? r.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard r.ok, !h.isEmpty else { app?.show(t("shutong.notHeard")); return }
         input = input.isEmpty ? h : input + " " + h                     // 认出的字先放进输入框：他看一眼、能改，再点发送
+    }
+
+    // ---------------------------------------------------------------- 137 开口说（ShutongTalker 叫）
+    /// 他说的一句先占一行（字幕）：认出字以前是「…」
+    func talkLine(rid: String) -> UUID {
+        load()
+        let l = ShutongLine(who: "he", text: "…", rid: rid, mode: "talk", state: "waiting")
+        lines.append(l)
+        save()
+        return l.id
+    }
+
+    func talkSet(_ lineID: UUID, text: String? = nil, state: String? = nil, rid: String? = nil) {
+        guard let i = lines.firstIndex(where: { $0.id == lineID }) else { return }
+        if let text { lines[i].text = text }
+        if let state { lines[i].state = state }
+        if let rid { lines[i].rid = rid }
+        save()
+    }
+
+    /// 不是他的声音：那一行拿掉
+    func talkDrop(_ lineID: UUID) {
+        lines.removeAll { $0.id == lineID }
+        save()
+    }
+
+    func talkNote(_ text: String) {
+        lines.append(ShutongLine(who: "note", text: text))
+        save()
+    }
+
+    /// 问大管家带的：目录、文件夹、聊天前几句、是不是在等他点头；第二轮带全文
+    func talkAsk(confirming: Bool, full: [String: String]? = nil) -> ShutongAsk {
+        load()
+        return ShutongAsk(mode: "talk", round: full == nil ? 1 : 2, notes: catalog(), folders: folderInfo(), full: full,
+                          history: history().dropLast().map { $0 }, autoFolders: allFolders().filter(\.auto).count, confirming: confirming)
+    }
+
+    enum TalkActed { case done(ShutongCounts, skipped: Int), confirm, nothing(skipped: Int) }
+
+    /// 大脑回的动作：跟聊天窗一样逐条查；扔、合并的列成清单等他点头（这回是嘴上点头）；别的直接做
+    func talkAct(_ acts: [ShutongAct], say: String) -> TalkActed {
+        let (notes, folders, auto) = world()
+        let c = ShutongPlan.check(acts, notes: notes, folders: folders, autoFolders: auto, mode: "chat")
+        if !say.isEmpty { lines.append(ShutongLine(who: "say", text: say)) }
+        var out = TalkActed.nothing(skipped: c.skipped.count)
+        if c.needsConfirm {
+            var l = ShutongLine(who: "confirm", text: "", acts: c.ok, state: "pending")
+            l.mode = "talk"
+            lines.append(l)
+            out = .confirm
+        } else if !c.ok.isEmpty, let b = doBatch(c.ok, auto: false) {
+            out = .done(b.counts, skipped: c.skipped.count)
+        }
+        if c.folderCapHit { lines.append(ShutongLine(who: "note", text: t("shutong.folderCap"))) }
+        if !c.skipped.isEmpty {
+            let why = Array(Set(c.skipped.map { zh ? $0.why : ShutongModel.english($0.why) })).sorted().prefix(3).joined(separator: zh ? "；" : "; ")
+            lines.append(ShutongLine(who: "note", text: app?.lang.f("shutong.skipped", c.skipped.count, why) ?? why))
+        }
+        save()
+        return out
+    }
+
+    /// 在等他嘴上点头的那张清单
+    var talkPending: UUID? { lines.last(where: { $0.who == "confirm" && $0.mode == "talk" && $0.state == "pending" })?.id }
+
+    /// 「对」：照办（划掉的不动）；「不对」、不吭声、他说了别的：不办。返回有没有在等的
+    @discardableResult
+    func talkNod(_ yes: Bool) -> Bool {
+        guard let id = talkPending else { return false }
+        if yes { confirm(id) } else { cancel(id) }
+        return true
+    }
+
+    /// 「撤销」：撤最近那一批还没撤的。返回撤没撤
+    func talkUndo() -> Bool {
+        guard let b = batches.last(where: { !$0.undone }) else { return false }
+        undo(b.id)
+        return true
+    }
+
+    /// 干一遍不落地（假大管家算回执、算要念的清单用）
+    func talkDryRun(_ acts: [ShutongAct]) -> (checked: ShutongChecked, counts: ShutongCounts) {
+        var (notes, folders, auto) = world()
+        let c = ShutongPlan.check(acts, notes: notes, folders: folders, autoFolders: auto, mode: "chat")
+        let b = ShutongApply.run(c.ok, notes: &notes, folders: &folders, now: Date(), id: "dry")
+        return (c, b.counts)
+    }
+
+    /// 假大管家（Demo）听到这一句回什么：跟聊天窗的假大脑一个路数
+    func talkFakeActs(_ said: String) -> (say: String, acts: [ShutongAct]) {
+        let z = zh
+        let text = said.lowercased()
+        let notes = catalog()
+        func find(_ words: [String]) -> String? { notes.first { n in words.contains { n.title.lowercased().contains($0) } }?.id }
+        if text.contains("扔") || text.contains("清") || text.contains("old") || text.contains("clean") || text.contains("trash") {
+            var acts: [ShutongAct] = []
+            for (w, why) in [(["旧", "old"], z ? "半年没打开" : "untouched for months"), (["读书", "reading"], z ? "很短，也没再动过" : "short and never touched again")] {
+                if let id = find(w) { acts.append(ShutongAct(op: "trash", note: id, why: why)) }
+            }
+            return (z ? "这两条看着可以扔了。" : "These two look done.", acts)
+        }
+        if text.contains("机床") || text.contains("machine") {
+            let folder = z ? "机床" : "Machines"
+            var acts = [ShutongAct(op: "folder", name: folder)]
+            if let id = find(["交接", "handover"]) { acts.append(ShutongAct(op: "move", note: id, folder: folder)) }
+            if let id = find(["周会", "weekly"]) { acts.append(ShutongAct(op: "move", note: id, folder: folder)) }
+            return (z ? "机床相关的放进『机床』了。" : "Put the machine stuff in “Machines”.", acts)
+        }
+        return (z ? "你说的是哪几条？" : "Which ones do you mean?", [])
+    }
+
+    func noteTitle(_ id: String?) -> String {
+        guard let s = id, let u = UUID(uuidString: s), let n = app?.note(u) else { return "?" }
+        return n.title.isEmpty ? t("note.untitled") : n.title
     }
 
     // ---------------------------------------------------------------- 截图、UI 测试用的假大脑（Demo）

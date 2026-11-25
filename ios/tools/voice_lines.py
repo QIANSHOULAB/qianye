@@ -1,7 +1,8 @@
 """117 一个嗓子：手机自己念的固定句子，全部用微软晓晓（zh-CN-XiaoxiaoNeural，+5%，跟大管家配回答的同一个嗓子）预先配好，
 放进 ios/Yiye/Voice/，随 App 带。
 
-句子从 Swift 里读（YiyeKit/Sources/YiyeKit/Companion.swift：CompanionTrouble.words 的每一句、Deep.says*），跟
+句子从 Swift 里读（YiyeKit/Sources/YiyeKit/Companion.swift：CompanionTrouble.words 的每一句、Deep.says*；137 起还有
+Talk137.swift 的 TalkSays），跟
 VoiceLines.all 一样；文件名 v-<FNV-1a 32 位>.mp3（跟 VoiceLines.fnv1a 一个算法）。写 lines.json（名字 -> 字），缺的配上，
 不再用的删掉。单测 Companion117Tests 查 lines.json 和录音齐不齐：字改了没重配，CI 就红。
 英文的句子（以后有了）写成 "en:" 开头，用 en-US-AvaNeural（同档的微软神经嗓）。现在手机念的都是中文。
@@ -41,6 +42,11 @@ def lines():
     for key in ("saysGot", "saysEnd", "saysTopic"):
         m = re.search(r"public static let " + key + r' = "([^"]+)"', src)
         out.append(m.group(1))
+    # 137 书童开口说：Talk137.swift 的 TalkSays（顺序照 TalkSays.all）
+    talk = open(os.path.join(os.path.dirname(SWIFT), "Talk137.swift"), encoding="utf-8").read()
+    i = talk.index("public enum TalkSays {")
+    j = talk.index("public static let all", i)
+    out += re.findall(r'public static let \w+ = "([^"]+)"', talk[i:j])
     seen, uniq = set(), []
     for t in out:
         if t not in seen:

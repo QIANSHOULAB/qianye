@@ -58,13 +58,17 @@ public struct ShutongAsk: Codable, Equatable, Sendable {
     /// 书童自己建过几个文件夹、上限几个（到了就别再建，回执里问一句）
     public var autoFolders: Int
     public var folderCap: Int
+    /// 137 开口说：上一句念了「要扔这几条，对吗？」，手机在等他点头（这一句是「对 / 不对」才算点头）
+    public var confirming: Bool?
 
     public init(mode: String, round: Int = 1, target: String? = nil, notes: [ShutongCard], folders: [ShutongFolderInfo],
-                full: [String: String]? = nil, history: [ShutongTalk]? = nil, autoFolders: Int, folderCap: Int = ShutongPlan.folderCap) {
+                full: [String: String]? = nil, history: [ShutongTalk]? = nil, autoFolders: Int, folderCap: Int = ShutongPlan.folderCap,
+                confirming: Bool? = nil) {
         self.mode = mode; self.round = round; self.target = target; self.notes = notes; self.folders = folders
         self.full = (full?.isEmpty ?? true) ? nil : full
         self.history = (history?.isEmpty ?? true) ? nil : history
         self.autoFolders = autoFolders; self.folderCap = folderCap
+        self.confirming = (confirming ?? false) ? true : nil
     }
 }
 
@@ -141,9 +145,12 @@ public struct ShutongReply: Codable, Equatable, Sendable {
     public var acts: [ShutongAct]?
     /// 要看全文的便签 id（手机再寄一轮）
     public var need: [String]?
+    /// 137 开口说：本地认出来的（undo / yes / no / bye / misheard / not-him / need，空 = 大脑回的）、信里那段配音念的是哪句
+    public var cmd: String?
+    public var spoken: String?
 
-    public init(say: String? = nil, acts: [ShutongAct]? = nil, need: [String]? = nil) {
-        self.say = say; self.acts = acts; self.need = need
+    public init(say: String? = nil, acts: [ShutongAct]? = nil, need: [String]? = nil, cmd: String? = nil, spoken: String? = nil) {
+        self.say = say; self.acts = acts; self.need = need; self.cmd = cmd; self.spoken = spoken
     }
 }
 

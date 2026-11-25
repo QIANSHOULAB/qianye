@@ -7,6 +7,7 @@ struct ShutongSheet: View {
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
     @State private var holding = false
+    @State private var fakeSay = ""
     @FocusState private var typing: Bool
 
     private var t: Lang { app.lang }
@@ -20,6 +21,7 @@ struct ShutongSheet: View {
                     .foregroundStyle(Color(Ink.accent))
                 BarTitle(text: t.t("shutong.name"))
                 Spacer()
+                talkButton
                 Button(t.t("common.done")) { m.open = false; dismiss() }.buttonStyle(PlainTextButtonStyle())
             }
             .padding(.horizontal, 16)
@@ -55,13 +57,77 @@ struct ShutongSheet: View {
                 .onChange(of: m.thinking) { _, _ in withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("bottom", anchor: .bottom) } }
             }
 
-            inputBar(m)
+            if ShutongTalker.shared.on { talkBar } else { inputBar(m) }
         }
         .background(PaperBackground().ignoresSafeArea())
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .onAppear { m.load() }
-        .onDisappear { m.open = false; if m.recording { m.stopRecording() } }
+        .onDisappear { m.open = false; if m.recording { m.stopRecording() }; ShutongTalker.shared.stop() }
+    }
+
+    /// 137 开口说：一按像打电话，再按一下退出
+    private var talkButton: some View {
+        let talker = ShutongTalker.shared
+        return Button { typing = false; talker.toggle() } label: {
+            Label(talker.on ? t.t("shutong.talkEnd") : t.t("shutong.talk"), systemImage: talker.on ? "phone.down.fill" : "waveform")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Color(talker.on ? Ink.danger : Ink.accent))
+                .padding(.horizontal, 10)
+                .frame(height: 32)
+                .background { Capsule().fill(Color(talker.on ? Ink.danger : Ink.accent).opacity(0.12)) }
+        }
+        .buttonStyle(.plain)
+        .disabled(ShutongModel.shared.recording || ShutongModel.shared.hearing)
+        .accessibilityIdentifier("shutong.talk")
+    }
+
+    /// 开口说开着：输入框换成一条「在听 / 在琢磨 / 在说」，像通话中的条
+    private var talkBar: some View {
+        let talker = ShutongTalker.shared
+        let (icon, words): (String, String) = {
+            switch talker.phase {
+            case .hearing: return ("waveform", t.t("shutong.talkHearing"))
+            case .thinking: return ("ellipsis", t.t("shutong.talkThinking"))
+            case .speaking: return ("speaker.wave.2.fill", t.t("shutong.talkSpeaking"))
+            default: return ("mic.fill", t.t("shutong.talkListening"))
+            }
+        }()
+        return VStack(spacing: 8) {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Color(Ink.accent))
+                    .symbolEffect(.pulse, options: .repeating, isActive: talker.phase == .listening || talker.phase == .hearing)
+                    .frame(width: 28)
+                Text(words)
+                    .font(.system(size: 15))
+                    .foregroundStyle(Color(Ink.text2))
+                    .accessibilityIdentifier("shutong.talkState")
+                Spacer(minLength: 0)
+            }
+            if app.demo != nil {                                  // 截图、UI 测试：没有话筒，假装说一句
+                HStack(spacing: 8) {
+                    TextField(t.t("shutong.talkFake"), text: $fakeSay)
+                        .font(.system(size: 15))
+                        .textFieldStyle(.roundedBorder)
+                        .accessibilityIdentifier("talk.fake")
+                    Button(t.t("shutong.send")) { talker.fakeHeard(fakeSay); fakeSay = "" }
+                        .buttonStyle(SmartButtonStyle())
+                        .accessibilityIdentifier("talk.say")
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(minHeight: 56)
+        .background {
+            ZStack(alignment: .top) {
+                LinearGradient(colors: [Color(Ink.barTop), Color(Ink.barBottom)], startPoint: .top, endPoint: .bottom)
+                Rectangle().fill(Color(Ink.barLine)).frame(height: 0.5)
+            }
+            .ignoresSafeArea(edges: .bottom)
+        }
     }
 
     private func inputBar(_ model: ShutongModel) -> some View {
@@ -124,6 +190,8 @@ struct ShutongSheet: View {
 struct ShutongBubble: View {
     let line: ShutongLine
     @Environment(AppModel.self) private var app
+    @State private var editing = false
+    @State private var fixing = ""
 
     private var t: Lang { app.lang }
     private var m: ShutongModel { ShutongModel.shared }
@@ -145,6 +213,11 @@ struct ShutongBubble: View {
 
     private var he: some View {
         VStack(alignment: .trailing, spacing: 3) {
+            if line.mode == "talk" {                                // 137：开口说的字幕
+                Label(t.t("shutong.talkSaid"), systemImage: "waveform")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color(Ink.text3))
+            }
             Text(line.text)
                 .font(.system(size: 16))
                 .foregroundStyle(Color(Ink.text))
@@ -156,6 +229,17 @@ struct ShutongBubble: View {
                 Button(t.t("shutong.retry")) { m.retry(line.id) }
                     .buttonStyle(PlainTextButtonStyle())
                     .font(.system(size: 13))
+            }
+            if line.mode == "talk", line.state != "waiting" {      // 认歪了：点开改字，照改后的再办一遍
+                Button(t.t("shutong.talkFix")) { fixing = line.text; editing = true }
+                    .buttonStyle(PlainTextButtonStyle())
+                    .font(.system(size: 13))
+                    .accessibilityIdentifier("shutong.talkFix")
+                    .alert(t.t("shutong.talkFixTitle"), isPresented: $editing) {
+                        TextField("", text: $fixing)
+                        Button(t.t("shutong.talkFixGo")) { ShutongTalker.shared.resend(line.id, text: fixing) }
+                        Button(t.t("common.cancel"), role: .cancel) {}
+                    }
             }
         }
         .frame(maxWidth: .infinity, alignment: .trailing)

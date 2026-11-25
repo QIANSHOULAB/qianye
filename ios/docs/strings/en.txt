@@ -257,6 +257,20 @@ shutong.skipped	Skipped %lld: %@
 shutong.slipCount	%lld notes
 shutong.slipOpen	Review
 shutong.sweepTitle	The scribe thinks these can go
+shutong.talk	Talk
+shutong.talkAway	You left, so Talk hung up.
+shutong.talkBusy	Companion is on. Turn it off first.
+shutong.talkEnd	Hang up
+shutong.talkFake	Pretend to say
+shutong.talkFix	Fix
+shutong.talkFixGo	Do this
+shutong.talkFixTitle	Heard it wrong? Fix it and I’ll redo it.
+shutong.talkHearing	Go on, I’m listening…
+shutong.talkListening	Listening. Pause when you’re done.
+shutong.talkMissed	(didn’t catch that)
+shutong.talkSaid	Said
+shutong.talkSpeaking	Talking. Cut in anytime.
+shutong.talkThinking	Thinking…
 shutong.thinking	Thinking…
 shutong.tidyOne	Tidy: %@
 shutong.trashIt	Toss them

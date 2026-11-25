@@ -38,6 +38,8 @@ final class ButlerService {
     @ObservationIgnored private var doves: Set<String> = []
     /// 书童（136）：在等回信的请求 id（app 被杀过也认：回信带 stage=shutong）
     @ObservationIgnored private var shutongs: Set<String> = []
+    /// 书童开口说（137）：在等回信的请求 id（一句话、插嘴对声纹）
+    @ObservationIgnored private var talks: Set<String> = []
     /// 备用信箱（130）：谷歌那根管子
     let backup = BackupCoordinator()
     /// 办过的信封号（两条管子可能各来一份：只办一次）
@@ -179,7 +181,7 @@ final class ButlerService {
             }
         }
         var action = MailAction.decide(env, waiting: waiting, dubbing: dubbing, words: words.requestIDs, looks: looks, keeps: Set(keepWait.keys), articles: Set(articles.keys), doves: doves,
-                                       shutongs: shutongs.union(ShutongModel.shared.waitingIDs))
+                                       shutongs: shutongs.union(ShutongModel.shared.waitingIDs), talks: talks)
         if action == .later, let ch = app.mirror.channel, let a = env.delivery?.audio {
             // 信里没带录音：去 iCloud 镜像里找（后台读，占位的要等它下载）
             let data: Data? = await withCheckedContinuation { c in
@@ -222,6 +224,10 @@ final class ButlerService {
         case .shutong(let r):                               // 136 书童：动作、一句话；按住说话认出的字
             shutongs.remove(r.id)
             ShutongModel.shared.answer(r)
+            return true
+        case .talk(let r, let audio):                       // 137 书童开口说：一句话的回信 / 插嘴对声纹
+            talks.remove(r.id)
+            ShutongTalker.shared.answer(r, audio: audio)
             return true
         case .deliver(let d, let audio):
             app.addDelivery(d, audio: audio)
@@ -639,6 +645,36 @@ final class ButlerService {
             return .failed((error as? MailError)?.errorDescription ?? error.localizedDescription)
         }
     }
+
+    // ---------------------------------------------------------------- 书童开口说（137）
+    /// 寄一句（只走信箱：晚到的回答没用）。信箱说两台大管家都不在：当场撤回，回 .sent(false)
+    func sendTalk(_ req: ButlerRequest, files: [String: Data] = [:]) async -> LookSent {
+        if mail == nil { connectMail() }
+        guard let mail else { return .noPair }
+        talks.insert(req.id)
+        do {
+            let sent = try await mail.send(.request(req, files: files), timeout: 15)
+            if !sent.pc {
+                talks.remove(req.id)
+                try? await mail.ack(sent.seq)
+            }
+            return .sent(sent.pc)
+        } catch {
+            talks.remove(req.id)
+            return .failed((error as? MailError)?.errorDescription ?? error.localizedDescription)
+        }
+    }
+
+    /// 不等回信的（进来、敲一下、退出）：寄了就算
+    func sendTalkNote(_ req: ButlerRequest) {
+        if mail == nil { connectMail() }
+        guard let mail, app?.demo == nil else { return }
+        Task {
+            if let sent = try? await mail.send(.request(req), timeout: 15), !sent.pc { try? await mail.ack(sent.seq) }
+        }
+    }
+
+    func forgetTalk(_ id: String) { talks.remove(id) }
 
     // ---------------------------------------------------------------- 陪玩（100）
     /// 问一句：只走信箱（晚到的回答没用，不走 iCloud）。信箱说两台大管家都不在：当场撤回，回 .sent(false)
