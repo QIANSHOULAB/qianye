@@ -41,25 +41,20 @@ final class CallTests: XCTestCase {
         return XCTWaiter().wait(for: [ex], timeout: timeout) == .completed
     }
 
-    /// 等标签变成 text（直接轮询：谓词等法在这个胶囊上判不出来）
+    /// 等顶上的胶囊写着 text（按字找：状态一换字，旧的那个元素就没了，盯着一个元素读字会读空）
     private func label(_ e: XCUIElement, _ text: String, _ timeout: TimeInterval) -> Bool {
-        let end = Date().addingTimeInterval(timeout)
-        repeat {
-            if e.exists && e.label == text { return true }
-            usleep(200_000)
-        } while Date() < end
-        return false
+        app.staticTexts.matching(NSPredicate(format: "label == %@", text)).firstMatch.waitForExistence(timeout: timeout)
     }
 
     /// 接通 → 问一句 → 答 → 说「挂掉」→ 挂（信箱断着：模拟器里根本没有信箱）
     func testAskThenHangUpByWords() {
         launch(say: "书童做完没|挂掉")
         check(state.waitForExistence(timeout: 8), "139-01-没接通", "顶上没有通话条")
-        check(label(state, "Butler's listening", 3), "139-02-接通不在听", "接通以后应该是「在听」：\(state.label)")
+        check(label(state, "Butler's listening", 3), "139-02-接通不在听", "接通以后应该是「在听」")
         shot("139-1-接通")
-        check(label(state, "Butler's thinking", 6), "139-03-没在想", "问了一句应该「在想」：\(state.label)")
+        check(label(state, "Butler's thinking", 6), "139-03-没在想", "问了一句应该「在想」")
         shot("139-2-在想")
-        check(label(state, "Butler's talking", 4), "139-04-没在说", "应该「在说」：\(state.label)")
+        check(label(state, "Butler's talking", 4), "139-04-没在说", "应该「在说」")
         shot("139-3-在说")
         check(gone(state, 8), "139-05-说挂掉没挂", "说了「挂掉」，通话条应该没了")
         check(app.staticTexts["Hung up. Back to your music."].waitForExistence(timeout: 2), "139-06-没说挂了", "挂了应该弹「Hung up」")
