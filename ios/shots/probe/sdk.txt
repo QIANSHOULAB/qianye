@@ -1,0 +1,173 @@
+SDK=/Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.5.sdk
+=== AVFAudio：CategoryOptions
+141: signal processing.  Has the side effect of setting AVAudioSessionCategoryOptionAllowBluetoothHFP.
+170: AVAudioSessionCategoryOptionAllowBluetoothHFP and AVAudioSessionCategoryOptionDefaultToSpeaker. 
+205:/// This mode requires ``AVAudioSessionCategoryOptionAllowBluetoothHFP`` to be set
+468:	/// Deprecated - please see ``AVAudioSessionCategoryOptionAllowBluetoothHFP``
+469:	AVAudioSessionCategoryOptionAllowBluetooth API_DEPRECATED_WITH_REPLACEMENT("AVAudioSessionCategoryOptionAllowBluetoothHFP", ios(1.0, 8.0), watchos(11.0, 11.0), tvos(17.0, 17.0), visionos(1.0, 1.0)) API_UNAVAILABLE(macos) = 0x4,
+476:	///			AllowBluetoothHFP defaults to false, but can be set to true, allowing a paired bluetooth
+481:	///			AllowBluetoothHFP defaults to false, but can be set to true, allowing a paired Bluetooth
+485:	///			AllowBluetoothHFP defaults to false and cannot be changed. Enabling Bluetooth for input in
+487:	AVAudioSessionCategoryOptionAllowBluetoothHFP API_AVAILABLE(ios(1.0), watchos(11.0), tvos(17.0), visionos(1.0)) API_UNAVAILABLE(macos) = 0x4,
+523:	///			AllowBluetoothA2DP defaults to false, but can be set to true, allowing a paired
+528:	///			AllowBluetoothA2DP is false, and cannot be set to true.
+531:	///			AllowBluetoothA2DP is always implicitly true and cannot be changed; Bluetooth A2DP ports
+534:	///		Setting both ``AVAudioSessionCategoryOptionAllowBluetoothHFP``
+535:	///		and ``AVAudioSessionCategoryOptionAllowBluetoothA2DP`` is
+539:	AVAudioSessionCategoryOptionAllowBluetoothA2DP API_AVAILABLE(ios(10.0), watchos(3.0), tvos(10.0)) API_UNAVAILABLE(macos) = 0x20,
+543:	///		various categories in the same way as ``AVAudioSessionCategoryOptionAllowBluetoothA2DP``;
+571:	/// 	- This option requires ``AVAudioSessionCategoryOptionAllowBluetoothHFP`` to be set.
+593:	///		will be ignored. This option may be combined with ``AVAudioSessionCategoryOptionAllowBluetoothHFP``,
+595:	///		``AVAudioSessionCategoryOptionBluetoothHighQualityRecording`` option.
+599:	///		- Note Apps using ``AVAudioSessionCategoryOptionBluetoothHighQualityRecording``
+602:	AVAudioSessionCategoryOptionBluetoothHighQualityRecording API_AVAILABLE(ios(26.0)) API_UNAVAILABLE(watchos, tvos, macCatalyst, visionos, macos) = 1 << 19
+592-	///		- When this option is provided alone, it will be enabled if the route supports it, otherwise the option
+593-	///		will be ignored. This option may be combined with ``AVAudioSessionCategoryOptionAllowBluetoothHFP``,
+594-	///		in which case HFP will be used as a fallback if the route does not support this
+595:	///		``AVAudioSessionCategoryOptionBluetoothHighQualityRecording`` option.
+596-	///
+597-	///		- Note This option may increase input latency when enabled and is therefore not recommended for
+598-	///			real-time communication usage.
+599:	///		- Note Apps using ``AVAudioSessionCategoryOptionBluetoothHighQualityRecording``
+600-	///		may want to consider setting ``AVAudioSession/setPrefersNoInterruptionsFromSystemAlerts:error:``
+601-	///		while recording, to avoid the recording session being interrupted by an incoming call ringtone.
+602:	AVAudioSessionCategoryOptionBluetoothHighQualityRecording API_AVAILABLE(ios(26.0)) API_UNAVAILABLE(watchos, tvos, macCatalyst, visionos, macos) = 1 << 19
+603-};
+604-
+605-/// Values for AVAudioSessionInterruptionTypeKey in AVAudioSessionInterruptionNotification's
+=== AppIntents：AudioRecordingIntent / supportedModes / LiveActivityIntent
+/Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.5.sdk/System/Library/Frameworks/AppIntents.framework/Modules/AppIntents.swiftmodule/arm64e-apple-ios.swiftinterface
+555:  @available(macOS, deprecated: 26.0, message: "Please provide 'supportedModes' instead")
+556:  @available(iOS, deprecated: 26.0, message: "Please provide 'supportedModes' instead")
+557:  @available(watchOS, deprecated: 26.0, message: "Please provide 'supportedModes' instead")
+558:  @available(tvOS, deprecated: 26.0, message: "Please provide 'supportedModes' instead")
+559:  @available(visionOS, deprecated: 26.0, message: "Please provide 'supportedModes' instead")
+560:  static var openAppWhenRun: Swift.Bool { get }
+562:  static var supportedModes: AppIntents.IntentModes { get }
+563:  static var authenticationPolicy: AppIntents.IntentAuthenticationPolicy { get }
+583:  public static var openAppWhenRun: Swift.Bool {
+586:  public static var authenticationPolicy: AppIntents.IntentAuthenticationPolicy {
+808:public protocol LiveActivityIntent : AppIntents.SystemIntent {
+971:public protocol AudioRecordingIntent : AppIntents.SystemIntent {
+1204:public protocol AudioPlaybackIntent : AppIntents.SystemIntent {
+1291:@available(macOS, introduced: 13.3, deprecated: 26.0, message: "Please include '.foreground(.dynamic)' in the 'supportedModes' of your app intent instead")
+1292:@available(iOS, introduced: 16.4, deprecated: 26.0, message: "Please include '.foreground(.dynamic)' in the 'supportedModes' of your app intent instead")
+1293:@available(watchOS, introduced: 9.4, deprecated: 26.0, message: "Please include '.foreground(.dynamic)' in the 'supportedModes' of your app intent instead")
+1294:@available(tvOS, introduced: 16.4, deprecated: 26.0, message: "Please include '.foreground(.dynamic)' in the 'supportedModes' of your app intent instead")
+1300:public protocol ForegroundContinuableIntent : AppIntents.AppIntent {
+1302:@available(macOS, introduced: 13.3, deprecated: 26.0, message: "Please include '.foreground(.dynamic)' in the 'supportedModes' of your app intent instead")
+1303:@available(iOS, introduced: 16.4, deprecated: 26.0, message: "Please include '.foreground(.dynamic)' in the 'supportedModes' of your app intent instead")
+1304:@available(watchOS, introduced: 9.4, deprecated: 26.0, message: "Please include '.foreground(.dynamic)' in the 'supportedModes' of your app intent instead")
+1305:@available(tvOS, introduced: 16.4, deprecated: 26.0, message: "Please include '.foreground(.dynamic)' in the 'supportedModes' of your app intent instead")
+2662:  public static var openAppWhenRun: Swift.Bool {
+2675:  public static var openAppWhenRun: Swift.Bool {
+4246:  public static var supportedModes: AppIntents.IntentModes {
+4257:public struct IntentModes : Swift.OptionSet, Swift.Hashable, Swift.Equatable, Swift.Sendable {
+9296:  public func continueInForeground(_ dialog: AppIntents.IntentDialog? = nil, alwaysConfirm: Swift.Bool = true) async throws
+9388:  public static var openAppWhenRun: Swift.Bool {
+9976:  public static var openAppWhenRun: Swift.Bool {
+965-  convenience public init(description: Foundation.LocalizedStringResource? = nil, default defaultValue: Value.UnwrappedType? = nil, requestValueDialog: AppIntents.IntentDialog? = nil, inputConnectionBehavior: _const AppIntents.InputConnectionBehavior = .default)
+966-  convenience public init<Spec>(description: Foundation.LocalizedStringResource? = nil, default defaultValue: Value.UnwrappedType? = nil, requestValueDialog: AppIntents.IntentDialog? = nil, inputConnectionBehavior: _const AppIntents.InputConnectionBehavior = .default, @AppIntents.ResolverSpecificationBuilder<Value.UnwrappedType> resolvers: @escaping () -> Spec) where Spec : AppIntents.ResolverSpecification
+967-  convenience public init<OptionsProvider>(description: Foundation.LocalizedStringResource? = nil, default defaultValue: Value.UnwrappedType? = nil, requestValueDialog: AppIntents.IntentDialog? = nil, inputConnectionBehavior: _const AppIntents.InputConnectionBehavior = .default, optionsProvider: OptionsProvider) where OptionsProvider : AppIntents.DynamicOptionsProvider, Value.ValueType == OptionsProvider.DefaultValue.ValueType
+968-  convenience public init<Spec, OptionsProvider>(description: Foundation.LocalizedStringResource? = nil, default defaultValue: Value.UnwrappedType? = nil, requestValueDialog: AppIntents.IntentDialog? = nil, inputConnectionBehavior: _const AppIntents.InputConnectionBehavior = .default, optionsProvider: OptionsProvider, @AppIntents.ResolverSpecificationBuilder<Value.UnwrappedType> resolvers: @escaping () -> Spec) where Spec : AppIntents.ResolverSpecification, OptionsProvider : AppIntents.DynamicOptionsProvider, Value.ValueType == OptionsProvider.DefaultValue.ValueType
+969-}
+970-@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+971:public protocol AudioRecordingIntent : AppIntents.SystemIntent {
+972-}
+973-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
+974-extension Swift.Int : AppIntents._IntentValue {
+975-  public static var defaultResolverSpecification: some AppIntents.ResolverSpecification {
+976-    get
+977-  }
+978-  @available(iOS 16.0, tvOS 16.0, watchOS 9.0, macOS 13.0, *)
+979-  public typealias Specification = @_opaqueReturnTypeOf("$sSi10AppIntentsE28defaultResolverSpecificationQrvpZ", 0) __
+980-  @available(iOS 16.0, tvOS 16.0, watchOS 9.0, macOS 13.0, *)
+981-  public typealias UnwrappedType = Swift.Int
+982-  @available(iOS 16.0, tvOS 16.0, watchOS 9.0, macOS 13.0, *)
+983-  public typealias ValueType = Swift.Int
+4257:public struct IntentModes : Swift.OptionSet, Swift.Hashable, Swift.Equatable, Swift.Sendable {
+4258-  public let rawValue: Swift.Int
+4259-  public init(rawValue: Swift.Int)
+4260-  public static func foreground(_ foregroundMode: AppIntents.IntentModes.ForegroundMode) -> AppIntents.IntentModes
+4261-  public static var background: AppIntents.IntentModes {
+4262-    get
+4263-  }
+4264-  public static var foreground: AppIntents.IntentModes {
+4265-    get
+4266-  }
+4267-  public struct ForegroundMode : Swift.Hashable, Swift.Equatable, Swift.Sendable {
+4268-    public static var immediate: AppIntents.IntentModes.ForegroundMode {
+4269-      get
+4270-    }
+4271-    public static var deferred: AppIntents.IntentModes.ForegroundMode {
+4272-      get
+4273-    }
+4274-    public static var dynamic: AppIntents.IntentModes.ForegroundMode {
+4275-      get
+4276-    }
+4277-    public static func == (a: AppIntents.IntentModes.ForegroundMode, b: AppIntents.IntentModes.ForegroundMode) -> Swift.Bool
+4278-    public func hash(into hasher: inout Swift.Hasher)
+4279-    public var hashValue: Swift.Int {
+4280-      get
+4281-    }
+4282-  }
+=== ActivityKit：request
+/Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.5.sdk/System/Library/Frameworks/ActivityKit.framework/Modules/ActivityKit.swiftmodule/arm64e-apple-ios.swiftinterface
+26:  case standard
+27:  case transient
+46:  public static func request(attributes: Attributes, contentState: ActivityKit.Activity<Attributes>.ContentState, pushType: ActivityKit.PushType? = nil) throws -> ActivityKit.Activity<Attributes>
+52:  public static func request(attributes: Attributes, content: ActivityKit.ActivityContent<ActivityKit.Activity<Attributes>.ContentState>, pushType: ActivityKit.PushType? = nil) throws -> ActivityKit.Activity<Attributes>
+59:  public static func request(attributes: Attributes, content: ActivityKit.ActivityContent<ActivityKit.Activity<Attributes>.ContentState>, pushType: ActivityKit.PushType? = nil, style: ActivityKit.ActivityStyle) throws -> ActivityKit.Activity<Attributes>
+66:  public static func request(attributes: Attributes, content: ActivityKit.ActivityContent<ActivityKit.Activity<Attributes>.ContentState>, pushType: ActivityKit.PushType? = nil, style: ActivityKit.ActivityStyle, alertConfiguration: ActivityKit.AlertConfiguration, start: Foundation.Date) throws -> ActivityKit.Activity<Attributes>
+73:  public static func request(attributes: Attributes, content: ActivityKit.ActivityContent<ActivityKit.Activity<Attributes>.ContentState>, pushType: ActivityKit.PushType? = nil, style: ActivityKit.ActivityStyle, alertConfiguration: ActivityKit.AlertConfiguration, startDate: Foundation.Date) throws -> ActivityKit.Activity<Attributes>
+383:  case pending
+384:  case active
+385:  case ended
+386:  case dismissed
+392:  case stale
+558:public enum ActivityAuthorizationError : Foundation.CustomNSError, Foundation.LocalizedError {
+562:  case attributesTooLarge
+563:  case unsupported
+564:  case denied
+565:  case globalMaximumExceeded
+566:  case targetMaximumExceeded
+567:  case unsupportedTarget
+568:  case visibility
+569:  case persistenceFailure
+570:  case missingProcessIdentifier
+571:  case unentitled
+572:  case malformedActivityIdentifier
+573:  case reconnectNotPermitted
+583:  public static func == (a: ActivityKit.ActivityAuthorizationError, b: ActivityKit.ActivityAuthorizationError) -> Swift.Bool
+624:extension ActivityKit.ActivityAuthorizationError : Swift.Equatable {}
+630:extension ActivityKit.ActivityAuthorizationError : Swift.Hashable {}
+=== CallKit
+CallKit.apinotes
+CallKit.h
+CXAction.h
+CXAnswerCallAction.h
+CXBase.h
+CXCall.h
+CXCallAction.h
+CXCallController.h
+CXCallDirectory.h
+CXCallDirectoryExtensionContext.h
+38:} API_AVAILABLE(ios(10.0), macCatalyst(13.0), watchos(9.0))  API_UNAVAILABLE(macos, tvos);
+40:CX_EXTERN API_AVAILABLE(ios(10.0), macCatalyst(13.0), watchos(9.0))  API_UNAVAILABLE(macos, tvos)
+79:CX_EXTERN API_AVAILABLE(ios(10.0), macCatalyst(13.0), watchos(9.0))  API_UNAVAILABLE(macos, tvos)
+111:+ (void)reportNewIncomingVoIPPushPayload:(NSDictionary *)dictionaryPayload completion:(nullable void (^)(NSError *_Nullable))completion API_UNAVAILABLE( tvos, watchos, macos) API_AVAILABLE(ios(14.5), macCatalyst(14.5));
+22:@property (nonatomic) NSUInteger maximumCallGroups; // Default 2
+27:@property (nonatomic) BOOL includesCallsInRecents API_AVAILABLE(ios(11.0), macCatalyst(13.0), macos(11.0), watchos(9.0));
+29:@property (nonatomic) BOOL supportsVideo; // Default NO
+=== Speech：SpeechTranscriber、analyzeSequence(from: AVAudioFile)
+/Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.5.sdk/System/Library/Frameworks/Speech.framework/Modules/Speech.swiftmodule/arm64e-apple-ios.swiftinterface
+49:final public class DictationTranscriber : Speech.SpeechModule, Speech.LocaleDependentSpeechModule {
+218:  final public func analyzeSequence<InputSequence>(_ inputSequence: InputSequence) async throws -> CoreMedia.CMTime? where InputSequence : Swift.Sendable, InputSequence : _Concurrency.AsyncSequence, InputSequence.Element == Speech.AnalyzerInput
+220:  final public func finalizeAndFinishThroughEndOfInput() async throws
+221:  final public func finalizeAndFinish(through: CoreMedia.CMTime) async throws
+330:  final public func start(inputAudioFile audioFile: AVFAudio.AVAudioFile, finishAfterFile: Swift.Bool = false) async throws
+331:  final public func analyzeSequence(from audioFile: AVFAudio.AVAudioFile) async throws -> CoreMedia.CMTime?
+335:final public class SpeechTranscriber : Speech.SpeechModule, Speech.LocaleDependentSpeechModule {
+399:  public static var isAvailable: Swift.Bool {
+=== Info.plist：INAlternativeAppNames（Intents）
+/Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.5.sdk/System/Library/Frameworks/Intents.framework/Intents.tbd
