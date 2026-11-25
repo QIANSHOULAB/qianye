@@ -36,9 +36,14 @@ final class CallTests: XCTestCase {
     private var bar: XCUIElement { app.otherElements["call.bar"].firstMatch }
     private var state: XCUIElement { app.staticTexts["call.state"].firstMatch }
 
+    /// 等它没了（直接轮询：谓词等法在这个胶囊上判不出来，11-25 CI 两回）
     private func gone(_ e: XCUIElement, _ timeout: TimeInterval) -> Bool {
-        let ex = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: e)
-        return XCTWaiter().wait(for: [ex], timeout: timeout) == .completed
+        let end = Date().addingTimeInterval(timeout)
+        repeat {
+            if !e.exists { return true }
+            usleep(300_000)
+        } while Date() < end
+        return !e.exists
     }
 
     /// 等顶上的胶囊写着 text（按字找：状态一换字，旧的那个元素就没了，盯着一个元素读字会读空）

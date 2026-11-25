@@ -970,11 +970,12 @@ final class NoteListSwipe: UIPanGestureRecognizer, UIGestureRecognizerDelegate {
         return cv.visibleCells.first { $0.frame.contains(p) }
     }
 
-    /// 有一条左滑开着：系统的按钮（类名带 SwipeAction 的视图）露在外面
-    static func swipeOpen(_ v: UIView) -> Bool {
-        for s in v.subviews {
-            if !s.isHidden, s.alpha > 0.01, s.bounds.width > 1, NSStringFromClass(type(of: s)).contains("SwipeAction") { return true }
-            if swipeOpen(s) { return true }
+    /// 有一条左滑开着：系统把那一格的内容往左推开了（行里垫的 RowTagView 跑到了格子左边距 12 点的左边）。
+    /// 11-25 CI：先前看「类名带 SwipeAction 的视图露着」不行——SwiftUI 的列表平时就挂着那些视图，一直当成开着，右拖从来起不了手
+    static func swipeOpen(_ cv: UICollectionView) -> Bool {
+        for c in cv.visibleCells {
+            guard let tag = RowTagView.find(in: c) else { continue }
+            if tag.convert(tag.bounds, to: c).minX < 4 { return true }
         }
         return false
     }
