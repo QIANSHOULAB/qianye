@@ -56,6 +56,14 @@ butler.short.queued	排队
 butler.short.waiting	在理
 butler.unchanged	大管家看过了，一个字没改
 butler.waiting	大管家在理
+call.hangUp	挂断
+call.hearing	在听你说
+call.hungUp	挂了。歌接着放。
+call.intent	叫大管家
+call.intentDesc	喊一声就接通。说完它就听，说「挂掉」就挂，挂了歌接着放。
+call.listening	大管家在听
+call.speaking	大管家在说
+call.thinking	大管家在想
 capture.camera	拍照认字
 capture.fromAlbum	从相册选
 capture.library	从相册认字

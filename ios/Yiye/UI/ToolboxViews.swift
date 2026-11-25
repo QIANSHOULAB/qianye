@@ -115,10 +115,13 @@ struct ToolboxPanel: View {
     /// 「陪玩」那格下面两行小字（108）：上次开听的体检、上一句大管家认出来的字。听歪了、哪样没连上，一眼看得出来
     @ViewBuilder private var companionLines: some View {
         let c = app.companion
-        if c.healthLine != nil || c.lastHeard != nil || c.voiceprintLine != nil {
+        if c.healthLine != nil || c.lastHeard != nil || c.voiceprintLine != nil || c.callTimes != nil {
             VStack(alignment: .leading, spacing: 2) {
                 if let h = c.healthLine {
                     Text(h)
+                }
+                if let ct = c.callTimes {                       // 139：电话的秒数
+                    Text(ct)
                 }
                 if let v = c.voiceprintLine {                  // 117：只认他的声音，攒到哪了
                     Text(v)

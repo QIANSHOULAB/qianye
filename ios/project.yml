@@ -9,7 +9,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.7.21"
+    MARKETING_VERSION: "0.7.22"
     CURRENT_PROJECT_VERSION: "30"
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
@@ -52,6 +52,12 @@ targets:
         NSPhotoLibraryAddUsageDescription: Saves the pictures you make from notes to your Photos.
         NSMicrophoneUsageDescription: Records what you say and keeps it with the note.
         NSSpeechRecognitionUsageDescription: Turns your voice into text right on your phone.
+        # 139：Siri 认不出「一叶笺」：「大管家」「Yiye」也当 App 名字，「叫大管家」「Call Yiye」喊得起来
+        INAlternativeAppNames:
+          - INAlternativeAppName: 大管家
+          - INAlternativeAppName: Yiye
+            INAlternativeAppNamePronunciationHint: yee yeah
+          - INAlternativeAppName: Butler
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: lab.qianshou.yiye

@@ -56,6 +56,14 @@ butler.short.queued	Queued
 butler.short.waiting	Tidying
 butler.unchanged	The butler read it. Nothing to fix.
 butler.waiting	The butler’s on it
+call.hangUp	Hang up
+call.hearing	Hearing you
+call.hungUp	Hung up. Back to your music.
+call.intent	Call the butler
+call.intentDesc	Rings the butler. Talk, it listens. Say “bye” and it hangs up — your music picks right back up.
+call.listening	Butler's listening
+call.speaking	Butler's talking
+call.thinking	Butler's thinking
 capture.camera	Scan page
 capture.fromAlbum	Choose from Photos
 capture.library	Scan a photo

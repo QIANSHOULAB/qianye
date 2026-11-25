@@ -1,0 +1,76 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Call ${applicationName}": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "叫${applicationName}"
+          }
+        }
+      }
+    },
+    "Call the butler in ${applicationName}": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用${applicationName}叫大管家"
+          }
+        }
+      }
+    },
+    "Talk to ${applicationName}": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打给${applicationName}"
+          }
+        }
+      }
+    },
+    "Record a voice note in ${applicationName}": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用${applicationName}录语音便签"
+          }
+        }
+      }
+    },
+    "${applicationName} voice note": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}语音便签"
+          }
+        }
+      }
+    },
+    "Save to ${applicationName}": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "存进${applicationName}"
+          }
+        }
+      }
+    },
+    "Save an article to ${applicationName}": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "把文章存进${applicationName}"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -60,3 +60,53 @@ struct BroadcastPicker: UIViewRepresentable {
         trigger.picker = v
     }
 }
+
+/// 139 打电话式：接通了顶上一条小胶囊：在听 / 在想 / 在说 + 挂断。锁屏上没有（那要 Live Activity 扩展，免费签名装不下第 4 个）
+struct CallBar: View {
+    @Environment(AppModel.self) private var app
+
+    var body: some View {
+        let c = app.companion
+        if c.callOn {
+            HStack(spacing: 10) {
+                Circle()
+                    .fill(c.phase == .hearing ? Color.green : Color(Ink.accent))
+                    .frame(width: 8, height: 8)
+                Text(app.lang.t(state(c.phase)))
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color(Ink.text))
+                    .accessibilityIdentifier("call.state")
+                Button {
+                    c.hangUp(.button)
+                } label: {
+                    Image(systemName: "phone.down.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 34, height: 26)
+                        .background(Capsule().fill(Color(Ink.danger)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(app.lang.t("call.hangUp"))
+                .accessibilityIdentifier("call.hangUp")
+            }
+            .padding(.leading, 14)
+            .padding(.trailing, 6)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(Color(Ink.paper)).shadow(color: .black.opacity(0.16), radius: 8, y: 3))
+            .overlay(Capsule().strokeBorder(Color(Ink.paperEdge), lineWidth: 0.75))
+            .padding(.top, 6)
+            .transition(.move(edge: .top).combined(with: .opacity))
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("call.bar")
+        }
+    }
+
+    private func state(_ p: CompanionPhase) -> String {
+        switch p {
+        case .hearing: return "call.hearing"
+        case .asking: return "call.thinking"
+        case .speaking: return "call.speaking"
+        default: return "call.listening"
+        }
+    }
+}

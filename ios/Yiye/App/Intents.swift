@@ -34,8 +34,29 @@ struct SaveToYiyeIntent: AppIntent {
     }
 }
 
+/// 139「叫大管家」：喊一声接通（Siri、捷径、侧键、耳机上喊 Siri），就是深聊那套；说「挂掉」就挂，挂了歌接着放
+struct CallButlerIntent: AppIntent {
+    static let title: LocalizedStringResource = "call.intent"
+    static let description = IntentDescription("call.intentDesc")
+    static let openAppWhenRun: Bool = true
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        let app = AppModel.shared
+        app.started()
+        app.companion.startCall()
+        return .result()
+    }
+}
+
 struct YiyeShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
+        // 139：中文说法在 AppShortcuts.xcstrings；Info.plist 的 INAlternativeAppNames 让「大管家」「Yiye」也当 App 名字认，
+        // 所以「叫大管家」「Call Yiye」就能喊起来
+        AppShortcut(intent: CallButlerIntent(),
+                    phrases: ["Call \(.applicationName)", "Call the butler in \(.applicationName)", "Talk to \(.applicationName)"],
+                    shortTitle: "call.intent",
+                    systemImageName: "phone")
         AppShortcut(intent: RecordVoiceIntent(),
                     phrases: ["Record a voice note in \(.applicationName)", "\(.applicationName) voice note"],
                     shortTitle: "voice.intent",

@@ -50,6 +50,10 @@ final class Settings {
             if listenLoopDay != newValue.litDay { listenLoopDay = newValue.litDay }
         }
     }
+    /// 139：锁着屏接通过「叫大管家」（锁屏喊得回来）：答完 60 秒没话自己挂才开
+    var callLockOK: Bool { didSet { save("yiye.callLockOK", callLockOK) } }
+    /// 139：挂了以后才答好的（标题），下次接通先提一句
+    var callCarry: [String] { didSet { save("yiye.callCarry", callCarry) } }
     /// 136：书童自己收拾新便签（默认开）
     var shutongAuto: Bool { didSet { save("yiye.shutongAuto", shutongAuto) } }
     /// 136：每周日的清理建议上次是哪一周问的（"2026-W48"）、那张纸条他关了没有
@@ -80,6 +84,8 @@ final class Settings {
                                      litDay: persist ? d.string(forKey: "yiye.listenLoopDay") : nil, today: today)
         listenLoopDays = loaded.lit.sorted()
         listenLoopDay = loaded.litDay
+        callLockOK = persist ? d.bool(forKey: "yiye.callLockOK") : false
+        callCarry = persist ? (d.stringArray(forKey: "yiye.callCarry") ?? []) : []
         shutongAuto = persist ? (d.object(forKey: "yiye.shutongAuto") as? Bool ?? true) : true
         shutongSweepWeek = persist ? (d.string(forKey: "yiye.shutongSweepWeek") ?? "") : ""
         // 144：迁过来的亮法当场存下，明天才会照规矩翻回只亮今天

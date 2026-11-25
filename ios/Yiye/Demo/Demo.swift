@@ -254,6 +254,7 @@ enum Demo {
             app.changeLoop { $0 = ListenLoop(on: true, lit: [today, twoDaysKey], litDay: today) }
             app.listening = ListenOpen(startNote: listenFirst)
         case "listen-text": app.listening = ListenOpen(startNote: listenFirst, showText: true)
+        case "call": app.companion.startCall()                  // 139：假接通（-YiyeCallSay 给他说的几句，| 隔开）
         case "voice-note": app.path = [.editor(voice.id)]
         case "spoken": if let id = tidiedID { app.path = [.editor(id)] }
         case "ocr":

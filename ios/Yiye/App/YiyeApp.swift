@@ -40,6 +40,7 @@ struct RootView: View {
         }
         .tint(Color(uiColor: Ink.accent))
         .overlay(alignment: .bottom) { ToastView() }
+        .overlay(alignment: .top) { CallBar() }                                                     // 139 打电话式
         .overlay { if app.busy != nil { BusyOverlay() } }
         .fullScreenCover(item: $app.voiceTarget) { target in RecorderScreen(target: target) }
         .background {
