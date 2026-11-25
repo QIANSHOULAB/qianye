@@ -245,6 +245,8 @@ struct Track: Equatable {
     var path: String
     var title: String
     var marks: [ListenMark]
+    /// 144：哪天的（"yyyy-MM-dd"，笔记的 createdAt）；写字页那条用不着
+    var day: String = ""
 }
 
 /// 放录音：同一时间只放一段。
@@ -270,8 +272,8 @@ final class AudioPlayback {
     var playlist = false
     /// 单句循环：锁在哪一句（nil = 不锁）
     var locked: Int?
-    /// 整串循环（112）：最后一条放完回到第一条
-    var loopAll = false
+    /// 🔁（112 整串循环，144 挑哪几天）：开着就只在亮着的那几天里转，最后一篇放完回亮着的第一篇
+    var loop = ListenLoop()
     /// 一篇第一次完整放完一遍（112：记 heardAt）
     @ObservationIgnored var onHeard: ((UUID) -> Void)?
 
@@ -385,9 +387,17 @@ final class AudioPlayback {
     }
 
     func nextTrack() {
-        guard let store, index + 1 < queue.count else { return }
-        index += 1
+        // 144：🔁 开着时下一篇也只在亮着的那几天里找（到底回亮着的第一篇）
+        guard let store, let next = loop.next(after: index, dayOf: queue.map(\.day)) else { return }
+        index = next
         load(store: store, at: 0, play: true)
+    }
+
+    /// 144：列表变了（来了新稿子、清掉了旧的）：换上新的队，正在放的那篇不动
+    func refresh(_ tracks: [Track]) {
+        guard playlist, let cur = track, queue != tracks, let i = tracks.firstIndex(where: { $0.note == cur.note && $0.path == cur.path }) else { return }
+        queue = tracks
+        index = i
     }
 
     func previousTrack() {
@@ -434,7 +444,7 @@ final class AudioPlayback {
             nowPlaying()
             return
         }
-        if playlist, let next = ListenRule.nextIndex(after: index, count: queue.count, loopAll: loopAll) {
+        if playlist, let next = loop.next(after: index, dayOf: queue.map(\.day)) {
             index = next
             load(store: store, at: 0, play: true)
             return

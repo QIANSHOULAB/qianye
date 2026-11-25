@@ -206,6 +206,8 @@ S = {
  "article.simplified": ("简写好了，点这里去听", "Simplified. Tap to listen"),
  "listen.redub": ("重配", "Re-dub"),
  "listen.loopAll": ("整串循环", "Loop the whole list"),
+ "listen.loopEvery": ("全部", "All"),
+ "listen.loopDay": ("循环%@", "Loop %@"),
  "word.known": ("「%@」毕业，简讯不再讲", "“%@” graduated. No more lectures."),
  "word.learning": ("「%@」留级，简讯接着补课", "“%@” repeats a grade. More lessons in the brief."),
  "listen.add": ("放进听力", "Add to Listening"),

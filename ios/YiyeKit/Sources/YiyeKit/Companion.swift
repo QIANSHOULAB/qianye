@@ -198,7 +198,7 @@ public struct ClipCutter: Sendable {
     public var noise: Double { gate.noise }
     public var speaking: Bool { gate.speaking }
 
-    /// 开口前留多少样本：0.3 秒 + 判开口要的那段（startMs；插嘴要 0.5 秒，按长的留），这样交出去的一句从开口前 0.3 秒开始
+    /// 缓冲留多少样本：0.3 秒 + 判开口要的那段（插嘴要 0.5 秒，按长的留）；开口时再按这次用的那段裁，交出去的一句从开口前 0.3 秒开始
     var preCap: Int { Int((preMs + max(gate.startMs, gate.strictStartMs)) / 1000 * Double(ClipCutter.rate)) }
     var maxCount: Int { Int(maxSeconds * Double(ClipCutter.rate)) }
 
@@ -217,7 +217,9 @@ public struct ClipCutter: Sendable {
         let ev = gate.feed(db: db, ms: ms, mute: mute, strict: strict)
         switch ev {
         case .start?:
-            clip = pre + s
+            // 144：缓冲按插嘴的长度留，交出去时按这次判开口实际用的长度裁：普通开口从开口前 0.3 秒起，插嘴才多留
+            let keep = Int((preMs + (strict ? gate.strictStartMs : gate.startMs)) / 1000 * Double(ClipCutter.rate)) - s.count
+            clip = Array(pre.suffix(max(0, keep))) + s
             pre = []
             peak = db
             if clip.count >= maxCount { return finish() }

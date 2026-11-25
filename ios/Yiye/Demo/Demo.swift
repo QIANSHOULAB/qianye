@@ -146,6 +146,27 @@ enum Demo {
             if k == 2 { n.heardAt = Date().addingTimeInterval(-2 * 86_400) }       // 听完的那篇淡一点（112）
             if k == 0 { listenFirst = n.id }
         }
+        // 144：前天两篇短的（各两句、9 秒）：循环挑天的截图和 UI 测试（放完那天最后一篇回那天第一篇）
+        let twoDays = [
+            "# Rain all week in London
+It will rain every day this week. Take an umbrella.",
+            "# Trains run late in Tokyo
+A storm slowed the trains on Sunday. Most were on time again by noon.",
+        ]
+        let eightToday = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: now) ?? now
+        for (k, text) in twoDays.enumerated() {
+            let n = add(text, ago: 60, folder: english, kind: "listen")
+            n.createdAt = Calendar.current.date(byAdding: .day, value: -2, to: eightToday)?.addingTimeInterval(-Double(k + 1)) ?? now
+            n.modifiedAt = n.createdAt
+            let sentences = Listen.sentences(text)
+            let marks = sentences.enumerated().map { ListenMark(t: Double($0.offset) * 4.5, s: $0.element) }
+            if let rel = Demo.silence(app.attachments, name: Listen.deliveryName(note: n.id, ext: "m4a"), seconds: Double(sentences.count) * 4.5) {
+                n.audioPaths = [rel]
+                app.setMarks(n, path: rel, marks: marks)
+            }
+            n.inListen = true
+        }
+        let twoDaysKey = ListenLoop.key(Calendar.current.date(byAdding: .day, value: -2, to: eightToday) ?? now)
         // 刚放进听力、交给大管家配音还没回来的一篇
         let waiting = add("# Oil prices climb again\nOil prices rose 3 percent on Tuesday. Winter is coming, and people need more fuel to heat their homes.",
                           ago: 60 * 8, folder: english, kind: "listen")
@@ -228,7 +249,9 @@ enum Demo {
         case "voice": app.voiceTarget = .new
         case "listen": app.listening = ListenOpen(startNote: listenFirst)
         case "listen-loop":
-            app.settings.listenLoopAll = true
+            // 144：🔁 开着、亮两天（今天和前天）
+            let today = ListenLoop.key(now)
+            app.changeLoop { $0 = ListenLoop(on: true, lit: [today, twoDaysKey], litDay: today) }
             app.listening = ListenOpen(startNote: listenFirst)
         case "listen-text": app.listening = ListenOpen(startNote: listenFirst, showText: true)
         case "voice-note": app.path = [.editor(voice.id)]

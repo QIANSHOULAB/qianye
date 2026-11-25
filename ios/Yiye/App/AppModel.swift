@@ -102,7 +102,7 @@ final class AppModel {
             migrateDeskFolders()
             backfillListen()
         }
-        AudioPlayback.shared.loopAll = settings.listenLoopAll
+        AudioPlayback.shared.loop = settings.listenLoop
         AudioPlayback.shared.onHeard = { [weak self] id in self?.heard(id) }
         butler.start()
         if demo == nil { companion.setUp() }
@@ -369,7 +369,8 @@ final class AppModel {
     /// 一条笔记的听力录音（没有就 nil）
     func track(_ n: Note) -> Track? {
         guard let path = n.listenPath else { return nil }
-        return Track(note: n.id, path: path, title: n.title.isEmpty ? t.t("note.untitled") : n.title, marks: n.markTable[path] ?? [])
+        return Track(note: n.id, path: path, title: n.title.isEmpty ? t.t("note.untitled") : n.title, marks: n.markTable[path] ?? [],
+                     day: ListenLoop.key(n.createdAt))
     }
 
     /// 放进听力 / 从听力拿掉。放进去时还没录音：大管家在线就交它配音，不在线手机先念

@@ -8,6 +8,7 @@ import YiyeKit
 /// 大管家送来的每日简讯直接进（088，Song 11-23 15:05），Song 自己点小耳机放进来的也在。还没声音的也列着，写明在等大管家配音。
 /// 按日期分组（088）：一天一个小标题，新的一天在上面，组里新的在上面（简讯 1→6）；放完一篇接下一篇，一天放完接着放前一天的。
 /// 每篇放几遍（1/2/3/5/一直），放够了自动下一篇；想看字点那一行后面的「文」
+/// 🔁 开着时每天的标题右边一个小圈（144）：亮 = 这天在循环里，可以亮好几天，第一个标题旁边「全部」一下全亮
 struct PlaylistScreen: View {
     let open: ListenOpen
     @Environment(AppModel.self) private var app
@@ -22,6 +23,9 @@ struct PlaylistScreen: View {
 
     /// 按天分好的（笔记 createdAt，手机的时区）
     private var days: [ListenDay<UUID>] { ListenDays.group(notes.map { (id: $0.id, at: $0.createdAt) }) }
+    /// 144：那几天的「yyyy-MM-dd」，从上到下
+    private var dayKeys: [String] { days.map { ListenLoop.key($0.start) } }
+    private var today: String { ListenLoop.key(Date()) }
 
     /// 能放的（有录音的那些），照分组从上到下的顺序
     private var tracks: [Track] {
@@ -56,14 +60,15 @@ struct PlaylistScreen: View {
                 .frame(maxWidth: .infinity)
             } else {
                 let byID = Dictionary(notes.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+                let keys = dayKeys
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 8) {
                         ForEach(days, id: \.start) { day in
-                            DayHeader(text: dayTitle(day.start))
+                            header(day, first: day.start == days.first?.start, keys: keys)
                             ForEach(day.ids, id: \.self) { id in
                                 if let n = byID[id] {
                                     if let i = tracks.firstIndex(where: { $0.note == n.id }) {
-                                        row(i, tracks, heard: n.heardAt != nil)
+                                        row(i, tracks, heard: n.heardAt != nil, keys: keys)
                                     } else {
                                         waitingRow(n)
                                     }
@@ -82,6 +87,7 @@ struct PlaylistScreen: View {
             TextSheet(track: tr, tracks: tracks).presentationDetents([.medium, .large])
         }
         .onAppear(perform: begin)
+        .onChange(of: tracks) { _, new in player.refresh(new) }      // 144：循环到一半来了新稿子，排进去（亮着的话）
     }
 
     private func begin() {
@@ -89,22 +95,31 @@ struct PlaylistScreen: View {
         began = true
         player.repeatTarget = app.settings.listenRepeat
         player.rate = Float(app.settings.listenRate)
-        player.loopAll = app.settings.listenLoopAll
+        let today = self.today
+        app.changeLoop { $0.open(today: today) }               // 144：换了一天，回到只亮今天
         let tracks = self.tracks
         guard let id = open.startNote, let i = tracks.firstIndex(where: { $0.note == id }) else { return }
         // 从写字页进来的：直接放这篇
-        if player.track?.note != id || !player.playlist { player.play(tracks, from: i, store: app.attachments) }
+        if player.track?.note != id || !player.playlist {
+            let keys = dayKeys, day = tracks[i].day
+            app.changeLoop { $0.played(day: day, days: keys, today: today) }
+            player.play(tracks, from: i, store: app.attachments)
+        }
         if open.showText { textFor = tracks[i] }
     }
 
-    private func row(_ i: Int, _ tracks: [Track], heard: Bool) -> some View {
+    private func row(_ i: Int, _ tracks: [Track], heard: Bool, keys: [String]) -> some View {
         let tr = tracks[i]
         let on = player.playlist && player.track?.note == tr.note
         let total = player.duration(tr.path, store: app.attachments)
         return HStack(spacing: 10) {
             Button {
                 if on { player.playing ? player.pause() : player.resume() }
-                else { player.play(tracks, from: i, store: app.attachments) }
+                else {
+                    let today = self.today
+                    app.changeLoop { $0.played(day: tr.day, days: keys, today: today) }   // 144：点了没亮那天的一篇：循环换成只亮那天
+                    player.play(tracks, from: i, store: app.attachments)
+                }
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: on && player.playing ? "pause.fill" : "play.fill")
@@ -127,6 +142,8 @@ struct PlaylistScreen: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("listen.row.\(tr.title)")
+            .accessibilityValue(on ? "playing" : "")
 
             textButton(tr)
         }
@@ -187,6 +204,45 @@ struct PlaylistScreen: View {
             .accessibilityLabel(t.t("listen.showText"))
     }
 
+    /// 一天的小标题；🔁 开着时右边一个小圈（亮 = 这天在循环里），第一个标题旁边还有「全部」（144）
+    private func header(_ day: ListenDay<UUID>, first: Bool, keys: [String]) -> some View {
+        let key = ListenLoop.key(day.start)
+        let loop = app.settings.listenLoop
+        let lit = loop.shown(keys).contains(key)
+        let title = dayTitle(day.start)
+        let today = self.today
+        return HStack(alignment: .center, spacing: 2) {
+            DayHeader(text: title, top: 0)
+            Spacer(minLength: 8)
+            if loop.on {
+                if first {
+                    let all = loop.allLit(keys)
+                    Button(t.t("listen.loopEvery")) { app.changeLoop { $0.lightAll(today: today) } }
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(all ? Color(Ink.text3) : Color(Ink.accent))
+                        .buttonStyle(.plain)
+                        .disabled(all)
+                        .padding(.horizontal, 8)
+                        .accessibilityIdentifier("listen.loopEvery")
+                }
+                Button { app.changeLoop { $0.toggle(key, days: keys, today: today) } } label: {
+                    Image(systemName: lit ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 19))
+                        .foregroundStyle(lit ? Color(Ink.accent) : Color(Ink.text3))
+                        .frame(width: 36, height: 22)
+                        .contentShape(Rectangle().inset(by: -11))
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 4)
+                .accessibilityLabel(t.f("listen.loopDay", title))
+                .accessibilityIdentifier("listen.loop.\(key)")
+                .accessibilityValue(lit ? "on" : "off")
+                .accessibilityAddTraits(lit ? .isSelected : [])
+            }
+        }
+        .padding(.top, 16)
+    }
+
     /// 组的小标题：今天、昨天，再早的写日期加星期（不是今年的带年份）
     private func dayTitle(_ start: Date) -> String {
         switch ListenDays.label(start) {
@@ -210,12 +266,13 @@ struct PlaylistScreen: View {
 /// 一天的小标题：13 号字、灰，跟 iOS 设置的分组标题一个意思（不全大写）
 private struct DayHeader: View {
     let text: String
+    var top: CGFloat = 16
     var body: some View {
         Text(text)
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(Color(Ink.text2))
             .padding(.leading, 4)
-            .padding(.top, 16)
+            .padding(.top, top)
             .padding(.bottom, 0)
             .accessibilityAddTraits(.isHeader)
     }
@@ -243,6 +300,14 @@ struct PlayerBar: View {
     private var player: AudioPlayback { AudioPlayback.shared }
     private var t: Lang { app.lang }
 
+    /// 144：🔁 开着时大播放钮从亮着的第一篇开始
+    private var firstLit: Int {
+        let loop = app.settings.listenLoop
+        guard loop.on else { return 0 }
+        let lit = loop.shown(ListenLoop.ordered(tracks.map(\.day)))
+        return tracks.firstIndex { lit.contains($0.day) } ?? 0
+    }
+
     var body: some View {
         @Bindable var settings = app.settings
         VStack(spacing: 10) {
@@ -262,7 +327,7 @@ struct PlayerBar: View {
                     .accessibilityLabel(t.t("listen.prev"))
                 Button {
                     if player.playlist, player.track != nil { player.playing ? player.pause() : player.resume() }
-                    else if !tracks.isEmpty { player.play(tracks, from: 0, store: app.attachments) }
+                    else if !tracks.isEmpty { player.play(tracks, from: firstLit, store: app.attachments) }
                 } label: {
                     Image(systemName: player.playlist && player.playing ? "pause.fill" : "play.fill")
                         .font(.system(size: 22))
@@ -279,10 +344,9 @@ struct PlayerBar: View {
             HStack(spacing: 8) {
                 Segmented(items: [(1, t.t("listen.times1")), (2, t.t("listen.times2")), (3, t.t("listen.times3")), (5, t.t("listen.times5")), (0, t.t("listen.always"))],
                           selection: Binding(get: { settings.listenRepeat }, set: { settings.listenRepeat = $0; player.repeatTarget = $0 }))
-                // 整串循环（112）：最后一条放完回到第一条。一个图标，开着高亮，不加字
+                // 🔁 总开关（112 整串循环；144 开着时每天的标题上挑哪几天）。一个图标，开着高亮，不加字
                 Button {
-                    settings.listenLoopAll.toggle()
-                    player.loopAll = settings.listenLoopAll
+                    app.changeLoop { $0.on.toggle() }
                 } label: {
                     Image(systemName: "repeat")
                         .font(.system(size: 16, weight: .semibold))
@@ -459,5 +523,15 @@ struct SentenceText: UIViewRepresentable {
             let learning = UIAction(title: p.titles.learning, image: UIImage(systemName: "arrow.counterclockwise")) { _ in p.onWord(w, .learning) }
             return UIMenu(children: [UIMenu(options: .displayInline, children: [known, learning])] + suggestedActions)
         }
+    }
+}
+
+extension AppModel {
+    /// 144：改 🔁 和亮着的天：存进设置，播放器跟着换
+    func changeLoop(_ change: (inout ListenLoop) -> Void) {
+        var l = settings.listenLoop
+        change(&l)
+        settings.listenLoop = l
+        AudioPlayback.shared.loop = l
     }
 }

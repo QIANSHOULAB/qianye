@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import YiyeKit
 
 enum SortMode: String, CaseIterable {
     case modifiedNew, modifiedOld
@@ -35,6 +36,20 @@ final class Settings {
     var deskMigrated: Bool { didSet { save("yiye.deskMigrated111", deskMigrated) } }
     /// 112：整串循环（最后一条放完回到第一条）。默认关，记住
     var listenLoopAll: Bool { didSet { save("yiye.listenLoopAll", listenLoopAll) } }
+    /// 144：🔁 开着时哪几天在循环里（"yyyy-MM-dd"，"*" = 全亮）、这套亮法是哪天定的（换一天回到只亮今天）
+    var listenLoopDays: [String] { didSet { save("yiye.listenLoopDays", listenLoopDays) } }
+    var listenLoopDay: String { didSet { save("yiye.listenLoopDay", listenLoopDay) } }
+
+    /// 144：🔁 和亮着的天，合成一个
+    var listenLoop: ListenLoop {
+        get { ListenLoop(on: listenLoopAll, lit: Set(listenLoopDays), litDay: listenLoopDay) }
+        set {
+            if listenLoopAll != newValue.on { listenLoopAll = newValue.on }
+            let days = newValue.lit.sorted()
+            if listenLoopDays != days { listenLoopDays = days }
+            if listenLoopDay != newValue.litDay { listenLoopDay = newValue.litDay }
+        }
+    }
     /// 136：书童自己收拾新便签（默认开）
     var shutongAuto: Bool { didSet { save("yiye.shutongAuto", shutongAuto) } }
     /// 136：每周日的清理建议上次是哪一周问的（"2026-W48"）、那张纸条他关了没有
@@ -56,9 +71,22 @@ final class Settings {
         imageGap = persist ? (d.object(forKey: "yiye.imageGap") as? Bool ?? true) : true
         listenBackfilled = persist ? d.bool(forKey: "yiye.listenBackfill088") : true
         deskMigrated = persist ? d.bool(forKey: "yiye.deskMigrated111") : true
-        listenLoopAll = persist ? d.bool(forKey: "yiye.listenLoopAll") : false
+        let loopAll = persist ? d.bool(forKey: "yiye.listenLoopAll") : false
+        listenLoopAll = loopAll
+        // 144：没存过亮法的（112 的老设置）：整串循环开着的迁成 🔁 开着、全亮
+        let today = ListenLoop.key(Date())
+        let loaded = ListenLoop.load(loopAll: loopAll,
+                                     lit: persist ? d.stringArray(forKey: "yiye.listenLoopDays") : nil,
+                                     litDay: persist ? d.string(forKey: "yiye.listenLoopDay") : nil, today: today)
+        listenLoopDays = loaded.lit.sorted()
+        listenLoopDay = loaded.litDay
         shutongAuto = persist ? (d.object(forKey: "yiye.shutongAuto") as? Bool ?? true) : true
         shutongSweepWeek = persist ? (d.string(forKey: "yiye.shutongSweepWeek") ?? "") : ""
+        // 144：迁过来的亮法当场存下，明天才会照规矩翻回只亮今天
+        if persist, d.object(forKey: "yiye.listenLoopDays") == nil {
+            d.set(listenLoopDays, forKey: "yiye.listenLoopDays")
+            d.set(listenLoopDay, forKey: "yiye.listenLoopDay")
+        }
     }
 
     private func save(_ key: String, _ v: Any) {

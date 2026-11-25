@@ -144,9 +144,9 @@ final class CompanionTests: XCTestCase {
     /// 20 毫秒一块（16 kHz 是 320 个样本），整块一个值：RMS 就是这个值
     private func chunk(_ db: Double) -> [Float] { [Float](repeating: Float(pow(10, db / 20)), count: 320) }
 
-    private func run(_ c: inout ClipCutter, _ db: Double, _ n: Int, mute: Bool = false) -> [ClipCutter.Out] {
+    private func run(_ c: inout ClipCutter, _ db: Double, _ n: Int, mute: Bool = false, strict: Bool = false) -> [ClipCutter.Out] {
         var out: [ClipCutter.Out] = []
-        for _ in 0..<n { if let e = c.feed(chunk(db), mute: mute) { out.append(e) } }
+        for _ in 0..<n { if let e = c.feed(chunk(db), mute: mute, strict: strict) { out.append(e) } }
         return out
     }
 
@@ -168,6 +168,18 @@ final class CompanionTests: XCTestCase {
         XCTAssertEqual(peak, -30, accuracy: 0.2)
         XCTAssertFalse(c.speaking)
         XCTAssertTrue(c.clip.isEmpty)
+    }
+
+    /// 144：插嘴（strict）判开口要 0.5 秒，交出去的一句也是从开口前 0.3 秒起，判开口那 0.5 秒一点不丢
+    func testCutterStrictKeepsSamePreRoll() {
+        var c = ClipCutter()
+        XCTAssertTrue(run(&c, -70, 50).isEmpty)
+        XCTAssertEqual(run(&c, -20, 50, strict: true), [.start])
+        _ = run(&c, -70, 39)
+        guard case .clip(let s, _, _)? = run(&c, -70, 1).first else { return XCTFail("没交出一句") }
+        let quiet = Float(pow(10, -70.0 / 20)) * 1.01
+        let lead = s.prefix { $0 <= quiet }.count
+        XCTAssertEqual(Double(lead) / 16_000, 0.3, accuracy: 0.025, "插嘴也是开口前留 0.3 秒")
     }
 
     /// 一直说 25 秒：第一句截在 20 秒整
