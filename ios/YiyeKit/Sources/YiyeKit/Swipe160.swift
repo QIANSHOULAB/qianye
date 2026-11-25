@@ -6,8 +6,8 @@ import Foundation
 public struct SwipeTrash: Equatable, Sendable {
     /// 线：纸条宽的 70%（以后好调）
     public static let line: Double = 0.7
-    /// 手指先往右走过这么多点才算起手（UIKit 的拖动识别器自己也要走 10 点左右才问）
-    public static let start: Double = 6
+    /// 手指往右走过这么多点、横比竖多才算起手。iOS 26 的拖动识别器手指走 3 点就来问（11-25 CI 量的），门槛高了就永远起不来
+    public static let start: Double = 2
 
     public enum Buzz: Equatable, Sendable { case none, crossed, back }
 

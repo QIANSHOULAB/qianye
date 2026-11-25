@@ -27,7 +27,9 @@ final class Swipe160Tests: XCTestCase {
         XCTAssertTrue(SwipeTrash.begins(dx: 12, dy: 3, selecting: false, swipeOpen: false))
         XCTAssertFalse(SwipeTrash.begins(dx: 30, dy: 200, selecting: false, swipeOpen: false))   // 斜着往下：滚列表
         XCTAssertFalse(SwipeTrash.begins(dx: -20, dy: 0, selecting: false, swipeOpen: false))    // 往左：系统的左滑
-        XCTAssertFalse(SwipeTrash.begins(dx: 3, dy: 0, selecting: false, swipeOpen: false))      // 还没走够
+        XCTAssertTrue(SwipeTrash.begins(dx: 3, dy: 0, selecting: false, swipeOpen: false))       // 走 3 点系统就来问了：要认
+        XCTAssertFalse(SwipeTrash.begins(dx: 1, dy: 0, selecting: false, swipeOpen: false))      // 还没走够
+        XCTAssertFalse(SwipeTrash.begins(dx: 3, dy: 3, selecting: false, swipeOpen: false))      // 横竖一样：不算横
         XCTAssertFalse(SwipeTrash.begins(dx: 40, dy: 0, selecting: true, swipeOpen: false))      // 批量选里不扔
         XCTAssertFalse(SwipeTrash.begins(dx: 40, dy: 0, selecting: false, swipeOpen: true))      // 左滑开着：是收回去
     }
