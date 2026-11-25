@@ -1,0 +1,853 @@
+{
+ "sim": "iPhone 17 Pro / iOS-26-5",
+ "results": [
+  {
+   "name": "cam6_noisy.jpg",
+   "info": {
+    "jpeg": true,
+    "orient": 6,
+    "w": 4032,
+    "h": 3024,
+    "mpf": false,
+    "gain": []
+   },
+   "rows": [
+    {
+     "way": "legacy",
+     "cf": null,
+     "bf": 0,
+     "size": 78205,
+     "rounds": 1,
+     "nat": [
+      3024,
+      4032
+     ],
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 971
+    },
+    {
+     "way": "img",
+     "cf": 75.9,
+     "bf": 75.9,
+     "size": 1324797,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 1304
+    },
+    {
+     "way": "imgOff",
+     "cf": 75.9,
+     "bf": 75.9,
+     "size": 1324797,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 532
+    },
+    {
+     "way": "bitmap",
+     "cf": 79,
+     "bf": 79,
+     "size": 1597434,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 941
+    },
+    {
+     "way": "bitmapRaw",
+     "cf": 79,
+     "bf": 79,
+     "size": 1597434,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 945
+    }
+   ],
+   "squeeze": {
+    "way": "img",
+    "flat": 75.9,
+    "tried": [
+     {
+      "way": "img",
+      "flat": 75.9,
+      "ms": 175
+     }
+    ],
+    "ok": true,
+    "size": 1324797
+   }
+  },
+  {
+   "name": "cam6_calm.jpg",
+   "info": {
+    "jpeg": true,
+    "orient": 6,
+    "w": 4032,
+    "h": 3024,
+    "mpf": false,
+    "gain": []
+   },
+   "rows": [
+    {
+     "way": "legacy",
+     "cf": null,
+     "bf": 0,
+     "size": 78205,
+     "rounds": 1,
+     "nat": [
+      3024,
+      4032
+     ],
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 312
+    },
+    {
+     "way": "img",
+     "cf": 91.8,
+     "bf": 91.7,
+     "size": 343365,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 427
+    },
+    {
+     "way": "imgOff",
+     "cf": 91.8,
+     "bf": 91.7,
+     "size": 343365,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 397
+    },
+    {
+     "way": "bitmap",
+     "cf": 93.6,
+     "bf": 93.6,
+     "size": 366310,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 972
+    },
+    {
+     "way": "bitmapRaw",
+     "cf": 93.6,
+     "bf": 93.6,
+     "size": 366310,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 811
+    }
+   ],
+   "squeeze": {
+    "way": "img",
+    "flat": 91.7,
+    "tried": [
+     {
+      "way": "img",
+      "flat": 91.8,
+      "ms": 170
+     }
+    ],
+    "ok": true,
+    "size": 343365
+   }
+  },
+  {
+   "name": "cam1_land_noisy.jpg",
+   "info": {
+    "jpeg": true,
+    "orient": 1,
+    "w": 4032,
+    "h": 3024,
+    "mpf": false,
+    "gain": []
+   },
+   "rows": [
+    {
+     "way": "legacy",
+     "cf": null,
+     "bf": 0,
+     "size": 78045,
+     "rounds": 1,
+     "nat": [
+      4032,
+      3024
+     ],
+     "wh": [
+      2560,
+      1920
+     ],
+     "ms": 349
+    },
+    {
+     "way": "img",
+     "cf": 75.1,
+     "bf": 75,
+     "size": 1364206,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      2560,
+      1920
+     ],
+     "ms": 593
+    },
+    {
+     "way": "imgOff",
+     "cf": 75.1,
+     "bf": 75,
+     "size": 1364206,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      2560,
+      1920
+     ],
+     "ms": 1128
+    },
+    {
+     "way": "bitmap",
+     "cf": 78.1,
+     "bf": 78.1,
+     "size": 1645136,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      2560,
+      1920
+     ],
+     "ms": 1098
+    },
+    {
+     "way": "bitmapRaw",
+     "cf": 78.1,
+     "bf": 78.1,
+     "size": 1645136,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      2560,
+      1920
+     ],
+     "ms": 786
+    }
+   ],
+   "squeeze": {
+    "way": "img",
+    "flat": 75,
+    "tried": [
+     {
+      "way": "img",
+      "flat": 75.1,
+      "ms": 206
+     }
+    ],
+    "ok": true,
+    "size": 1364206
+   }
+  },
+  {
+   "name": "album1_noisy.jpg",
+   "info": {
+    "jpeg": true,
+    "orient": 1,
+    "w": 3024,
+    "h": 4032,
+    "mpf": false,
+    "gain": []
+   },
+   "rows": [
+    {
+     "way": "legacy",
+     "cf": null,
+     "bf": 0,
+     "size": 78205,
+     "rounds": 1,
+     "nat": [
+      3024,
+      4032
+     ],
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 235
+    },
+    {
+     "way": "img",
+     "cf": 75.9,
+     "bf": 75.9,
+     "size": 1324367,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 801
+    },
+    {
+     "way": "imgOff",
+     "cf": 75.9,
+     "bf": 75.9,
+     "size": 1324367,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 555
+    },
+    {
+     "way": "bitmap",
+     "cf": 78.9,
+     "bf": 78.9,
+     "size": 1597922,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 1043
+    },
+    {
+     "way": "bitmapRaw",
+     "cf": 78.9,
+     "bf": 78.9,
+     "size": 1597922,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 708
+    }
+   ],
+   "squeeze": {
+    "way": "img",
+    "flat": 75.9,
+    "tried": [
+     {
+      "way": "img",
+      "flat": 75.9,
+      "ms": 196
+     }
+    ],
+    "ok": true,
+    "size": 1324367
+   }
+  },
+  {
+   "name": "cam6_48mp_noisy.jpg",
+   "info": {
+    "jpeg": true,
+    "orient": 6,
+    "w": 4284,
+    "h": 5712,
+    "mpf": false,
+    "gain": []
+   },
+   "rows": [
+    {
+     "way": "legacy",
+     "cf": null,
+     "bf": 0,
+     "size": 78045,
+     "rounds": 1,
+     "nat": [
+      5712,
+      4284
+     ],
+     "wh": [
+      2560,
+      1920
+     ],
+     "ms": 672
+    },
+    {
+     "way": "img",
+     "cf": 75.9,
+     "bf": 75.9,
+     "size": 974596,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      2560,
+      1920
+     ],
+     "ms": 904
+    },
+    {
+     "way": "imgOff",
+     "cf": 75.9,
+     "bf": 75.9,
+     "size": 974596,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      2560,
+      1920
+     ],
+     "ms": 577
+    },
+    {
+     "way": "bitmap",
+     "cf": 76.8,
+     "bf": 76.7,
+     "size": 1478527,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      2560,
+      1920
+     ],
+     "ms": 1446
+    },
+    {
+     "way": "bitmapRaw",
+     "cf": 76.8,
+     "bf": 76.7,
+     "size": 1478527,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      2560,
+      1920
+     ],
+     "ms": 1215
+    }
+   ],
+   "squeeze": {
+    "way": "img",
+    "flat": 75.9,
+    "tried": [
+     {
+      "way": "img",
+      "flat": 75.9,
+      "ms": 413
+     }
+    ],
+    "ok": true,
+    "size": 974596
+   }
+  },
+  {
+   "name": "gain_apple_cam6_noisy.jpg",
+   "info": {
+    "jpeg": true,
+    "orient": 6,
+    "w": 4032,
+    "h": 3024,
+    "mpf": true,
+    "gain": []
+   },
+   "rows": [
+    {
+     "way": "legacy",
+     "cf": null,
+     "bf": 75.7,
+     "size": 1324658,
+     "rounds": 1,
+     "nat": [
+      3024,
+      4032
+     ],
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 610
+    },
+    {
+     "way": "img",
+     "cf": 75.9,
+     "bf": 75.7,
+     "size": 1324658,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 470
+    },
+    {
+     "way": "imgOff",
+     "cf": 75.9,
+     "bf": 75.7,
+     "size": 1324658,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 504
+    },
+    {
+     "way": "bitmap",
+     "cf": 78.9,
+     "bf": 78.7,
+     "size": 1598269,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 860
+    },
+    {
+     "way": "bitmapRaw",
+     "cf": 78.9,
+     "bf": 78.7,
+     "size": 1598269,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 775
+    }
+   ],
+   "squeeze": {
+    "way": "img",
+    "flat": 75.7,
+    "tried": [
+     {
+      "way": "img",
+      "flat": 75.9,
+      "ms": 401
+     }
+    ],
+    "ok": true,
+    "size": 1324658
+   }
+  },
+  {
+   "name": "gain_apple_cam6_calm.jpg",
+   "info": {
+    "jpeg": true,
+    "orient": 6,
+    "w": 4032,
+    "h": 3024,
+    "mpf": true,
+    "gain": [
+     "apple"
+    ]
+   },
+   "rows": [
+    {
+     "way": "legacy",
+     "cf": null,
+     "bf": 91.7,
+     "size": 343370,
+     "rounds": 1,
+     "nat": [
+      3024,
+      4032
+     ],
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 551
+    },
+    {
+     "way": "img",
+     "cf": 91.5,
+     "bf": 91.7,
+     "size": 343370,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 456
+    },
+    {
+     "way": "imgOff",
+     "cf": 91.5,
+     "bf": 91.7,
+     "size": 343370,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 431
+    },
+    {
+     "way": "bitmap",
+     "cf": 93.3,
+     "bf": 93.5,
+     "size": 366370,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 678
+    },
+    {
+     "way": "bitmapRaw",
+     "cf": 93.3,
+     "bf": 93.5,
+     "size": 366370,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 732
+    }
+   ],
+   "squeeze": {
+    "way": "img",
+    "flat": 91.7,
+    "tried": [
+     {
+      "way": "img",
+      "flat": 91.5,
+      "ms": 333
+     }
+    ],
+    "ok": true,
+    "size": 343370
+   }
+  },
+  {
+   "name": "gain_iso_cam6_noisy.jpg",
+   "info": {
+    "jpeg": true,
+    "orient": 6,
+    "w": 4032,
+    "h": 3024,
+    "mpf": true,
+    "gain": []
+   },
+   "rows": [
+    {
+     "way": "legacy",
+     "cf": null,
+     "bf": 75.7,
+     "size": 1324658,
+     "rounds": 1,
+     "nat": [
+      3024,
+      4032
+     ],
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 830
+    },
+    {
+     "way": "img",
+     "cf": 75.9,
+     "bf": 75.7,
+     "size": 1324658,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 1012
+    },
+    {
+     "way": "imgOff",
+     "cf": 75.9,
+     "bf": 75.7,
+     "size": 1324658,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 1023
+    },
+    {
+     "way": "bitmap",
+     "cf": 78.9,
+     "bf": 78.7,
+     "size": 1598269,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 968
+    },
+    {
+     "way": "bitmapRaw",
+     "cf": 78.9,
+     "bf": 78.7,
+     "size": 1598269,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 705
+    }
+   ],
+   "squeeze": {
+    "way": "img",
+    "flat": 75.7,
+    "tried": [
+     {
+      "way": "img",
+      "flat": 75.9,
+      "ms": 343
+     }
+    ],
+    "ok": true,
+    "size": 1324658
+   }
+  },
+  {
+   "name": "gain_iso_cam6_calm.jpg",
+   "info": {
+    "jpeg": true,
+    "orient": 6,
+    "w": 4032,
+    "h": 3024,
+    "mpf": true,
+    "gain": []
+   },
+   "rows": [
+    {
+     "way": "legacy",
+     "cf": null,
+     "bf": 91.7,
+     "size": 343370,
+     "rounds": 1,
+     "nat": [
+      3024,
+      4032
+     ],
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 443
+    },
+    {
+     "way": "img",
+     "cf": 91.5,
+     "bf": 91.7,
+     "size": 343370,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 485
+    },
+    {
+     "way": "imgOff",
+     "cf": 91.5,
+     "bf": 91.7,
+     "size": 343370,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 387
+    },
+    {
+     "way": "bitmap",
+     "cf": 93.3,
+     "bf": 93.5,
+     "size": 366370,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 723
+    },
+    {
+     "way": "bitmapRaw",
+     "cf": 93.3,
+     "bf": 93.5,
+     "size": 366370,
+     "rounds": 0,
+     "nat": null,
+     "wh": [
+      1920,
+      2560
+     ],
+     "ms": 569
+    }
+   ],
+   "squeeze": {
+    "way": "img",
+    "flat": 91.7,
+    "tried": [
+     {
+      "way": "img",
+      "flat": 91.5,
+      "ms": 241
+     }
+    ],
+    "ok": true,
+    "size": 343370
+   }
+  }
+ ]
+}
