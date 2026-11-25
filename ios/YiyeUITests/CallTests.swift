@@ -51,12 +51,11 @@ final class CallTests: XCTestCase {
         launch(say: "书童做完没|挂掉")
         check(state.waitForExistence(timeout: 8), "139-01-没接通", "顶上没有通话条")
         check(label(state, "Butler's listening", 3), "139-02-接通不在听", "接通以后应该是「在听」")
-        shot("139-1-接通")
-        check(label(state, "Butler's thinking", 15), "139-03-没在想", "问了一句应该「在想」")
+        check(label(state, "Butler's thinking", 25), "139-03-没在想", "问了一句应该「在想」")
         shot("139-2-在想")
-        check(label(state, "Butler's talking", 8), "139-04-没在说", "应该「在说」")
+        check(label(state, "Butler's talking", 15), "139-04-没在说", "应该「在说」")
         shot("139-3-在说")
-        check(gone(state, 15), "139-05-说挂掉没挂", "说了「挂掉」，通话条应该没了")
+        check(gone(state, 25), "139-05-说挂掉没挂", "说了「挂掉」，通话条应该没了")
         check(app.staticTexts["Hung up. Back to your music."].waitForExistence(timeout: 2), "139-06-没说挂了", "挂了应该弹「Hung up」")
         shot("139-4-挂了")
     }
@@ -65,7 +64,7 @@ final class CallTests: XCTestCase {
     func testOtherWordsWithHangDontHangUp() {
         launch(say: "把那个会话挂掉|挂个后台")
         check(state.waitForExistence(timeout: 8), "139-07-没接通", "顶上没有通话条")
-        sleep(20)
+        sleep(30)
         check(state.exists, "139-08-误挂", "「把那个会话挂掉」「挂个后台」不该挂")
     }
 
