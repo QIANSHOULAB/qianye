@@ -303,17 +303,24 @@ struct SpokenPanel: View {
     let swapBack: () -> Void
     @Environment(AppModel.self) private var app
 
+    private var spokenText: some View {
+        Text(note.spoken)
+            .font(.system(size: 15))
+            .foregroundStyle(Color(Ink.text2))
+            .textSelection(.enabled)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityIdentifier("shutong.spoken")
+    }
+
     var body: some View {
         let t = app.lang
         let same = note.markdown == note.spoken
         VStack(alignment: .leading, spacing: 8) {
-            ScrollView {
-                Text(note.spoken)
-                    .font(.system(size: 15))
-                    .foregroundStyle(Color(Ink.text2))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityIdentifier("shutong.spoken")
+            // 短的多高占多高，长的才滚（ScrollView 会把空的地方也撑满）
+            ViewThatFits(in: .vertical) {
+                spokenText
+                ScrollView { spokenText }
             }
             HStack {
                 if same {
@@ -326,7 +333,7 @@ struct SpokenPanel: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .frame(maxHeight: UIScreen.main.bounds.height * (compact ? 0.22 : 0.4))
+        .frame(maxHeight: UIScreen.main.bounds.height * (compact ? 0.22 : 0.4), alignment: .top)
         .background(Color(Ink.text).opacity(0.06))
         .overlay(alignment: .bottom) { Rectangle().fill(Color(Ink.barLine)).frame(height: 0.5) }
     }
