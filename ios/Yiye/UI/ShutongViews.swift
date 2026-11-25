@@ -317,10 +317,12 @@ struct SpokenPanel: View {
         let t = app.lang
         let same = note.markdown == note.spoken
         VStack(alignment: .leading, spacing: 8) {
-            // 短的多高占多高，长的才滚（ScrollView 会把空的地方也撑满）
-            ViewThatFits(in: .vertical) {
+            // 短的多高占多高；长的才放进一个固定高的框里滚（ScrollView 会把空的地方也撑满）
+            if note.spoken.count <= 240 {
                 spokenText
+            } else {
                 ScrollView { spokenText }
+                    .frame(height: UIScreen.main.bounds.height * (compact ? 0.16 : 0.32))
             }
             HStack {
                 if same {
@@ -333,7 +335,7 @@ struct SpokenPanel: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .frame(maxHeight: UIScreen.main.bounds.height * (compact ? 0.22 : 0.4), alignment: .top)
+        .fixedSize(horizontal: false, vertical: true)
         .background(Color(Ink.text).opacity(0.06))
         .overlay(alignment: .bottom) { Rectangle().fill(Color(Ink.barLine)).frame(height: 0.5) }
     }
