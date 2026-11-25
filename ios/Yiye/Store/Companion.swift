@@ -1002,6 +1002,17 @@ extension Companion {
         }
     }
 
+    /// 意图用：接通，等话筒真开了（最多 3 秒）。返回接通没有（锁屏里系统不让开话筒就是 false）
+    func startCallWaiting() async -> Bool {
+        startCall()
+        for _ in 0..<30 {
+            if callOn { return true }
+            if case .failed = phase { return false }
+            try? await Task.sleep(nanoseconds: 100_000_000)
+        }
+        return callOn
+    }
+
     /// 接通了（嘟一声已经响了）
     fileprivate func connected(companion: Bool) {
         guard let app else { return }
@@ -1381,9 +1392,10 @@ final class Ear: @unchecked Sendable {
         lock.unlock()
     }
 
-    /// 139：电话的音频会话选项（蓝牙耳机用它的麦）
+    /// 139：电话的音频会话选项。蓝牙耳机用它的麦：iOS 26 的 AirPods 高音质收音（bluetoothHighQualityRecording），
+    /// 耳机不支持就退到 HFP（allowBluetoothHFP，SDK 写明两个一起给时 HFP 兜底）。挂了会话一放，歌回 A2DP 原音质
     static var callOptions: AVAudioSession.CategoryOptions {
-        [.defaultToSpeaker, .allowBluetooth]
+        [.defaultToSpeaker, .allowBluetoothHFP, .bluetoothHighQualityRecording]
     }
 
     /// 117 插嘴：这一句的头 1 秒交出去对声纹

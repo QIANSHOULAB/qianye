@@ -34,17 +34,20 @@ struct SaveToYiyeIntent: AppIntent {
     }
 }
 
-/// 139「叫大管家」：喊一声接通（Siri、捷径、侧键、耳机上喊 Siri），就是深聊那套；说「挂掉」就挂，挂了歌接着放
-struct CallButlerIntent: AppIntent {
+/// 139「叫大管家」：喊一声接通（Siri、捷径、侧键、耳机上喊 Siri），就是深聊那套；说「挂掉」就挂，挂了歌接着放。
+/// 锁着屏：先在后台直接开话筒（AudioRecordingIntent：系统认这是开录音的意图）；系统不让（话筒起不来）再请他解锁、到前台接通。
+struct CallButlerIntent: AudioRecordingIntent {
     static let title: LocalizedStringResource = "call.intent"
     static let description = IntentDescription("call.intentDesc")
-    static let openAppWhenRun: Bool = true
+    static let supportedModes: IntentModes = [.background, .foreground(.dynamic)]
 
     @MainActor
     func perform() async throws -> some IntentResult {
         let app = AppModel.shared
         app.started()
-        app.companion.startCall()
+        if await app.companion.startCallWaiting() { return .result() }
+        try await continueInForeground(nil, alwaysConfirm: false)
+        _ = await app.companion.startCallWaiting()
         return .result()
     }
 }

@@ -41,9 +41,14 @@ final class CallTests: XCTestCase {
         return XCTWaiter().wait(for: [ex], timeout: timeout) == .completed
     }
 
+    /// 等标签变成 text（直接轮询：谓词等法在这个胶囊上判不出来）
     private func label(_ e: XCUIElement, _ text: String, _ timeout: TimeInterval) -> Bool {
-        let ex = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", text), object: e)
-        return XCTWaiter().wait(for: [ex], timeout: timeout) == .completed
+        let end = Date().addingTimeInterval(timeout)
+        repeat {
+            if e.exists && e.label == text { return true }
+            usleep(200_000)
+        } while Date() < end
+        return false
     }
 
     /// 接通 → 问一句 → 答 → 说「挂掉」→ 挂（信箱断着：模拟器里根本没有信箱）
