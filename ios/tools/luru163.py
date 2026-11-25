@@ -78,7 +78,11 @@ for kind in ('apple', 'iso'):
             names.append(dst)
 for n in names:
     b = open(os.path.join(IMG, n), 'rb').read()
-    P(f'  {n}: {len(b)/1e6:.2f}MB MPF={b"MPF" in b[:200000]} HDRGainMap={b"HDRGainMap" in b} iso={b"21496" in b} hdrgm={b"hdrgm" in b}')
+    try:
+        o = Image.open(os.path.join(IMG, n)).getexif().get(0x0112)
+    except Exception as e:
+        o = f'?{e}'
+    P(f'  {n}: 方向 {o} {len(b)/1e6:.2f}MB MPF={b"MPF" in b[:200000]} HDRGainMap={b"HDRGainMap" in b} iso={b"21496" in b} hdrgm={b"hdrgm" in b}')
 json.dump(names, open(os.path.join(IMG, 'list.json'), 'w'))
 
 open(f'{W}/lr/web/sim163.html', 'w').write('''<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
@@ -176,8 +180,15 @@ srv = http.server.ThreadingHTTPServer(('127.0.0.1', 8163), H)
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 subprocess.run(['xcrun', 'simctl', 'boot', UDID])
 subprocess.run(['xcrun', 'simctl', 'bootstatus', UDID, '-b'], timeout=600)
-time.sleep(5)
-subprocess.run(['xcrun', 'simctl', 'openurl', UDID, 'http://127.0.0.1:8163/web/sim163.html'], check=True)
+time.sleep(20)
+subprocess.run(['xcrun', 'simctl', 'launch', UDID, 'com.apple.mobilesafari'])
+time.sleep(25)
+for i in range(6):                                   # 新模拟器头一回开 Safari 慢：多试几次
+    r = subprocess.run(['xcrun', 'simctl', 'openurl', UDID, 'http://127.0.0.1:8163/web/sim163.html'], capture_output=True, text=True)
+    P('openurl', i, r.returncode, r.stderr.strip()[-200:])
+    if r.returncode == 0:
+        break
+    time.sleep(20)
 t0 = time.time()
 shot = 0
 while not done.wait(30):
