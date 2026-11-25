@@ -2126,6 +2126,23 @@
         }
       }
     },
+    "listen.fresh": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New ones to hear"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有新稿子没听"
+          }
+        }
+      }
+    },
     "listen.loopAll": {
       "extractionState": "manual",
       "localizations": {

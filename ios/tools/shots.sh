@@ -120,4 +120,41 @@ for tid in yellow green blue pink; do
     done
   done
 done
+# 小屏（157）：顶栏三个按钮挤不挤、「全部便签 ▾」有没有被挤成省略号。挑一台 375 点宽的（SE / mini / 16e 哪个有用哪个），
+# 列表、工具箱，中英 × 浅深。挑不到、开不起来就跳过（不算这次没过）
+SMALL_TYPE=$(xcrun simctl list devicetypes 2>/dev/null | grep -E "iPhone SE|iPhone 1[2-3] mini" | tail -1 | sed -E 's/.*\((com\.apple[^)]*)\).*/\1/')
+SMALL_RT=$(xcrun simctl list runtimes 2>/dev/null | grep -E "^iOS" | tail -1 | sed -E 's/.* - (com\.apple[^ ]*).*/\1/')
+if [ -n "$SMALL_TYPE" ] && [ -n "$SMALL_RT" ] && SMALL=$(xcrun simctl create yiye-small "$SMALL_TYPE" "$SMALL_RT" 2>/dev/null); then
+  echo "小屏：$SMALL_TYPE"
+  xcrun simctl boot "$SMALL" 2>/dev/null || true
+  xcrun simctl bootstatus "$SMALL" -b >/dev/null 2>&1 || true
+  xcrun simctl status_bar "$SMALL" override --time "9:41" >/dev/null 2>&1 || true
+  if xcrun simctl install "$SMALL" "$APP"; then
+    for lang in zh-Hans en; do
+      short=$([ "$lang" = zh-Hans ] && echo zh || echo en)
+      locale=$([ "$lang" = zh-Hans ] && echo zh_CN || echo en_US)
+      for ap in light dark; do
+        xcrun simctl ui "$SMALL" appearance "$ap"
+        dir="$OUT/small-$short-$ap"
+        rm -rf "$dir"; mkdir -p "$dir"
+        i=1
+        for s in list toolbox; do
+          xcrun simctl terminate "$SMALL" "$BID" >/dev/null 2>&1 || true
+          SIMCTL_CHILD_TZ=Asia/Singapore xcrun simctl launch "$SMALL" "$BID" -YiyeDemo YES -YiyeScreen "$s" -YiyeLang "$lang" -YiyeAppearance "$ap" \
+            -AppleLanguages "($lang)" -AppleLocale "$locale" >/dev/null || true
+          sleep 5
+          png="$dir/$(printf %02d $i)-$s.png"
+          if xcrun simctl io "$SMALL" screenshot --type=png "$png" >/dev/null 2>&1; then
+            sips --resampleWidth 750 -s format jpeg -s formatOptions 84 "$png" --out "${png%.png}.jpg" >/dev/null && rm "$png"
+          fi
+          i=$((i+1))
+        done
+      done
+    done
+  fi
+  xcrun simctl shutdown "$SMALL" >/dev/null 2>&1 || true
+  xcrun simctl delete "$SMALL" >/dev/null 2>&1 || true
+else
+  echo "小屏：没有 375 点宽的模拟器，跳过"
+fi
 exit $fail

@@ -14,6 +14,8 @@ struct ListScreen: View {
     @Environment(AppModel.self) private var app
     @Query(filter: #Predicate<Note> { $0.trashed == false && $0.kind != "listen" }, sort: \Note.modifiedAt, order: .reverse) private var notes: [Note]
     @Query(sort: \Folder.order) private var folders: [Folder]
+    /// 157：还没听过的听力稿（大管家送来、还没完整放过一遍的）：顶栏「听力」右上角一个小点
+    @Query(filter: #Predicate<Note> { $0.trashed == false && $0.kind == "listen" && $0.heardAt == nil }) private var unheard: [Note]
     @State private var query = ""
     @State private var showFolders = false
     @State private var folderDetent: PresentationDetent = .medium
@@ -65,6 +67,23 @@ struct ListScreen: View {
                 Button { ShutongModel.shared.open = true } label: { Image(systemName: "studentdesk") }
                     .buttonStyle(SmartButtonStyle())
                     .accessibilityLabel(t.t("shutong.name"))
+                // 157 听力（Song 11-25「把听力放出来，经常用」）：一点直接进；有没听过的新稿子，右上角一个小点
+                let fresh = unheard.contains { $0.listenPath != nil }
+                Button { app.listening = ListenOpen() } label: {
+                    Image(systemName: "headphones")
+                        .overlay(alignment: .topTrailing) {
+                            if fresh {
+                                Circle().fill(Color(Ink.accent))
+                                    .frame(width: 8, height: 8)
+                                    .overlay(Circle().strokeBorder(Color(Ink.btnTop), lineWidth: 1.5))
+                                    .offset(x: 6, y: -5)
+                            }
+                        }
+                }
+                .buttonStyle(SmartButtonStyle())
+                .accessibilityLabel(t.t("listen.title"))
+                .accessibilityValue(fresh ? t.t("listen.fresh") : "")
+                .accessibilityIdentifier("bar.listen")
             } center: {
                 Button { showFolders = true } label: {
                     HStack(spacing: 5) {
@@ -357,7 +376,6 @@ struct ListScreen: View {
     private func openTool(_ tool: Tool) {
         closeTools()
         switch tool {
-        case .listen: app.listening = ListenOpen()
         case .settings: app.path.append(.settings)
         case .companion:
             if !broadcast.fire() { app.show(t.t("companion.noPanel")) }
@@ -365,8 +383,6 @@ struct ListScreen: View {
             app.companion.toggleDeep()
         case .dove:
             DoveModel.shared.open = true             // 128：飞鸽传书（RootView 里的 sheet）
-        case .shutong:
-            ShutongModel.shared.open = true          // 136：书童（RootView 里的 sheet）
         }
     }
 

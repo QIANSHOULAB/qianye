@@ -207,6 +207,7 @@ S = {
  "listen.redub": ("重配", "Re-dub"),
  "listen.loopAll": ("整串循环", "Loop the whole list"),
  "listen.loopEvery": ("全部", "All"),
+ "listen.fresh": ("有新稿子没听", "New ones to hear"),
  "call.intent": ("叫大管家", "Call the butler"),
  "call.intentDesc": ("喊一声就接通。说完它就听，说「挂掉」就挂，挂了歌接着放。", "Rings the butler. Talk, it listens. Say “bye” and it hangs up — your music picks right back up."),
  "call.listening": ("大管家在听", "Butler's listening"),

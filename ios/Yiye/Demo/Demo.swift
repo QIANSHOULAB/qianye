@@ -145,6 +145,7 @@ enum Demo {
             }
             n.inListen = true
             if k == 2 { n.heardAt = Date().addingTimeInterval(-2 * 86_400) }       // 听完的那篇淡一点（112）
+            if k != 0, UserDefaults.standard.bool(forKey: "YiyeOneUnheard") { n.heardAt = Date().addingTimeInterval(-3600) }   // 157 UI 测试
             if k == 0 { listenFirst = n.id }
         }
         // 144：前天两篇短的（各两句、9 秒）：循环挑天的截图和 UI 测试（放完那天最后一篇回那天第一篇）

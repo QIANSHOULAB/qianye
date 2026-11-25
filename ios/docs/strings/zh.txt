@@ -129,6 +129,7 @@ listen.dubQueued	排上了，大管家一上线就开嗓。
 listen.dubSent	交给大管家了，配完音自己回到这条。
 listen.dubbed	大管家配好音了：%@
 listen.empty	听力还是空的。列表里左滑一条、点小耳机，就塞进来了。
+listen.fresh	有新稿子没听
 listen.loopAll	整串循环
 listen.loopDay	循环%@
 listen.loopEvery	全部

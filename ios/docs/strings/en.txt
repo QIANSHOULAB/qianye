@@ -129,6 +129,7 @@ listen.dubQueued	Queued. The butler voices it the moment it's back.
 listen.dubSent	Sent to the butler. The audio lands back on this note.
 listen.dubbed	The butler voiced “%@”
 listen.empty	Nothing to listen to yet. Swipe left on a note, tap the headphones, done.
+listen.fresh	New ones to hear
 listen.loopAll	Loop the whole list
 listen.loopDay	Loop %@
 listen.loopEvery	All
