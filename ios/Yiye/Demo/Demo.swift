@@ -148,10 +148,8 @@ enum Demo {
         }
         // 144：前天两篇短的（各两句、9 秒）：循环挑天的截图和 UI 测试（放完那天最后一篇回那天第一篇）
         let twoDays = [
-            "# Rain all week in London
-It will rain every day this week. Take an umbrella.",
-            "# Trains run late in Tokyo
-A storm slowed the trains on Sunday. Most were on time again by noon.",
+            "# Rain all week in London\nIt will rain every day this week. Take an umbrella.",
+            "# Trains run late in Tokyo\nA storm slowed the trains on Sunday. Most were on time again by noon.",
         ]
         let eightToday = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: now) ?? now
         for (k, text) in twoDays.enumerated() {
