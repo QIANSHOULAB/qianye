@@ -46,17 +46,26 @@ final class CallTests: XCTestCase {
         app.staticTexts.matching(NSPredicate(format: "label == %@", text)).firstMatch.waitForExistence(timeout: timeout)
     }
 
-    /// 接通 → 问一句 → 答 → 说「挂掉」→ 挂（信箱断着：模拟器里根本没有信箱）
+    /// 点一下状态字：Demo 走一步（不靠计时）
+    private func step() { state.tap() }
+
+    /// 接通 → 问一句 → 在想 → 在说 → 说「挂掉」→ 挂（信箱断着：模拟器里根本没有信箱）
     func testAskThenHangUpByWords() {
         launch(say: "书童做完没|挂掉")
         check(state.waitForExistence(timeout: 8), "139-01-没接通", "顶上没有通话条")
-        check(label(state, "Butler's listening", 3), "139-02-接通不在听", "接通以后应该是「在听」")
-        check(label(state, "Butler's thinking", 25), "139-03-没在想", "问了一句应该「在想」")
+        check(label(state, "Butler's listening", 5), "139-02-接通不在听", "接通以后应该是「在听」")
+        shot("139-1-接通")
+        step()
+        check(label(state, "Butler's thinking", 10), "139-03-没在想", "问了一句应该「在想」")
         shot("139-2-在想")
-        check(label(state, "Butler's talking", 15), "139-04-没在说", "应该「在说」")
+        step()
+        check(label(state, "Butler's talking", 10), "139-04-没在说", "应该「在说」")
         shot("139-3-在说")
-        check(gone(state, 25), "139-05-说挂掉没挂", "说了「挂掉」，通话条应该没了")
-        check(app.staticTexts["Hung up. Back to your music."].waitForExistence(timeout: 2), "139-06-没说挂了", "挂了应该弹「Hung up」")
+        step()
+        check(label(state, "Butler's listening", 10), "139-04b-没回到在听", "说完应该回到「在听」")
+        step()
+        check(gone(state, 10), "139-05-说挂掉没挂", "说了「挂掉」，通话条应该没了")
+        check(app.staticTexts["Hung up. Back to your music."].waitForExistence(timeout: 3), "139-06-没说挂了", "挂了应该弹「Hung up」")
         shot("139-4-挂了")
     }
 
@@ -64,8 +73,11 @@ final class CallTests: XCTestCase {
     func testOtherWordsWithHangDontHangUp() {
         launch(say: "把那个会话挂掉|挂个后台")
         check(state.waitForExistence(timeout: 8), "139-07-没接通", "顶上没有通话条")
-        sleep(30)
-        check(state.exists, "139-08-误挂", "「把那个会话挂掉」「挂个后台」不该挂")
+        for _ in 0..<6 {                       // 两句各走一圈：在想 → 在说 → 在听
+            step()
+            usleep(300_000)
+        }
+        check(state.exists && label(state, "Butler's listening", 10), "139-08-误挂", "「把那个会话挂掉」「挂个后台」不该挂")
     }
 
     /// 顶上的挂断键
@@ -74,6 +86,6 @@ final class CallTests: XCTestCase {
         let b = app.buttons["call.hangUp"].firstMatch
         check(b.waitForExistence(timeout: 8), "139-09-没挂断键", "通话条上没有挂断键")
         b.tap()
-        check(gone(state, 3), "139-10-点了没挂", "点挂断键应该挂")
+        check(gone(state, 5), "139-10-点了没挂", "点挂断键应该挂")
     }
 }

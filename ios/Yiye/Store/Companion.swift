@@ -93,6 +93,7 @@ final class Companion {
     @ObservationIgnored fileprivate var heldOff = false
     @ObservationIgnored fileprivate var lastSpokeEnd: Double?
     @ObservationIgnored fileprivate var firstSound: Double?
+    @ObservationIgnored fileprivate var demoSays: [String] = []
 
     enum After { case nothing, listen, stop }
     /// 117：开口那一刻的截图先寄了没有
@@ -1101,37 +1102,38 @@ extension Companion {
         }
     }
 
-    /// 截图、UI 测试：假装接通（模拟器没有真话筒、没有信箱）。-YiyeCallSay「书童做完没|挂掉」：接通 10 秒后当他说了第一句，以后每句隔 4 秒，
-    /// 不是挂断词的当问了、答了；挂断词照手机本地的规矩挂
+    /// 截图、UI 测试：假装接通（模拟器没有真话筒、没有信箱）。-YiyeCallSay「书童做完没|挂掉」是他要说的几句（| 隔开）。
+    /// 不靠计时往下走（CI 的模拟器慢起来截一张图要好几秒）：测试点一下顶上的状态字走一步——在听 → 他说下一句（挂断词照手机本地的
+    /// 规矩挂；别的当问了：在想）→ 在说 → 在听
     fileprivate func demoCall() {
         line = CallLine(idleOn: false)
         line.connect(now: Date(), companion: false)
         callOn = true
         deep = true
         phase = .listening
-        let says = (UserDefaults.standard.string(forKey: "YiyeCallSay") ?? "").split(separator: "|").map(String.init)
-        Task {
-            for (k, s) in says.enumerated() {                       // CI 的模拟器慢：每个样子停够久，测试截得到
-                try? await Task.sleep(nanoseconds: k == 0 ? 10_000_000_000 : 4_000_000_000)
-                guard self.callOn else { return }
-                if HangUp.endsCall(s) {
-                    self.line.hangUp(.words, port: NoPort())
-                    self.callOn = false
-                    self.deep = false
-                    self.phase = .off
-                    self.callTimes = "电话：说挂掉到挂断 0.0 秒（模拟器）"
-                    self.app?.show(self.app?.lang.t("call.hungUp") ?? "", seconds: 3)
-                    return
-                }
-                self.lastHeard = s
-                self.phase = .asking
-                try? await Task.sleep(nanoseconds: 8_000_000_000)
-                guard self.callOn else { return }
-                self.phase = .speaking
-                try? await Task.sleep(nanoseconds: 8_000_000_000)
-                guard self.callOn else { return }
-                self.phase = .listening
+        demoSays = (UserDefaults.standard.string(forKey: "YiyeCallSay") ?? "").split(separator: "|").map(String.init)
+    }
+
+    /// 截图、UI 测试：走一步（见 demoCall）
+    func demoNext() {
+        guard app?.demo != nil, callOn else { return }
+        switch phase {
+        case .asking: phase = .speaking
+        case .speaking: phase = .listening
+        default:
+            guard !demoSays.isEmpty else { return }
+            let s = demoSays.removeFirst()
+            if HangUp.endsCall(s) {
+                line.hangUp(.words, port: NoPort())
+                callOn = false
+                deep = false
+                phase = .off
+                callTimes = "电话：说挂掉到挂断 0.0 秒（模拟器）"
+                app?.show(app?.lang.t("call.hungUp") ?? "", seconds: 3)
+                return
             }
+            lastHeard = s
+            phase = .asking
         }
     }
 }

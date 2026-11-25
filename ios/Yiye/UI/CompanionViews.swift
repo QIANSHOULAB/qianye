@@ -76,6 +76,7 @@ struct CallBar: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color(Ink.text))
                     .accessibilityIdentifier("call.state")
+                    .onTapGesture { c.demoNext() }                 // 只在截图、UI 测试里有用（见 Companion.demoCall）
                 Button {
                     c.hangUp(.button)
                 } label: {
