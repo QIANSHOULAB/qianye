@@ -1101,7 +1101,7 @@ extension Companion {
         }
     }
 
-    /// 截图、UI 测试：假装接通（模拟器没有真话筒、没有信箱）。-YiyeCallSay「书童做完没|挂掉」：每 2.5 秒当他说了一句，
+    /// 截图、UI 测试：假装接通（模拟器没有真话筒、没有信箱）。-YiyeCallSay「书童做完没|挂掉」：接通 8 秒后当他说了第一句，以后每句隔 4 秒，
     /// 不是挂断词的当问了、答了；挂断词照手机本地的规矩挂
     fileprivate func demoCall() {
         line = CallLine(idleOn: false)
@@ -1111,8 +1111,8 @@ extension Companion {
         phase = .listening
         let says = (UserDefaults.standard.string(forKey: "YiyeCallSay") ?? "").split(separator: "|").map(String.init)
         Task {
-            for s in says {
-                try? await Task.sleep(nanoseconds: 2_500_000_000)
+            for (k, s) in says.enumerated() {                       // CI 的模拟器慢：每个样子停够久，测试截得到
+                try? await Task.sleep(nanoseconds: k == 0 ? 8_000_000_000 : 4_000_000_000)
                 guard self.callOn else { return }
                 if HangUp.endsCall(s) {
                     self.line.hangUp(.words, port: NoPort())
@@ -1125,10 +1125,10 @@ extension Companion {
                 }
                 self.lastHeard = s
                 self.phase = .asking
-                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                try? await Task.sleep(nanoseconds: 4_000_000_000)
                 guard self.callOn else { return }
                 self.phase = .speaking
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                try? await Task.sleep(nanoseconds: 4_000_000_000)
                 guard self.callOn else { return }
                 self.phase = .listening
             }
