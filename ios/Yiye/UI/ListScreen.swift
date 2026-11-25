@@ -59,7 +59,7 @@ struct ListScreen: View {
             if selecting {
                 selectionBar
             } else {
-            SmartBar {
+            SmartBar(centerInset: Narrow.on ? 140 : 104) {      // 157：窄屏中间只给两边按钮之间那一段（长的文件夹名先缩小再省略，不压按钮）
                 ToolboxButton(trigger: broadcast) {
                     withAnimation(.easeOut(duration: 0.2)) { showTools.toggle() }
                 }
@@ -87,9 +87,9 @@ struct ListScreen: View {
             } center: {
                 Button { showFolders = true } label: {
                     HStack(spacing: 5) {
-                        BarTitle(text: currentFolder?.name ?? t.t("list.all"))
+                        BarTitle(text: currentFolder?.name ?? t.t("list.all"), size: Narrow.on ? 15 : 17)
                         Image(systemName: "chevron.down")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.system(size: Narrow.on ? 10 : 11, weight: .bold))
                             .foregroundStyle(Color(Ink.text3))
                     }
                     .hit44()

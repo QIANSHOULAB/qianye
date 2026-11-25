@@ -43,11 +43,14 @@ struct SmartBar<Left: View, Center: View, Right: View>: View {
 /// 顶栏上的标题
 struct BarTitle: View {
     let text: String
+    /// 157：窄屏的主页顶栏用 15
+    var size: CGFloat = 17
     var body: some View {
         Text(text)
-            .font(.system(size: 17, weight: .semibold))
+            .font(.system(size: size, weight: .semibold))
             .foregroundStyle(Color(Ink.text))
             .lineLimit(1)
+            .minimumScaleFactor(0.85)
             .shadow(color: .white.opacity(0.6), radius: 0, y: 0.5)
     }
 }
