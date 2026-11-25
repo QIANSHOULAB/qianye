@@ -39,6 +39,7 @@ struct RootView: View {
                 }
         }
         .tint(Color(uiColor: Ink.accent))
+        .frame(maxWidth: Narrow.demo ? 375 : .infinity)                                            // 157 截图：限宽 375 看小屏挤不挤
         .overlay(alignment: .bottom) { ToastView() }
         .overlay(alignment: .top) { CallBar() }                                                     // 139 打电话式
         .overlay { if app.busy != nil { BusyOverlay() } }

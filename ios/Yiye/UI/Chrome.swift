@@ -53,17 +53,25 @@ struct BarTitle: View {
 }
 
 /// 2014 年那种按钮：圆角小方块，上亮下暗，一圈细边
+/// 157：窄屏（375 点宽那种，或者截图时 -YiyeNarrow 限宽）。主页顶栏左右各三个按钮，「全部便签 ▾」只剩一指宽，按钮左右留白收一点
+enum Narrow {
+    static var demo: Bool { UserDefaults.standard.bool(forKey: "YiyeNarrow") }
+    @MainActor static var on: Bool { demo || UIScreen.main.bounds.width < 390 }
+}
+
 struct SmartButtonStyle: ButtonStyle {
     var prominent = false
     var minWidth: CGFloat = 40
+    /// 157：窄屏的顶栏：左右留白 10 → 7，最窄 40 → 34
+    var compact = false
 
     func makeBody(configuration: Configuration) -> some View {
         let pressed = configuration.isPressed
         return configuration.label
             .font(.system(size: 15, weight: .medium))
             .foregroundStyle(prominent ? Color.white : Color(Ink.text2))
-            .padding(.horizontal, 10)
-            .frame(minWidth: minWidth, minHeight: 32)
+            .padding(.horizontal, compact ? 7 : 10)
+            .frame(minWidth: compact ? min(minWidth, 34) : minWidth, minHeight: 32)
             .background {
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
                     .fill(prominent

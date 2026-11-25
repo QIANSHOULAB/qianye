@@ -65,7 +65,7 @@ struct ListScreen: View {
                 }
                 // 136 书童：一点，从下面升起半屏聊天窗
                 Button { ShutongModel.shared.open = true } label: { Image(systemName: "studentdesk") }
-                    .buttonStyle(SmartButtonStyle())
+                    .buttonStyle(SmartButtonStyle(compact: Narrow.on))
                     .accessibilityLabel(t.t("shutong.name"))
                 // 157 听力（Song 11-25「把听力放出来，经常用」）：一点直接进；有没听过的新稿子，右上角一个小点
                 let fresh = unheard.contains { $0.listenPath != nil }
@@ -80,7 +80,7 @@ struct ListScreen: View {
                             }
                         }
                 }
-                .buttonStyle(SmartButtonStyle())
+                .buttonStyle(SmartButtonStyle(compact: Narrow.on))
                 .accessibilityLabel(t.t("listen.title"))
                 .accessibilityValue(fresh ? t.t("listen.fresh") : "")
                 .accessibilityIdentifier("bar.listen")
@@ -97,7 +97,7 @@ struct ListScreen: View {
                 .buttonStyle(.plain)
             } right: {
                 Button { app.startVoice() } label: { Image(systemName: "mic") }
-                    .buttonStyle(SmartButtonStyle())
+                    .buttonStyle(SmartButtonStyle(compact: Narrow.on))
                     .accessibilityLabel(t.t("voice.title"))
                 Menu {
                     Button { startCamera() } label: { Label(t.t("capture.shootPage"), systemImage: "camera") }
@@ -106,7 +106,7 @@ struct ListScreen: View {
                     Image(systemName: "camera")
                 }
                 .menuStyle(.button)
-                .buttonStyle(SmartButtonStyle())
+                .buttonStyle(SmartButtonStyle(compact: Narrow.on))
                 .accessibilityLabel(t.t("capture.camera"))
                 Menu {
                     Button { app.newNote() } label: { Label(t.t("list.new"), systemImage: "square.and.pencil") }
@@ -119,7 +119,7 @@ struct ListScreen: View {
                     app.newNote()
                 }
                 .menuStyle(.button)
-                .buttonStyle(SmartButtonStyle())
+                .buttonStyle(SmartButtonStyle(compact: Narrow.on))
                 .accessibilityLabel(t.t("list.new"))
             }
             }

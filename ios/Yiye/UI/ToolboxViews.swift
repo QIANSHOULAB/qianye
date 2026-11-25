@@ -45,7 +45,7 @@ struct ToolboxButton: View {
                     }
                 }
         }
-        .buttonStyle(SmartButtonStyle())
+        .buttonStyle(SmartButtonStyle(compact: Narrow.on))
         .background {
             BroadcastPicker(trigger: trigger)
                 .frame(width: 44, height: 44)
