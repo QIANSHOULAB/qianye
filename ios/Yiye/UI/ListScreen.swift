@@ -1011,6 +1011,12 @@ final class NoteListSwipe: UIPanGestureRecognizer, UIGestureRecognizerDelegate {
         }
     }
 
+    /// 列表自己的左右滑（系统 swipeActions 的拖动）也会接右拖（11-25 CI：它先接走了，什么都不干，松手还算成点开）：
+    /// 别的拖动类手势都等它先作废。往左、往下、批量选里、左滑开着，它一走动就作废，系统的照常；133、135 自己的不等它
+    func gestureRecognizer(_ g: UIGestureRecognizer, shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
+        g === self && other is UIPanGestureRecognizer && !(other is NoteListSweep) && other !== self
+    }
+
     @objc private func handle() {
         guard let cv = list, let c = cell else { return }
         let dx = max(0, translation(in: cv).x)
