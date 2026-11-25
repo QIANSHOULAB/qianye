@@ -119,11 +119,17 @@ try {
     const file = new File([blob], 'image.jpg', { type: 'image/jpeg', lastModified: Date.now() });
     const info = I.jpegInfo(await file.slice(0, 4 << 20).arrayBuffer());
     const rows = [];
-    for (const way of ['legacy', 'img', 'imgOff', 'bitmap', 'bitmapRaw']) {
+    for (const way of ['legacy', 'img', 'offscreen', 'bitmap', 'bitmapRaw', 'prepare']) {
       const t0 = performance.now();
       try {
         let out, rounds = 0, cf = null, nat = null;
         if (way === 'legacy') { const r = await legacy(file); out = r.blob; rounds = r.rounds; nat = r.nat; }
+        else if (way === 'prepare') {          // 网页版认字送出去的那份（openImage -> prepare，最长边 2048）
+          const img = await I.openImage(file); nat = [img.naturalWidth, img.naturalHeight];
+          const b64 = await I.prepare(img); const bin = atob(b64), u = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+          out = new Blob([u], { type: 'image/jpeg' });
+        }
         else { const c = await I.paintWith(way, file, SIDE, info); cf = I.flatness(c); out = await I.toBlob(c, 0.86); c.width = c.height = 1; }
         const bf = await I.blobFlatness(out);
         const { t, wh } = await look(out);
