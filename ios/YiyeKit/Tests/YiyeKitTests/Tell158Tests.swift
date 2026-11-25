@@ -15,7 +15,7 @@ final class Tell158Tests: XCTestCase {
     }
 
     func testListeningStillListening() throws {
-        let raw = #"{"v":2,"kind":"delivery","id":"l-1","at":"2026-11-25T15:20:00+08:00","data":{"v":1,"id":"l-1","kind":"listen","text":"# Hi","at":"2026-11-25T15:20:00+08:00"}}"#
+        let raw = #"{"v":2,"kind":"delivery","id":"l-1","at":"2026-11-25T15:20:00+08:00","data":{"v":1,"id":"l-1","kind":"listen","text":"Hi there","at":"2026-11-25T15:20:00+08:00"}}"#
         let env = try MailEnvelope.decode(Data(raw.utf8))
         if case .tell = MailAction.decide(env, waiting: [:], dubbing: [:]) { XCTFail("听力稿被当成大管家的话") }
     }
