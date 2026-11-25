@@ -50,6 +50,7 @@ enum Demo {
 
     static func seed(_ app: AppModel, _ cfg: DemoConfig) {
         let zh = cfg.lang == "zh-Hans"
+        UserDefaults.standard.removeObject(forKey: "YiyeSwipeDemo")       // 160：上一个画面（swipe-in / out）留下的，别带到别的画面
         let ctx = app.context
         // 笔记的时间按「今天 9:41」算（列表上显示几点，不显示「昨天」）；心跳按真的现在（显示在线）
         let now = Calendar.current.date(bySettingHour: 9, minute: 41, second: 0, of: Date()) ?? Date()
@@ -254,7 +255,9 @@ enum Demo {
             app.changeLoop { $0 = ListenLoop(on: true, lit: [today, twoDaysKey], litDay: today) }
             app.listening = ListenOpen(startNote: listenFirst)
         case "listen-text": app.listening = ListenOpen(startNote: listenFirst, showText: true)
-        case "call": app.companion.startCall()                  // 139：假接通（-YiyeCallSay 给他说的几句，| 隔开）
+        case "call": app.companion.startCall()
+        case "swipe-in": UserDefaults.standard.set(0.5, forKey: "YiyeSwipeDemo")    // 160：右滑停在线内（五成）
+        case "swipe-out": UserDefaults.standard.set(0.8, forKey: "YiyeSwipeDemo")   // 160：右滑过了线（八成），垃圾桶跟着纸条走                  // 139：假接通（-YiyeCallSay 给他说的几句，| 隔开）
         case "voice-note": app.path = [.editor(voice.id)]
         case "spoken": if let id = tidiedID { app.path = [.editor(id)] }
         case "ocr":

@@ -93,11 +93,8 @@ final class ListGestureTests: XCTestCase {
     func testSwipeRightTrashesAndUndo() {
         launch()
         let r = row("Tomorrow")
-        r.swipeRight()
-        // 没整条滑过去：露出「Trash」再点
-        let trash = app.buttons["Trash"]
-        if r.exists, trash.waitForExistence(timeout: 1.5) { trash.tap() }
-        check(r.waitForNonExistence(timeout: 4), "03-右滑没扔掉", "右滑以后这条还在列表里")
+        drag(r, 0.8)                                        // 160：拖过七成松手就扔，不点任何按钮
+        check(r.waitForNonExistence(timeout: 4), "03-右滑八成没扔掉", "拖到八成松手以后这条还在列表里")
         let undo = app.buttons["Undo"]
         check(undo.waitForExistence(timeout: 3), "03-没有撤销", "扔了以后底下没出「Undo」")
         undo.tap()
@@ -148,6 +145,13 @@ final class ListGestureTests: XCTestCase {
     // Demo 主页从上往下（CI 截图里看的）：Weekend groceries（置顶）、Weekly sync、An article being pulled、Tomorrow's sync、Handover, Nov 3……
 
     /// 一条纸条上的一个点：左边那一条（圆圈 / 小木钉）离纸条按钮左边 x 点；mid = true 就是纸条正中间
+    /// 160：从纸条左边起手，慢慢往右拖纸条宽的 frac，停一下再松手
+    private func drag(_ r: XCUIElement, _ frac: CGFloat, fromX: CGFloat = 0.08) {
+        let from = r.coordinate(withNormalizedOffset: CGVector(dx: fromX, dy: 0.5))
+        let to = from.withOffset(CGVector(dx: r.frame.width * frac, dy: 0))
+        from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .slow, thenHoldForDuration: 0.2)
+    }
+
     private func spot(_ r: XCUIElement, x: CGFloat = 24, mid: Bool = false) -> XCUICoordinate {
         mid ? r.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5))
             : r.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5)).withOffset(CGVector(dx: x, dy: 0))
@@ -197,13 +201,11 @@ final class ListGestureTests: XCTestCase {
 
     func testLeftStripWhenNotSelecting() {
         launch()
-        // 右滑：从左边那一条起手往右划，照样扔进废纸篓。
+        // 右滑：从左边那一条起手往右拖过七成（160），照样扔进废纸篓。
         // 撤销 testSwipeRightTrashesAndUndo 测过；这里 CI 模拟器慢，Undo 只亮 5 秒，等查到常常已经没了（11-25 第二轮），在就顺手点掉，不卡它
         let r = row("Handover, Nov 3")
-        spot(r).press(forDuration: 0.05, thenDragTo: spot(r, x: 330), withVelocity: .fast, thenHoldForDuration: 0)
-        let trash = app.buttons["Trash"]
-        if r.exists, trash.waitForExistence(timeout: 1.5) { trash.tap() }
-        check(r.waitForNonExistence(timeout: 4), "11-左边那一条右滑没扔掉", "从左边那一条右滑以后这条还在列表里")
+        drag(r, 0.8, fromX: 0.04)
+        check(r.waitForNonExistence(timeout: 4), "11-左边那一条右滑没扔掉", "从左边那一条右拖过七成以后这条还在列表里")
         let undo = app.buttons["Undo"]
         if undo.exists { undo.tap() }
         // 左滑：从左边那一条起手往左划，露出置顶
@@ -225,5 +227,50 @@ final class ListGestureTests: XCTestCase {
         check(show.waitForExistence(timeout: 8), "07-小耳机没开", "小耳机里找不到「Show text」")
         show.tap()
         check(app.textViews.firstMatch.waitForExistence(timeout: 5), "07-小耳机点了没打开", "点了「Show text」没出原文")
+    }
+
+    // ---------------------------------------------------------------- 右滑扔（160）
+
+    func testSwipeShortSnapsBack() {
+        launch()
+        let r = row("Tomorrow")
+        drag(r, 0.55)
+        check(r.waitForExistence(timeout: 2) && r.exists, "160-1-五成五扔了", "拖到五成五松手，这条不该扔")
+        check(!app.buttons["Trash"].exists, "160-2-停成了半开", "线内松手应该弹回去，不该露出「Trash」等着点")
+        sleep(1)
+        check(r.isHittable, "160-3-没弹回来", "线内松手以后这条点不着（没弹回原位）")
+        r.tap()
+        assertEditor("room two", "160-4-弹回来以后点不开")
+    }
+
+    func testDiagonalScrollsNotTrashes() {
+        launch()
+        let r = row("Weekly sync")
+        let y0 = r.frame.minY
+        let from = r.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.5))
+        from.press(forDuration: 0.05, thenDragTo: from.withOffset(CGVector(dx: 30, dy: -200)), withVelocity: .slow, thenHoldForDuration: 0.2)
+        check(r.exists, "160-5-斜拖扔了", "横 30 竖 200 的斜拖不该扔")
+        check(abs(r.frame.minY - y0) > 20, "160-6-斜拖没滚", "横 30 竖 200 的斜拖，列表应该滚了（\(y0) → \(r.frame.minY)）")
+    }
+
+    func testRightSwipeClosesOpenLeftSwipe() {
+        launch()
+        let r = row("Tomorrow")
+        r.swipeLeft()
+        check(app.buttons["Pin"].waitForExistence(timeout: 3), "160-7-左滑没露出置顶", "左滑以后没有「Pin」")
+        drag(r, 0.8, fromX: 0.3)
+        sleep(1)
+        check(r.exists, "160-8-收回时扔了", "左滑开着的那条往右滑，应该是收回去，不扔")
+        check(!app.buttons["Pin"].exists, "160-9-没收回去", "往右滑以后「Pin」应该收回去")
+    }
+
+    func testNoTrashWhileSelecting() {
+        launch()
+        row("Tomorrow").press(forDuration: 1.0)
+        waitSelected(1, "160-10-长按没进批量选")
+        let r = row("Weekly sync")
+        drag(r, 0.8, fromX: 0.4)
+        sleep(1)
+        check(r.exists, "160-11-批量选里右滑扔了", "批量选里右滑不该扔")
     }
 }

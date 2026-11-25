@@ -9,6 +9,7 @@ import YiyeKit
 /// 右滑扔进废纸篓（留 3 天，底下给撤销）；左滑置顶、小耳机；长按一条进批量选，手指不抬往上往下划，划过的都选上。
 /// 长按（133）：不挂 SwiftUI 手势（0.7.8–0.7.12 的高优先长按把点按和左右滑都压住了），挂在列表底下的 UICollectionView 上，见 NoteListPress。
 /// 批量选里沿左边那一条（圆圈连同小木钉）往上往下划（135）：起手那条没选，划过的都选上；选了的，划过的都取消。见 NoteListSweep。
+/// 右滑扔（160）：拖过纸条宽的七成松手就扔，不用拉满、不用再点按钮。也挂在 UICollectionView 上，见 NoteListSwipe。
 struct ListScreen: View {
     @Environment(AppModel.self) private var app
     @Query(filter: #Predicate<Note> { $0.trashed == false && $0.kind != "listen" }, sort: \Note.modifiedAt, order: .reverse) private var notes: [Note]
@@ -211,17 +212,14 @@ struct ListScreen: View {
         }
         .buttonStyle(StripButtonStyle())
         .background(RowTag(id: n.id, begin: startTouch, move: moveTouch, end: endTouch,
-                           selecting: selecting, sweepBegin: sweepBegin, sweepMove: sweepMove, sweepEnd: endTouch))
+                           selecting: selecting, sweepBegin: sweepBegin, sweepMove: sweepMove, sweepEnd: endTouch,
+                           trash: { id in if let x = app.note(id) { app.delete(x) } }, trashTitle: t.t("trash.swipe")))
         .accessibilityAddTraits(on ? .isSelected : [])
+        .accessibilityAction(named: Text(t.t("trash.swipe"))) { if !selecting { app.delete(n) } }   // 160：右滑换成自己的拖，VoiceOver 的「扔」补上
         .listRowInsets(EdgeInsets(top: 5, leading: 12, bottom: 5, trailing: 12))
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
-        .swipeActions(edge: .leading, allowsFullSwipe: true) {
-            if !selecting {
-                Button(role: .destructive) { app.delete(n) } label: { Label(t.t("trash.swipe"), systemImage: "trash") }
-                    .tint(.red)
-            }
-        }
+        // 右滑扔（160）不再用系统的 swipeActions（那条线是系统定的，滑一小段停成半开还要再点）：NoteListSwipe
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             if !selecting {
                 Button { togglePin(n) } label: { Label(n.pinned ? t.t("note.unpin") : t.t("note.pin"), systemImage: n.pinned ? "pin.slash" : "pin") }
@@ -392,6 +390,9 @@ struct RowTag: UIViewRepresentable {
     var sweepBegin: @MainActor (UUID) -> Void = { _ in }
     var sweepMove: @MainActor (UUID) -> Void = { _ in }
     var sweepEnd: @MainActor () -> Void = {}
+    /// 160：右滑过七成松手：扔这条；红底上的字
+    var trash: @MainActor (UUID) -> Void = { _ in }
+    var trashTitle = ""
 
     func makeUIView(context: Context) -> RowTagView {
         let v = RowTagView()
@@ -409,6 +410,8 @@ struct RowTag: UIViewRepresentable {
         v.sweepBegin = sweepBegin
         v.sweepMove = sweepMove
         v.sweepEnd = sweepEnd
+        v.trash = trash
+        v.trashTitle = trashTitle
         v.install()
     }
 }
@@ -422,6 +425,8 @@ final class RowTagView: UIView {
     var sweepBegin: (@MainActor (UUID) -> Void)?
     var sweepMove: (@MainActor (UUID) -> Void)?
     var sweepEnd: (@MainActor () -> Void)?
+    var trash: (@MainActor (UUID) -> Void)?
+    var trashTitle = ""
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
@@ -445,6 +450,14 @@ final class RowTagView: UIView {
             s.onBegin = sweepBegin
             s.onMove = sweepMove
             s.onEnd = sweepEnd
+        }
+        // 160：右滑扔
+        if let trash {
+            let w = NoteListSwipe.on(cv)
+            w.selecting = selecting
+            w.onTrash = trash
+            w.title = trashTitle
+            w.demoOnce()
         }
     }
 
@@ -914,5 +927,176 @@ enum When {
         f.locale = lang.locale
         f.setLocalizedDateFormatFromTemplate(lang.isZh ? "MMMdEEEjmm" : "EEEMMMdjmm")
         return f.string(from: d)
+    }
+}
+
+// ---------------------------------------------------------------- 右滑扔（160）
+/// 往右拖一条纸条：纸条跟着手指走，左边露出红底、垃圾桶、「扔」；过了纸条宽的七成（SwipeTrash.line）轻震一下，垃圾桶从停在最左边
+/// 改成跟着纸条左边走，一看就知道松手就扔；拖回线内再震一下。松手：线外纸条往右飞出去、这一行收起（app.delete：废纸篓留 3 天、
+/// 底下撤销照旧）；线内弹回原位。系统的 swipeActions 定不了这条线，所以跟长按（133）、左边划选（135）一样挂在 UICollectionView 上：
+/// - 只认往右、横比竖多、走过几点的拖（gestureRecognizerShouldBegin）；斜着往下、往左（系统的左滑）它都作废；
+/// - 批量选里不认（左边那一条的划选照旧）；某条左滑开着（系统的置顶、小耳机露着）不认，让系统把它收回去；
+/// - 列表的上下滚等它作废再动（require(toFail:)，跟 135 一样）；它起来了 cancelsTouchesInView，松手不算点；
+/// - 起来了别的手势都让它（默认不同时认）：长按（手指一动就作废）、系统的左滑都不动。
+final class NoteListSwipe: UIPanGestureRecognizer, UIGestureRecognizerDelegate {
+    var selecting = false
+    var onTrash: @MainActor (UUID) -> Void = { _ in }
+    var title = ""
+    private weak var list: UICollectionView?
+    private weak var cell: UICollectionViewCell?
+    private var noteID: UUID?
+    private var track = SwipeTrash(width: 1)
+    private var back: SwipeBack?
+    /// 起手时那一格的位置（有了 transform 以后 frame 就不准了）
+    private var home = CGRect.zero
+    private let buzz = UIImpactFeedbackGenerator(style: .medium)
+
+    static func on(_ cv: UICollectionView) -> NoteListSwipe {
+        if let g = cv.gestureRecognizers?.first(where: { $0 is NoteListSwipe }) as? NoteListSwipe { return g }
+        let g = NoteListSwipe(target: nil, action: nil)
+        g.list = cv
+        g.maximumNumberOfTouches = 1
+        g.cancelsTouchesInView = true
+        g.delegate = g
+        g.addTarget(g, action: #selector(NoteListSwipe.handle))
+        cv.addGestureRecognizer(g)
+        cv.panGestureRecognizer.require(toFail: g)
+        return g
+    }
+
+    private func cellAt(_ p: CGPoint) -> UICollectionViewCell? {
+        guard let cv = list else { return nil }
+        if let ip = cv.indexPathForItem(at: p), let c = cv.cellForItem(at: ip) { return c }
+        return cv.visibleCells.first { $0.frame.contains(p) }
+    }
+
+    /// 有一条左滑开着：系统的按钮（类名带 SwipeAction 的视图）露在外面
+    static func swipeOpen(_ v: UIView) -> Bool {
+        for s in v.subviews {
+            if !s.isHidden, s.alpha > 0.01, s.bounds.width > 1, NSStringFromClass(type(of: s)).contains("SwipeAction") { return true }
+            if swipeOpen(s) { return true }
+        }
+        return false
+    }
+
+    func gestureRecognizerShouldBegin(_ g: UIGestureRecognizer) -> Bool {
+        guard g === self, let cv = list else { return true }
+        let tr = translation(in: cv)
+        guard SwipeTrash.begins(dx: Double(tr.x), dy: Double(tr.y), selecting: selecting, swipeOpen: Self.swipeOpen(cv)) else { return false }
+        let p = location(in: cv)
+        guard let c = cellAt(CGPoint(x: p.x - tr.x, y: p.y - tr.y)), let id = RowTagView.find(in: c)?.noteID else { return false }
+        cell = c
+        noteID = id
+        return true
+    }
+
+    /// 截图用（Demo 画面 swipe-in / swipe-out）：第二条纸条停在拖到一半（YiyeSwipeDemo = 纸条宽的几成）的样子
+    private var demoDone = false
+    func demoOnce() {
+        let f = UserDefaults.standard.double(forKey: "YiyeSwipeDemo")
+        guard f > 0, !demoDone else { return }
+        demoDone = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+            guard let self, let cv = self.list else { return }
+            let cells = cv.visibleCells.filter { RowTagView.find(in: $0)?.noteID != nil }.sorted { $0.frame.minY < $1.frame.minY }
+            guard cells.count > 1 else { return }
+            let c = cells[1]
+            self.cell = c
+            self.home = c.frame
+            self.track = SwipeTrash(width: Double(c.bounds.width))
+            let b = SwipeBack(title: self.title)
+            cv.insertSubview(b, belowSubview: c)
+            self.back = b
+            self.follow(c, c.bounds.width * CGFloat(f))
+        }
+    }
+
+    @objc private func handle() {
+        guard let cv = list, let c = cell else { return }
+        let dx = max(0, translation(in: cv).x)
+        switch state {
+        case .began:
+            c.transform = .identity
+            home = c.frame
+            track = SwipeTrash(width: Double(c.bounds.width))
+            buzz.prepare()
+            back?.removeFromSuperview()
+            let b = SwipeBack(title: title)
+            cv.insertSubview(b, belowSubview: c)
+            back = b
+            follow(c, dx)
+        case .changed:
+            follow(c, dx)
+        case .ended:
+            if track.release(Double(dx)) { flyOut(c) } else { snapBack(c) }
+        default:
+            snapBack(c)
+        }
+    }
+
+    /// 纸条跟着手指走；红底从纸条原来的左边一直铺到它现在的左边；过线、回线各轻震一下
+    private func follow(_ c: UICollectionViewCell, _ dx: CGFloat) {
+        if track.move(Double(dx)) != .none { buzz.impactOccurred(); buzz.prepare() }
+        c.transform = CGAffineTransform(translationX: dx, y: 0)
+        back?.place(in: home, dx: dx, track: track)
+    }
+
+    private func flyOut(_ c: UICollectionViewCell) {
+        let id = noteID, w = c.bounds.width, b = back, h = home
+        back = nil
+        cell = nil
+        UIView.animate(withDuration: 0.18, delay: 0, options: [.curveEaseIn]) {
+            c.transform = CGAffineTransform(translationX: w + 40, y: 0)
+            b?.place(in: h, dx: w + 40, track: self.track)
+        } completion: { _ in
+            if let id { self.onTrash(id) }
+            UIView.animate(withDuration: 0.25) { b?.alpha = 0 } completion: { _ in b?.removeFromSuperview() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { c.transform = .identity }   // 这一格收起以后会被别的便签拿去用
+        }
+    }
+
+    private func snapBack(_ c: UICollectionViewCell) {
+        let b = back, h = home
+        back = nil
+        cell = nil
+        UIView.animate(withDuration: 0.28, delay: 0, usingSpringWithDamping: 0.85, initialSpringVelocity: 0) {
+            c.transform = .identity
+            b?.place(in: h, dx: 0, track: self.track)
+        } completion: { _ in b?.removeFromSuperview() }
+    }
+}
+
+/// 右滑时纸条后面露出来的红底：垃圾桶 + 「扔」
+final class SwipeBack: UIView {
+    private let icon = UIImageView(image: UIImage(systemName: "trash.fill"))
+    private let label = UILabel()
+    private let iconW: CGFloat = 64
+
+    init(title: String) {
+        super.init(frame: .zero)
+        backgroundColor = .systemRed
+        layer.cornerRadius = 6
+        clipsToBounds = true
+        isUserInteractionEnabled = false
+        icon.tintColor = .white
+        icon.contentMode = .scaleAspectFit
+        label.text = title
+        label.textColor = .white
+        label.font = .systemFont(ofSize: 13, weight: .semibold)
+        label.textAlignment = .center
+        addSubview(icon)
+        addSubview(label)
+        accessibilityIdentifier = "swipe.back"
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    /// cell：那一格原来的位置（没挪的）；dx：纸条往右挪了多少。红底从纸条原来的左边（行左边距 12）铺到它现在的左边
+    func place(in cell: CGRect, dx: CGFloat, track: SwipeTrash) {
+        frame = CGRect(x: cell.minX + 12, y: cell.minY + 5, width: max(0, dx), height: max(0, cell.height - 10))
+        let x = CGFloat(track.iconX(Double(dx), iconWidth: Double(iconW)))
+        let midY = bounds.height / 2
+        icon.frame = CGRect(x: x + (iconW - 22) / 2, y: midY - 20, width: 22, height: 22)
+        label.frame = CGRect(x: x, y: midY + 4, width: iconW, height: 18)
     }
 }
