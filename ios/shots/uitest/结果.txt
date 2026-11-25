@@ -1,20 +1,20 @@
 # UI 测试：全绿
 
--[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting]' passed (68.985 seconds).
--[YiyeUITests.ListGestureTests testListeningOpensText]' passed (16.413 seconds).
--[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (34.366 seconds).
--[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (11.145 seconds).
--[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (13.945 seconds).
--[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects]' passed (33.411 seconds).
--[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange]' passed (28.460 seconds).
--[YiyeUITests.ListGestureTests testSweepMiddleScrollsNotSelects]' passed (26.098 seconds).
--[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (24.022 seconds).
--[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (21.328 seconds).
--[YiyeUITests.ListGestureTests testTapOpensNote]' passed (13.433 seconds).
--[YiyeUITests.ShutongTests testChatReceiptThenUndo]' passed (31.225 seconds).
--[YiyeUITests.ShutongTests testNewVoiceNoteTidiedWithOriginalWords]' passed (23.758 seconds).
+-[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting]' passed (70.564 seconds).
+-[YiyeUITests.ListGestureTests testListeningOpensText]' passed (27.176 seconds).
+-[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (32.695 seconds).
+-[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (15.234 seconds).
+-[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (16.933 seconds).
+-[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects]' passed (34.169 seconds).
+-[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange]' passed (22.344 seconds).
+-[YiyeUITests.ListGestureTests testSweepMiddleScrollsNotSelects]' passed (25.135 seconds).
+-[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (14.744 seconds).
+-[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (16.388 seconds).
+-[YiyeUITests.ListGestureTests testTapOpensNote]' passed (9.525 seconds).
+-[YiyeUITests.ShutongTests testChatReceiptThenUndo]' passed (24.284 seconds).
+-[YiyeUITests.ShutongTests testNewVoiceNoteTidiedWithOriginalWords]' passed (18.161 seconds).
 
 
-	 Executed 13 tests, with 0 failures (0 unexpected) in 346.589 (346.602) seconds
-	 Executed 13 tests, with 0 failures (0 unexpected) in 346.589 (346.603) seconds
+	 Executed 13 tests, with 0 failures (0 unexpected) in 327.354 (327.372) seconds
+	 Executed 13 tests, with 0 failures (0 unexpected) in 327.354 (327.374) seconds
 ** TEST SUCCEEDED **
