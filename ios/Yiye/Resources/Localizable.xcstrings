@@ -3617,7 +3617,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "书童自己收拾新便签"
+            "value": "小书童自己收拾新便签"
           }
         }
       }
@@ -3872,7 +3872,58 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "书童这回没办成"
+            "value": "小书童这回没办成"
+          }
+        }
+      }
+    },
+    "shutong.butler": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Butler"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大管家"
+          }
+        }
+      }
+    },
+    "shutong.butlerOpen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "看"
+          }
+        }
+      }
+    },
+    "shutong.butlerSays": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Butler: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大管家：%@"
           }
         }
       }
@@ -3906,7 +3957,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "清空书童聊天记录"
+            "value": "清空小书童聊天记录"
           }
         }
       }
@@ -3991,7 +4042,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "书童自己建的文件夹满 10 个了，这条先放在全部。要新夹子跟我说一声。"
+            "value": "小书童自己建的文件夹满 10 个了，这条先放在全部。要新夹子跟我说一声。"
           }
         }
       }
@@ -4059,7 +4110,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "书童在此。说一句怎么收拾就行：「把机床相关的放一起」「清一清」。新便签不用喊，存下就收拾。"
+            "value": "小书童在此。说一句怎么收拾就行：「把机床相关的放一起」「清一清」。新便签不用喊，存下就收拾。"
           }
         }
       }
@@ -4212,7 +4263,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "书童"
+            "value": "小书童"
           }
         }
       }
@@ -4246,7 +4297,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "书童没回话，大管家可能不在"
+            "value": "小书童没回话，大管家可能不在"
           }
         }
       }
@@ -4263,7 +4314,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "还没跟大管家配对，书童没大脑可用"
+            "value": "还没跟大管家配对，小书童没大脑可用"
           }
         }
       }
@@ -4314,7 +4365,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "跟书童说…"
+            "value": "跟小书童说…"
           }
         }
       }
@@ -4467,7 +4518,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "书童觉得这几条可以扔了"
+            "value": "小书童觉得这几条可以扔了"
           }
         }
       }
@@ -4688,7 +4739,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "书童在说，插嘴它就闭嘴"
+            "value": "小书童在说，插嘴它就闭嘴"
           }
         }
       }
@@ -4705,7 +4756,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "书童在琢磨…"
+            "value": "小书童在琢磨…"
           }
         }
       }
@@ -4722,7 +4773,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "书童在琢磨…"
+            "value": "小书童在琢磨…"
           }
         }
       }
@@ -4977,7 +5028,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "书童"
+            "value": "小书童"
           }
         }
       }

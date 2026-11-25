@@ -232,6 +232,9 @@ share.share	Share
 share.title	Share as image
 shutong.auto	New note
 shutong.brainFailed	The scribe fumbled that one.
+shutong.butler	Butler
+shutong.butlerOpen	View
+shutong.butlerSays	Butler: %@
 shutong.cancelled	Skipped
 shutong.clear	Clear scribe chat
 shutong.cleared	Chat cleared.

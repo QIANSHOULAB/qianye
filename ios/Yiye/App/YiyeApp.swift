@@ -50,7 +50,7 @@ struct RootView: View {
         .background { Color.clear.sheet(item: $dove.secret) { c in SecretCardView(card: c) } }    // 128 特勤局机密文件
         .background { Color.clear.sheet(isPresented: $shutong.open) { ShutongSheet() } }           // 136 书童
         .task {                                                                                    // 截图、UI 测试用
-            if let s = app.demo?.screen, ["shutong", "shutong-confirm", "shutong-slip"].contains(s) {
+            if let s = app.demo?.screen, ["shutong", "shutong-confirm", "shutong-slip", "shutong-tell"].contains(s) {
                 app.started()
                 try? await Task.sleep(nanoseconds: 400_000_000)
                 ShutongModel.shared.demo(s)

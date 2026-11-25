@@ -62,7 +62,7 @@ struct ShutongSheet: View {
         .background(PaperBackground().ignoresSafeArea())
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
-        .onAppear { m.load() }
+        .onAppear { m.load(); m.markRead() }                         // 158：开了窗，大管家的话都算看过
         .onDisappear { m.open = false; if m.recording { m.stopRecording() }; ShutongTalker.shared.stop() }
     }
 
@@ -202,6 +202,7 @@ struct ShutongBubble: View {
         case "say": say
         case "receipt": receipt
         case "confirm": ShutongConfirmCard(line: line)
+        case "butler": butler
         default:
             Text(line.text)
                 .font(.system(size: 13))
@@ -244,6 +245,30 @@ struct ShutongBubble: View {
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
         .padding(.leading, 48)
+    }
+
+    /// 158：大管家找他：一行小标题「大管家 · 15:20」（急的带个红点），下面一块淡色的底
+    private var butler: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                if line.state == "urgent" { Circle().fill(Color(Ink.danger)).frame(width: 7, height: 7) }
+                Text(t.t("shutong.butler") + " · " + When.short(line.at, t))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color(Ink.text3))
+            }
+            Text(line.text)
+                .font(.system(size: 16))
+                .foregroundStyle(Color(Ink.text))
+                .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .background { RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(Ink.text3).opacity(0.12)) }
+        }
+        .padding(.trailing, 32)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("shutong.butlerLine")
     }
 
     private var say: some View {

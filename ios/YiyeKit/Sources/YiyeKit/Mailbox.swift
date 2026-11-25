@@ -345,6 +345,8 @@ public enum MailAction: Equatable, Sendable {
     case dove(ButlerResult)
     /// 大管家递来的一次性机密（128）：弹一张卡，不存
     case secret(ButlerDelivery)
+    /// 大管家要跟 Song 说的话（158）：进小书童聊天窗、弹通知、回执
+    case tell(ButlerDelivery)
     /// 大管家递来的备用信箱配置（130）：存钥匙串，回「收到」
     case fbConfig(FbConfigLetter)
     /// 书童的回信（136）：动作、一句话；按住说话认出来的字（stage = shutong / shutong-hear）
@@ -380,6 +382,7 @@ public enum MailAction: Equatable, Sendable {
             if let c = env.config { return .fbConfig(c) }
             guard let d = env.delivery else { return .drop("delivery 没有 data") }
             if d.kind == "secret" { return .secret(d) }
+            if d.kind == "tell" { return .tell(d) }                 // 158：不是听力稿，别当听力收
             guard let a = d.audio else { return .deliver(d, audio: nil) }
             if let data = env.files[a] ?? localAudio(a) { return .deliver(d, audio: data) }
             return .later

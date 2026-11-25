@@ -51,6 +51,11 @@ extension ButlerRequest {
 
 extension ButlerRequest {
     /// 「收到」备用信箱配置（130）：大管家收到后记下，不再递
+    /// 158：大管家的话收到了（回执）：note 是那封送来的 id
+    public static func tellOK(id: String, of tell: String, at: String, app: String) -> ButlerRequest {
+        ButlerRequest(id: id, note: tell, kind: .text, text: "", images: nil, unsure: nil, ask: "tell-ok", at: at, app: app)
+    }
+
     public static func fbConfigOK(id: String, of cfg: String, at: String, app: String) -> ButlerRequest {
         var r = ButlerRequest(id: id, note: "", kind: .text, text: "", images: nil, unsure: nil, ask: "fb-config-ok", at: at, app: app)
         r.of = cfg

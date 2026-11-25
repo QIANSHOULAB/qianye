@@ -111,7 +111,7 @@ final class AppModel {
     func scenePhase(_ p: ScenePhase) {
         switch p {
         case .active:
-            if demo == nil { purgeTrashed(); cleanHeard() }
+            if demo == nil { purgeTrashed(); cleanHeard(); ShutongModel.shared.showUnread() }   // 158：大管家的话没看的先弹
             butler.start()
         case .background:
             ShutongTalker.shared.wentAway()                  // 137：切走了，开口说停（回来接着打字）

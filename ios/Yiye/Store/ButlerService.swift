@@ -214,6 +214,10 @@ final class ButlerService {
         case .secret(let d):                                // 128：大管家递来的一次性机密：弹一张卡，不存
             DoveModel.shared.show(d)
             return true
+        case .tell(let d):                                  // 158：大管家要跟 Song 说的：进小书童聊天窗、弹通知、回执
+            ShutongModel.shared.butlerSaid(d)
+            sendTellOK(of: d.id)
+            return true
         case .fbConfig(let c):                              // 130：备用信箱的配置：存钥匙串，回「收到」
             backup.adopt(c.config, box: pairing?.box)
             sendFbConfigOK(of: c.id)
@@ -539,6 +543,13 @@ final class ButlerService {
     }
 
     /// 备用信箱的配置存好了：回大管家一句「收到」（它不再递）。走 send：Cloudflare 或谷歌，哪条通走哪条
+    /// 158：大管家的话收到了（它 30 分钟没收到回执就补发 Telegram）
+    private func sendTellOK(of tell: String) {
+        guard let mail else { return }
+        let req = ButlerRequest.tellOK(id: UUID().uuidString, of: tell, at: ISOTime.string(Date()), app: ButlerService.appVersion)
+        Task { _ = try? await mail.send(.request(req), timeout: 20) }
+    }
+
     private func sendFbConfigOK(of cfg: String) {
         guard let mail else { return }
         let req = ButlerRequest.fbConfigOK(id: UUID().uuidString, of: cfg, at: ISOTime.string(Date()), app: ButlerService.appVersion)

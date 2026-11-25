@@ -216,7 +216,7 @@ settings.pairOff	还没接上头。大管家那边配好会自己连；等不及
 settings.pairOn	接上头了：交给大管家的东西几秒就到，路上全程加密。
 settings.pairPaste	粘贴配对码
 settings.pairScan	扫码配对
-settings.shutongAuto	书童自己收拾新便签
+settings.shutongAuto	小书童自己收拾新便签
 settings.shutongAutoHint	语音的去口水话、起标题、进文件夹，原话留着；打字的、拍照的只起标题、进文件夹。
 settings.theme	配色
 settings.title	设置
@@ -231,18 +231,21 @@ share.saved	存进相册了
 share.share	分享
 share.title	分享成图
 shutong.auto	新便签
-shutong.brainFailed	书童这回没办成
+shutong.brainFailed	小书童这回没办成
+shutong.butler	大管家
+shutong.butlerOpen	看
+shutong.butlerSays	大管家：%@
 shutong.cancelled	没办
-shutong.clear	清空书童聊天记录
+shutong.clear	清空小书童聊天记录
 shutong.cleared	聊天记录清掉了
 shutong.confirm	这几条要动，你点头才办：
 shutong.doIt	照办
 shutong.done	办了
-shutong.folderCap	书童自己建的文件夹满 10 个了，这条先放在全部。要新夹子跟我说一声。
+shutong.folderCap	小书童自己建的文件夹满 10 个了，这条先放在全部。要新夹子跟我说一声。
 shutong.hearOffline	大管家不在线，没法认字，先打字吧
 shutong.hearTimeout	认字超时了，再说一遍或者打字
 shutong.hearing	大管家在认字…
-shutong.hint	书童在此。说一句怎么收拾就行：「把机床相关的放一起」「清一清」。新便签不用喊，存下就收拾。
+shutong.hint	小书童在此。说一句怎么收拾就行：「把机床相关的放一起」「清一清」。新便签不用喊，存下就收拾。
 shutong.hold	按住说
 shutong.keptAfterEdit	%lld 条你后来改过，没撤，免得盖掉你的字
 shutong.makeFolder	建文件夹：%@
@@ -251,13 +254,13 @@ shutong.micBusy	陪玩正占着话筒，先关陪玩
 shutong.micDenied	没给话筒权限：Settings › 一叶笺 › Microphone
 shutong.micFailed	话筒没开起来：%@
 shutong.moveTo	挪：%1$@ → %2$@
-shutong.name	书童
+shutong.name	小书童
 shutong.never	算了
-shutong.noAnswer	书童没回话，大管家可能不在
-shutong.noPair	还没跟大管家配对，书童没大脑可用
+shutong.noAnswer	小书童没回话，大管家可能不在
+shutong.noPair	还没跟大管家配对，小书童没大脑可用
 shutong.notHeard	没听清，再说一遍
 shutong.nothingLeft	都划掉了，一条没动
-shutong.placeholder	跟书童说…
+shutong.placeholder	跟小书童说…
 shutong.queued	大管家不在线，话放信箱里了，它一上线就办
 shutong.renameTo	改标题：%1$@ → %2$@
 shutong.retry	再问一次
@@ -266,7 +269,7 @@ shutong.sendFailed	没寄出去：%@
 shutong.skipped	%lld 个动作没做：%@
 shutong.slipCount	%lld 条
 shutong.slipOpen	过目
-shutong.sweepTitle	书童觉得这几条可以扔了
+shutong.sweepTitle	小书童觉得这几条可以扔了
 shutong.talk	开口说
 shutong.talkAway	切走了，开口说先挂了
 shutong.talkBusy	陪玩开着，先关掉陪玩
@@ -279,9 +282,9 @@ shutong.talkHearing	你说，我听着…
 shutong.talkListening	在听。说完停一下；说「好了」就挂
 shutong.talkMissed	（没听清）
 shutong.talkSaid	说的
-shutong.talkSpeaking	书童在说，插嘴它就闭嘴
-shutong.talkThinking	书童在琢磨…
-shutong.thinking	书童在琢磨…
+shutong.talkSpeaking	小书童在说，插嘴它就闭嘴
+shutong.talkThinking	小书童在琢磨…
+shutong.thinking	小书童在琢磨…
 shutong.tidyOne	收拾：%@
 shutong.trashIt	照扔
 shutong.undo	撤销这一批
@@ -296,7 +299,7 @@ toast.deleted	删了「%@」
 toast.undo	撤销
 tools.deep	深聊
 tools.dove	飞鸽传书
-tools.shutong	书童
+tools.shutong	小书童
 tools.title	工具箱
 trash.days	还剩 %lld 天
 trash.deleteNow	现在就删

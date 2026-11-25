@@ -2,13 +2,14 @@ import Foundation
 import Observation
 import SwiftUI
 import SwiftData
+import UIKit
 import AVFoundation
 import YiyeKit
 
 /// 聊天窗里的一行（136 书童）
 struct ShutongLine: Codable, Identifiable, Equatable {
     var id = UUID()
-    /// he 他说的 / say 书童说的 / receipt 一批的回执 / confirm 要他点头的 / note 一行小字（没动的、出错的）
+    /// he 他说的 / say 书童说的 / receipt 一批的回执 / confirm 要他点头的 / note 一行小字（没动的、出错的）/ butler 大管家找他（158）
     var who: String
     var text: String
     var at = Date()
@@ -30,6 +31,8 @@ struct ShutongLine: Codable, Identifiable, Equatable {
 /// 存在手机里的：聊天记录（最近 200 条）、最近 40 批的快照、这周的清理建议
 private struct ShutongStore: Codable {
     var lines: [ShutongLine] = []
+    /// 158：大管家的话还没看的（下次打开一叶笺先弹出小书童窗）
+    var unread: Bool? = nil
     var batches: [ShutongBatch] = []
     var slip: ShutongLine?
     var sweepRid: String?
@@ -57,6 +60,8 @@ final class ShutongModel {
     var hearing = false
     /// 每周日的清理建议（主页顶上那张纸条）
     var slip: ShutongLine?
+    /// 158：大管家的话还没看
+    var unread = false
 
     @ObservationIgnored private var batches: [ShutongBatch] = []
     @ObservationIgnored private var sweepRid: String?
@@ -86,6 +91,7 @@ final class ShutongModel {
         loaded = true
         guard let file, let d = try? Data(contentsOf: file), let s = try? JSONDecoder().decode(ShutongStore.self, from: d) else { return }
         lines = s.lines
+        unread = s.unread ?? false
         batches = s.batches
         slip = s.slip
         sweepRid = s.sweepRid
@@ -97,7 +103,8 @@ final class ShutongModel {
         if lines.count > ShutongModel.maxLines { lines.removeFirst(lines.count - ShutongModel.maxLines) }
         if batches.count > ShutongModel.maxBatches { batches.removeFirst(batches.count - ShutongModel.maxBatches) }
         guard let file else { return }
-        let s = ShutongStore(lines: lines, batches: batches, slip: slip, sweepRid: sweepRid)
+        var s = ShutongStore(lines: lines, batches: batches, slip: slip, sweepRid: sweepRid)
+        s.unread = unread
         if let d = try? JSONEncoder().encode(s) { try? d.write(to: file, options: .atomic) }
     }
 
@@ -771,6 +778,42 @@ final class ShutongModel {
         }
     }
 
+    // ---------------------------------------------------------------- 158 大管家找 Song
+    /// 大管家的话来了：进聊天窗（标明是大管家，带时间）；在前台弹一行（点「看」开窗），在后台发本地通知；没看就记着，下次打开先弹窗
+    func butlerSaid(_ d: ButlerDelivery) {
+        load()
+        guard !lines.contains(where: { $0.who == "butler" && $0.rid == d.id }) else { return }
+        var l = ShutongLine(who: "butler", text: d.text)
+        l.rid = d.id
+        if let a = d.at, let at = ISOTime.date(a) { l.at = at }
+        l.state = d.urgent == true ? "urgent" : ""
+        lines.append(l)
+        if !open { unread = true }
+        save()
+        guard let app else { return }
+        if UIApplication.shared.applicationState == .active {
+            if !open {
+                app.show(app.lang.f("shutong.butlerSays", d.text), action: t("shutong.butlerOpen"), seconds: 8) { [weak self] in self?.open = true }
+            }
+        } else {
+            ButlerNotice.post(title: t("shutong.butler"), body: d.text, id: d.id)
+        }
+    }
+
+    /// 打开一叶笺时：有没看的大管家的话，先弹出小书童窗
+    func showUnread() {
+        load()
+        guard unread, !open else { return }
+        open = true
+    }
+
+    /// 聊天窗开了：都算看过
+    func markRead() {
+        guard unread else { return }
+        unread = false
+        save()
+    }
+
     /// 截图用：聊天窗里已经有一问一答一张回执 / 一张等他点头的清单；主页纸条
     func demo(_ screen: String) {
         guard let app else { return }
@@ -783,6 +826,16 @@ final class ShutongModel {
         case "shutong-confirm":
             input = app.lang.isZh ? "清一清" : "Clean up a bit"
             send()
+            open = true
+        case "shutong-tell":                                // 158：小书童窗里两条大管家的话
+            let z = app.lang.isZh
+            var a = ShutongLine(who: "butler", text: z ? "Claude 登录还剩 2 天就过期了。到电脑上右键八卦鱼 → 控制台，点「续上」。"
+                                                      : "Claude sign-in runs out in 2 days. On the PC: right-click the fish › Console › Renew.")
+            a.state = "urgent"
+            a.at = Date().addingTimeInterval(-3600 * 2)
+            var b = ShutongLine(who: "butler", text: z ? "测试：大管家找你走小书童这条路，通了。（15:20）" : "Test: the butler reaches you through the scribe now. (3:20 PM)")
+            b.at = Date().addingTimeInterval(-60)
+            lines = [a, b]
             open = true
         case "shutong-slip":
             let z = app.lang.isZh
