@@ -84,8 +84,7 @@ final class ShutongTalkTests: XCTestCase {
         startTalking(tag)
         say("Trash the old ones")
         check(containing(app.staticTexts, "These need your nod first").waitForExistence(timeout: 8), "\(tag)-没先问", "说了要扔，没列出来等点头")
-        check(containing(app.buttons, "Reading list").exists || containing(app.staticTexts, "Reading list").exists, "\(tag)-清单不对",
-              "要扔的清单里没有「Reading list」")
+        check(app.buttons["Toss them"].firstMatch.exists, "\(tag)-清单不对", "等点头的清单上没有「Toss them」")
         check(!containing(app.staticTexts, "Trashed").exists, "\(tag)-没问就扔了", "还没点头就扔了")
     }
 
