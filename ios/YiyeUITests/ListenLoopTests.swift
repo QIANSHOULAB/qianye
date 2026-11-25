@@ -86,13 +86,14 @@ final class ListenLoopTests: XCTestCase {
         reveal(tokyo, up: false)
         check(tokyo.exists, "144-09-没有前天的稿子", "前天那两篇不在列表里")
         tokyo.tap()
-        check(waitValue(tokyo, "playing", 3), "144-10-点了没放", "点前天最后一篇没放")
+        // 170：CI 模拟器慢的时候（同一轮 CallTests 一条 35 秒）3 秒等不到「在放」，6ef4ed5 那轮就红在这；放到 8 秒
+        check(waitValue(tokyo, "playing", 8), "144-10-点了没放", "点前天最后一篇没放")
 
         // 下一篇：前天最后一篇 → 回前天第一篇（不进今天、昨天）
         app.buttons["Next"].tap()
-        check(waitValue(london, "playing", 3), "144-11-下一篇跑出去了", "前天最后一篇按下一篇应该回前天第一篇")
+        check(waitValue(london, "playing", 8), "144-11-下一篇跑出去了", "前天最后一篇按下一篇应该回前天第一篇")
         app.buttons["Next"].tap()
-        check(waitValue(tokyo, "playing", 3), "144-12-下一篇不对", "London 下一篇应该是 Tokyo")
+        check(waitValue(tokyo, "playing", 8), "144-12-下一篇不对", "London 下一篇应该是 Tokyo")
 
         // 自己放完（9 秒 ÷ 1.25）：回前天第一篇
         check(waitValue(london, "playing", 25), "144-13-放完没回那天第一篇", "Tokyo 放完应该回 London，不进别的天")
