@@ -1,37 +1,34 @@
-# UI 测试：有红的（xcodebuild 退出码 65）
+# UI 测试：全绿
 
--[YiyeUITests.CallTests testAskThenHangUpByWords]' failed (108.156 seconds).
--[YiyeUITests.CallTests testHangUpButton]' failed (15.170 seconds).
--[YiyeUITests.CallTests testOtherWordsWithHangDontHangUp]' passed (15.868 seconds).
--[YiyeUITests.ListGestureTests testDiagonalScrollsNotTrashes]' passed (13.673 seconds).
--[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting]' passed (28.759 seconds).
--[YiyeUITests.ListGestureTests testListeningOpensText]' passed (16.514 seconds).
--[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (27.865 seconds).
--[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (15.478 seconds).
--[YiyeUITests.ListGestureTests testNoTrashWhileSelecting]' passed (16.002 seconds).
--[YiyeUITests.ListGestureTests testRightSwipeClosesOpenLeftSwipe]' passed (22.800 seconds).
--[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (23.283 seconds).
--[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects]' passed (35.084 seconds).
--[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange]' passed (25.883 seconds).
--[YiyeUITests.ListGestureTests testSweepMiddleScrollsNotSelects]' passed (25.597 seconds).
--[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (19.075 seconds).
--[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' failed (21.070 seconds).
--[YiyeUITests.ListGestureTests testSwipeShortSnapsBack]' passed (17.397 seconds).
--[YiyeUITests.ListGestureTests testTapOpensNote]' passed (10.408 seconds).
--[YiyeUITests.ListenLoopTests testLoopOnlyPickedDay]' passed (40.596 seconds).
--[YiyeUITests.ShutongTalkTests testTalkDoUndoThenBye]' passed (30.041 seconds).
--[YiyeUITests.ShutongTalkTests testTrashSayNo]' passed (22.095 seconds).
--[YiyeUITests.ShutongTalkTests testTrashSayYes]' passed (22.612 seconds).
--[YiyeUITests.ShutongTalkTests testTrashSilenceKeeps]' passed (26.768 seconds).
--[YiyeUITests.ShutongTests testChatReceiptThenUndo]' passed (27.927 seconds).
--[YiyeUITests.ShutongTests testNewVoiceNoteTidiedWithOriginalWords]' passed (19.842 seconds).
--[YiyeUITests.TopBarTests testListenButtonOpensAndDotGoesAfterHearing]' passed (37.096 seconds).
--[YiyeUITests.TopBarTests testToolboxLostListenAndScribe]' passed (18.979 seconds).
+-[YiyeUITests.CallTests testAskThenHangUpByWords]' passed (74.893 seconds).
+-[YiyeUITests.CallTests testHangUpButton]' passed (21.712 seconds).
+-[YiyeUITests.CallTests testOtherWordsWithHangDontHangUp]' passed (28.885 seconds).
+-[YiyeUITests.ListGestureTests testDiagonalScrollsNotTrashes]' passed (19.487 seconds).
+-[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting]' passed (32.606 seconds).
+-[YiyeUITests.ListGestureTests testListeningOpensText]' passed (13.972 seconds).
+-[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (27.349 seconds).
+-[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (19.270 seconds).
+-[YiyeUITests.ListGestureTests testNoTrashWhileSelecting]' passed (20.287 seconds).
+-[YiyeUITests.ListGestureTests testRightSwipeClosesOpenLeftSwipe]' passed (17.544 seconds).
+-[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (19.071 seconds).
+-[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects]' passed (29.360 seconds).
+-[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange]' passed (26.811 seconds).
+-[YiyeUITests.ListGestureTests testSweepMiddleScrollsNotSelects]' passed (32.527 seconds).
+-[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (17.719 seconds).
+-[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (18.493 seconds).
+-[YiyeUITests.ListGestureTests testSwipeShortSnapsBack]' passed (15.212 seconds).
+-[YiyeUITests.ListGestureTests testTapOpensNote]' passed (10.777 seconds).
+-[YiyeUITests.ListenLoopTests testLoopOnlyPickedDay]' passed (47.282 seconds).
+-[YiyeUITests.ShutongTalkTests testTalkDoUndoThenBye]' passed (32.351 seconds).
+-[YiyeUITests.ShutongTalkTests testTrashSayNo]' passed (27.156 seconds).
+-[YiyeUITests.ShutongTalkTests testTrashSayYes]' passed (24.305 seconds).
+-[YiyeUITests.ShutongTalkTests testTrashSilenceKeeps]' passed (18.383 seconds).
+-[YiyeUITests.ShutongTests testChatReceiptThenUndo]' passed (26.816 seconds).
+-[YiyeUITests.ShutongTests testNewVoiceNoteTidiedWithOriginalWords]' passed (18.961 seconds).
+-[YiyeUITests.TopBarTests testListenButtonOpensAndDotGoesAfterHearing]' passed (39.749 seconds).
+-[YiyeUITests.TopBarTests testToolboxLostListenAndScribe]' passed (18.115 seconds).
 
-CallTests.swift:16: error: -[YiyeUITests.CallTests testAskThenHangUpByWords] : Failed to get background assertion for target app with pid 16411: Timed out while acquiring background assertion.
-CallTests.swift:16: error: -[YiyeUITests.CallTests testHangUpButton] : Failed to get background assertion for target app with pid 16887: Timed out while acquiring background assertion.
-ListGestureTests.swift:100: error: -[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo] : Failed to get matching snapshot: No matches found for Elements matching predicate '"Undo" IN identifiers' from input {(
 
-	 Executed 27 tests, with 3 failures (0 unexpected) in 704.037 (704.070) seconds
-	 Executed 27 tests, with 3 failures (0 unexpected) in 704.037 (704.072) seconds
-** TEST FAILED **
+	 Executed 27 tests, with 0 failures (0 unexpected) in 699.092 (699.127) seconds
+	 Executed 27 tests, with 0 failures (0 unexpected) in 699.092 (699.131) seconds
+** TEST SUCCEEDED **
