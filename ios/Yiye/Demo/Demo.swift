@@ -152,7 +152,9 @@ enum Demo {
             "# Trains run late in Tokyo\nA storm slowed the trains on Sunday. Most were on time again by noon.",
         ]
         let eightToday = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: now) ?? now
-        for (k, text) in twoDays.enumerated() {
+        // 只在听力那几个画面加（书童「扔旧的」、列表手势的测试按条数数，别的画面照旧）
+        let listenScreens: Set<String> = ["listen", "listen-loop", "listen-text"]
+        for (k, text) in twoDays.enumerated() where listenScreens.contains(cfg.screen) {
             let n = add(text, ago: 60, folder: english, kind: "listen")
             n.createdAt = Calendar.current.date(byAdding: .day, value: -2, to: eightToday)?.addingTimeInterval(-Double(k + 1)) ?? now
             n.modifiedAt = n.createdAt
