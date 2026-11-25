@@ -252,10 +252,19 @@ final class ShutongModel {
         }
         if c.folderCapHit { lines.append(ShutongLine(who: "note", text: t("shutong.folderCap"))) }
         if !c.skipped.isEmpty {
-            let why = Array(Set(c.skipped.map(\.why))).sorted().prefix(3).joined(separator: "；")
+            let why = Array(Set(c.skipped.map { zh ? $0.why : ShutongModel.english($0.why) })).sorted().prefix(3).joined(separator: zh ? "；" : "; ")
             lines.append(ShutongLine(who: "note", text: app?.lang.f("shutong.skipped", c.skipped.count, why) ?? why))
         }
         save()
+    }
+
+    /// 没做的原因（YiyeKit 里是中文）：英文界面换成一句短的
+    static func english(_ why: String) -> String {
+        let map: [(String, String)] = [("不在白名单", "not allowed"), ("找不到", "note not found"), ("受保护", "protected (you pinned or colored it)"),
+                                       ("已经有标题", "already has a title"), ("他放好的不挪", "already in a folder"), ("数字或代码", "numbers didn’t match"),
+                                       ("合并后数字", "numbers didn’t match"), ("没有这个文件夹", "no such folder"), ("书童建的文件夹到", "folder limit reached"),
+                                       ("文件夹名", "bad folder name"), ("标题不行", "bad title"), ("只收拾语音", "only voice notes get tidied")]
+        return map.first { why.hasPrefix($0.0) }?.1 ?? "other"
     }
 
     /// 确认卡上点「照办」（清理建议是「照扔」）：划掉的不动，其余再查一遍（这期间可能变了）再做
@@ -472,7 +481,7 @@ final class ShutongModel {
         let c = ShutongPlan.check(acts, notes: notes, folders: folders, autoFolders: auto, mode: "tidy", target: n.id.uuidString)
         if !c.ok.isEmpty, let b = doBatch(c.ok, auto: true), let line = ShutongReceipt.line(b.counts, zh: zh) {
             let bid = b.id
-            app.show(t("shutong.name") + "：" + line, action: t("shutong.undo"), seconds: 5) { [weak self] in
+            app.show(t("shutong.name") + (zh ? "：" : ": ") + line, action: t("shutong.undo"), seconds: 5) { [weak self] in
                 self?.undo(bid)
                 self?.app?.toast = nil
             }

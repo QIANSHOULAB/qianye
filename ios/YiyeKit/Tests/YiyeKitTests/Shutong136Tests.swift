@@ -161,7 +161,8 @@ final class Shutong136Tests: XCTestCase {
         _ = ShutongApply.run([ShutongAct(op: "tidy", note: "v", text: "又收拾 VMC-850 1280")], notes: &notes, folders: &folders, now: t0, id: "B4")
         XCTAssertEqual(notes["v"]?.spoken, raw, "原话一个字不丢")
         // 换回原话 = 把 spoken 放回正文
-        notes["v"]?.markdown = notes["v"]!.spoken
+        let sp = notes["v"]!.spoken
+        notes["v"]?.markdown = sp
         XCTAssertEqual(notes["v"]?.markdown, raw)
     }
 

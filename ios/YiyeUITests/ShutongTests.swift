@@ -58,8 +58,13 @@ final class ShutongTests: XCTestCase {
         shot("S1-回执")
 
         app.buttons["Done"].firstMatch.tap()
+        // 改过的便签「改的时间」是真的现在，Demo 的便签是今天 9:41 往前排：CI 的钟早于 9:41 时它排到屏幕外。搜出来再看
+        let search = app.textFields["Search"]
+        check(search.waitForExistence(timeout: 5), "S1-搜索框", "找不到搜索框")
+        search.tap()
+        search.typeText("Lunch with")
         let renamed = containing(app.buttons, "Lunch with the team")
-        check(renamed.waitForExistence(timeout: 5), "S1-标题没改", "列表里没有书童起的标题「Lunch with the team」")
+        check(renamed.waitForExistence(timeout: 5), "S1-标题没改", "搜「Lunch with」搜不到书童起的标题「Lunch with the team」")
 
         open.tap()
         check(undo.waitForExistence(timeout: 5), "S1-再开没有撤销", "再开书童，回执上的「Undo this batch」不见了")
@@ -72,8 +77,19 @@ final class ShutongTests: XCTestCase {
     // ---------------------------------------------------------------- 2. 新语音便签自己收拾，原话在
     func testNewVoiceNoteTidiedWithOriginalWords() {
         launch("shutong-auto")
+        let search = app.textFields["Search"]
+        check(search.waitForExistence(timeout: 8), "S2-搜索框", "找不到搜索框")
         let row = containing(app.buttons, "Coolant and the new blade")
-        check(row.waitForExistence(timeout: 15), "S2-没收拾", "新录的语音便签没被收拾成「Coolant and the new blade」")
+        var found = false
+        for _ in 0..<4 where !found {                       // 书童 5 秒看一次：搜不到就清了再搜
+            search.tap()
+            if let v = search.value as? String, !v.isEmpty, v != "Search" {
+                search.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: v.count))
+            }
+            search.typeText("Coolant and the new")
+            found = row.waitForExistence(timeout: 5)
+        }
+        check(found, "S2-没收拾", "新录的语音便签没被收拾成「Coolant and the new blade」")
         row.tap()
 
         let text = app.textViews.firstMatch
