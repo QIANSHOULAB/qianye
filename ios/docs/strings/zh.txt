@@ -110,6 +110,9 @@ font.small	小
 import.done	搬回来 %lld 条，更新 %lld 条。
 import.pending	还有 %lld 条在 iCloud 里磨蹭，过会儿再搬一次。
 lang.system	跟系统
+link.copy	拷贝链接
+link.open	打开
+link.share	分享…
 list.all	全部便签
 list.empty	一片叶子都还没有。写一句、拍一页、说两句，随便喂它点什么。
 list.new	写一条

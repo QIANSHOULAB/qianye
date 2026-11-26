@@ -850,6 +850,18 @@ final class ShutongModel {
             b.at = Date().addingTimeInterval(-60)
             lines = [a, b]
             open = true
+        case "shutong-links":                               // 195：三种气泡里的网址（假网址，不真登），最下面是续登那种长的
+            let z = app.lang.isZh
+            let he = ShutongLine(who: "he", text: z ? "帮我看看 https://example.com/he-195" : "Look at https://example.com/he-195")
+            let say = ShutongLine(who: "say", text: z ? "Partial copy words 在这儿，选一段就能拷。回头看 https://example.com/say-195。"
+                                                      : "Partial copy words stay selectable. Read https://example.com/say-195 later.")
+            let long = "https://example.com/cai/oauth/authorize?code=true&client_id=195-demo-client-identifier-long-enough-to-wrap"
+                + "&response_type=code&redirect_uri=https%3A%2F%2Fexample.com%2Foauth%2Fcode%2Fcallback&scope=user%3Aprofile"
+                + "&code_challenge=AbCdEfGh1234567890AbCdEfGh1234567890abcde&state=END-195"
+            var login = ShutongLine(who: "butler", text: (z ? "点这个网址登，登完把那串码整串发我：\n" : "Open this to sign in, then send me the code:\n") + long)
+            login.at = Date().addingTimeInterval(-60)
+            lines = [he, say, login]
+            open = true
         case "shutong-slip":
             let z = app.lang.isZh
             let picks = app.allNotes().filter { !$0.trashed && ($0.title.contains(z ? "读书" : "Reading") || $0.title.contains(z ? "明天" : "Team")) }

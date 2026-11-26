@@ -82,6 +82,10 @@ S = {
  "common.close": ("关", "Close"),
  "common.done": ("好了", "Done"),
  "common.cancel": ("取消", "Cancel"),
+ # 195 网址
+ "link.open": ("打开", "Open"),
+ "link.copy": ("拷贝链接", "Copy Link"),
+ "link.share": ("分享…", "Share…"),
  "folders.title": ("文件夹", "Folders"),
  "folders.new": ("新建文件夹", "New folder"),
  "folders.add": ("建", "Add"),

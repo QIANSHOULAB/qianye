@@ -204,11 +204,16 @@ struct ShutongBubble: View {
         case "confirm": ShutongConfirmCard(line: line)
         case "butler": butler
         default:
-            Text(line.text)
-                .font(.system(size: 13))
-                .foregroundStyle(Color(Ink.text3))
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            if Links.find(line.text).isEmpty {
+                Text(line.text)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(Ink.text3))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                LinkText(line.text, size: 13, color: Ink.text3)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
     }
 
@@ -219,13 +224,10 @@ struct ShutongBubble: View {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Color(Ink.text3))
             }
-            Text(line.text)
-                .font(.system(size: 16))
-                .foregroundStyle(Color(Ink.text))
+            LinkText(line.text, color: Ink.text)                   // 195：网址能点，字能选一段
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background { RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(Ink.accent).opacity(0.16)) }
-                .textSelection(.enabled)
             if line.state == "failed" {
                 Button(t.t("shutong.retry")) { m.retry(line.id) }
                     .buttonStyle(PlainTextButtonStyle())
@@ -256,27 +258,27 @@ struct ShutongBubble: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Color(Ink.text3))
             }
-            Text(line.text)
-                .font(.system(size: 16))
-                .foregroundStyle(Color(Ink.text))
-                .fixedSize(horizontal: false, vertical: true)
-                .textSelection(.enabled)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 9)
-                .background { RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(Ink.text3).opacity(0.12)) }
+            VStack(alignment: .leading, spacing: 8) {
+                LinkText(line.text, color: Ink.text)
+                // 195 续登那种登录网址：旁边一个「打开」，点了直接开浏览器（码照旧贴回下面的输入框）
+                ForEach(Links.signIns(line.text), id: \.self) { url in
+                    Button(t.t("link.open")) { LinkOpener.open(url) }
+                        .buttonStyle(SmartButtonStyle(prominent: true, minWidth: 88))
+                        .accessibilityIdentifier("shutong.openLink")
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background { RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(Ink.text3).opacity(0.12)) }
         }
         .padding(.trailing, 32)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("shutong.butlerLine")
     }
 
     private var say: some View {
-        Text(line.text)
-            .font(.system(size: 16))
-            .foregroundStyle(Color(Ink.text))
-            .fixedSize(horizontal: false, vertical: true)
-            .textSelection(.enabled)
+        LinkText(line.text, color: Ink.text)
             .padding(.trailing, 32)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -412,14 +414,20 @@ struct SpokenPanel: View {
     let swapBack: () -> Void
     @Environment(AppModel.self) private var app
 
-    private var spokenText: some View {
-        Text(note.spoken)
-            .font(.system(size: 15))
-            .foregroundStyle(Color(Ink.text2))
-            .textSelection(.enabled)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityIdentifier("shutong.spoken")
+    @ViewBuilder private var spokenText: some View {
+        if Links.find(note.spoken).isEmpty {
+            Text(note.spoken)
+                .font(.system(size: 15))
+                .foregroundStyle(Color(Ink.text2))
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("shutong.spoken")
+        } else {
+            LinkText(note.spoken, size: 15, color: Ink.text2)      // 195
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("shutong.spoken")
+        }
     }
 
     var body: some View {

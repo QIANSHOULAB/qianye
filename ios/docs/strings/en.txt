@@ -110,6 +110,9 @@ font.small	Small
 import.done	Imported %lld, updated %lld.
 import.pending	%lld still dawdling in iCloud. Try again in a bit.
 lang.system	System
+link.copy	Copy Link
+link.open	Open
+link.share	Share…
 list.all	All Notes
 list.empty	Not a single leaf yet. Write, snap or talk — feed it something.
 list.new	New note

@@ -7,6 +7,8 @@ import YiyeKit
 
 extension NSAttributedString.Key {
     static let yiyeUnsure = NSAttributedString.Key("yiyeUnsure")
+    /// 195：这一段是网址（值是 URL）。不用系统的 .link：能打字的框里系统不认它
+    static let yiyeLink = NSAttributedString.Key("yiyeLink")
 }
 
 /// 正文里的一张图：记着它在附件里的路径
@@ -50,6 +52,11 @@ final class PaperTextView: UITextView {
     static let side: CGFloat = 20
     var onWidthChange: ((CGFloat) -> Void)?
     private var lastWidth: CGFloat = 0
+    /// 195：网址的点和长按（没弹键盘时点一下就打开；长按链接弹菜单，弹不弹键盘都一样）
+    var linkTitles = LinkTitles()
+    private let linkTap = UITapGestureRecognizer()
+    private let linkHold = UILongPressGestureRecognizer()
+    private lazy var linkGate = LinkGate(self)
 
     var metrics = EditorMetrics.of(1) {
         didSet { lines.lineHeight = metrics.line; setNeedsLayout() }
@@ -68,9 +75,65 @@ final class PaperTextView: UITextView {
         insertSubview(lines, at: 0)
         lines.lineHeight = metrics.line
         tintColor = Ink.accent
+        LinkOpener.watchPasteboardInDemo()
+        linkTap.addTarget(self, action: #selector(tappedLink(_:)))
+        linkHold.addTarget(self, action: #selector(heldLink(_:)))
+        linkHold.minimumPressDuration = 0.35
+        for g in [linkTap, linkHold] as [UIGestureRecognizer] {
+            g.delegate = linkGate
+            addGestureRecognizer(g)
+        }
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:)") }
+
+    // ---------------------------------------------------------------- 195 网址
+    /// 手指下面是哪个链接（连它在哪一块地方）
+    func link(at p: CGPoint) -> (url: URL, rect: CGRect)? {
+        let st = textStorage
+        var hit: (url: URL, rect: CGRect)?
+        st.enumerateAttribute(.yiyeLink, in: NSRange(location: 0, length: st.length), options: []) { v, r, stop in
+            guard let url = v as? URL,
+                  let a = position(from: beginningOfDocument, offset: r.location),
+                  let b = position(from: a, offset: r.length),
+                  let range = textRange(from: a, to: b) else { return }
+            for s in selectionRects(for: range) where s.rect.width > 1 && s.rect.insetBy(dx: -4, dy: -2).contains(p) {
+                hit = (url, s.rect)
+                stop.pointee = true
+                return
+            }
+        }
+        return hit
+    }
+
+    func isLinkGesture(_ g: UIGestureRecognizer) -> Bool { g === linkTap || g === linkHold }
+
+    /// 没弹键盘时手指刚落在链接上：这一下归链接，不进编辑（系统用哪个手势放光标都一样）
+    private var linkTouchUntil: TimeInterval = 0
+    func fingerDown(onLink: Bool) { linkTouchUntil = onLink ? ProcessInfo.processInfo.systemUptime + 1.0 : 0 }
+    override var canBecomeFirstResponder: Bool {
+        super.canBecomeFirstResponder && ProcessInfo.processInfo.systemUptime >= linkTouchUntil
+    }
+
+    /// 链接上的点、长按归链接：系统那套放光标、放大镜让开。弹着键盘时点链接照旧是放光标（要改网址得点得进去）
+    override func gestureRecognizerShouldBegin(_ g: UIGestureRecognizer) -> Bool {
+        if !isLinkGesture(g), g is UITapGestureRecognizer || g is UILongPressGestureRecognizer,
+           !isFirstResponder || g is UILongPressGestureRecognizer, link(at: g.location(in: self)) != nil {
+            return false
+        }
+        return super.gestureRecognizerShouldBegin(g)
+    }
+
+    @objc private func tappedLink(_ g: UITapGestureRecognizer) {
+        guard g.state == .ended, !isFirstResponder, let l = link(at: g.location(in: self)) else { return }
+        LinkOpener.open(l.url)
+    }
+
+    @objc private func heldLink(_ g: UILongPressGestureRecognizer) {
+        guard g.state == .began, let l = link(at: g.location(in: self)) else { return }
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        LinkOpener.menu(l.url, from: self, at: l.rect, titles: linkTitles)
+    }
 
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -125,6 +188,8 @@ struct MarkdownStyler {
         s.addAttributes(base(), range: full)
         s.removeAttribute(.backgroundColor, range: full)
         s.removeAttribute(.baselineOffset, range: full)
+        s.removeAttribute(.underlineStyle, range: full)
+        s.removeAttribute(.yiyeLink, range: full)
         for l in Markdown5.parse(text) {
             guard l.range.length > 0, l.range.location + l.range.length <= s.length else { continue }
             let lineR = ns.paragraphRange(for: l.range)
@@ -169,6 +234,11 @@ struct MarkdownStyler {
                 }
             }
         }
+        // 195：网址标成链接的样子
+        for l in Links.find(text) where l.range.location + l.range.length <= s.length {
+            s.addAttributes([.foregroundColor: Ink.accent, .underlineStyle: NSUnderlineStyle.single.rawValue, .yiyeLink: l.url],
+                            range: l.range)
+        }
         s.enumerateAttribute(.attachment, in: full, options: []) { v, r, _ in
             guard let a = v as? ImageAttachment else { return }
             s.addAttribute(.paragraphStyle, value: para(.center, height: a.slot), range: ns.paragraphRange(for: r))
@@ -177,6 +247,20 @@ struct MarkdownStyler {
             if v != nil { s.addAttribute(.backgroundColor, value: Ink.doubt, range: r) }
         }
         s.endEditing()
+    }
+}
+
+/// 195：链接那两个手势只在手指落在链接上时接（系统自带的那几个在 PaperTextView.gestureRecognizerShouldBegin 里让开）
+private final class LinkGate: NSObject, UIGestureRecognizerDelegate {
+    private weak var view: PaperTextView?
+
+    init(_ view: PaperTextView) { self.view = view }
+
+    func gestureRecognizer(_ g: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        guard let view else { return false }
+        let onLink = view.link(at: touch.location(in: view)) != nil
+        if !view.isFirstResponder { view.fingerDown(onLink: onLink) }
+        return onLink && (g is UILongPressGestureRecognizer || !view.isFirstResponder)
     }
 }
 

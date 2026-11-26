@@ -233,9 +233,16 @@ enum Demo {
             q.phase = "queued"
             raw.shutongState = q
         }
+        // 195：正文里有网址的一条（只在这个画面加）
+        var linkedID: UUID?
+        if cfg.screen == "link-note" {
+            linkedID = add(zh ? "https://example.com/note-195\n\n下面这行是普通的字，点它就弹键盘。"
+                              : "https://example.com/note-195\n\nA plain line below; tap it to type.", ago: 30, folder: work).id
+        }
         try? ctx.save()
 
         switch cfg.screen {
+        case "link-note": if let id = linkedID { app.path = [.editor(id)] }
         case "original", "original-focus": app.path = [.editor(photo.id)]
         case "markdown-focus": app.path = [.editor(mdNote.id)]
         case "article": app.path = [.editor(art.id)]

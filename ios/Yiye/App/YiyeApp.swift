@@ -53,7 +53,7 @@ struct RootView: View {
         .background { Color.clear.sheet(isPresented: $shutong.open) { ShutongSheet() } }           // 136 书童
         .background { Color.clear.sheet(isPresented: $remote.open) { RemoteSheet() } }             // 172 遥控
         .task {                                                                                    // 截图、UI 测试用
-            if let s = app.demo?.screen, ["shutong", "shutong-confirm", "shutong-slip", "shutong-tell"].contains(s) {
+            if let s = app.demo?.screen, ["shutong", "shutong-confirm", "shutong-slip", "shutong-tell", "shutong-links"].contains(s) {
                 app.started()
                 try? await Task.sleep(nanoseconds: 400_000_000)
                 ShutongModel.shared.demo(s)

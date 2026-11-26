@@ -1,3 +1,4 @@
+0.7.34：网址能点、能单独拷了。小书童、便签、项目待办里的网址自动变成链接：点一下用浏览器打开，长按是「拷贝链接 / 分享」；气泡里的字可以只选一段来拷。续登那条网址下面多一个「打开」，点了直接去登，码照旧贴回输入框。Links are now tappable and copyable on their own, in the scribe chat and in notes; select just part of a message; sign-in links get an Open button.
 0.7.33：小书童里大管家不在线时那句改成「大管家这会儿不在线，话放信箱里了，上线就办」。大管家那头一起修了：电脑、掌机明明开着、手机走备用通道时，不再说它们不在线。The butler-away line is clearer, and the butler no longer reads as away just because the phone switched to the backup route.
 0.7.32：遥控的截图能放大了。两指张开放大（最多 5 倍）、合拢缩小，放大了一根手指拖着看；点和长按还是点在手指下面那一点，右下角「1×」回整屏。两指一起上下滑照旧是滚轮。Remote: pinch to zoom the screenshot, drag to move around, taps land where your finger is.
 0.7.31：信箱出毛病的时候，手机不再一个劲儿地敲它。寄不出去就隔得越来越久（最长 5 分钟一次），信箱叫等就照它说的等；今天的免费额度用光了，设置里大管家那一行会写几点恢复，配了备用通道的话信直接走备用。便签、词、待办都还排着，通了接着寄，一条不丢。

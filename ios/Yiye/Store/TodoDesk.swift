@@ -188,7 +188,8 @@ final class TodoDesk {
         }
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 800_000_000)
-            self.receive(letter("todo", "demo-1", zh ? "真机试新版" : "Try the new build", zh ? "1. 打开\n2. 点一下" : "1. Open it\n2. Tap once"))
+            self.receive(letter("todo", "demo-1", zh ? "真机试新版" : "Try the new build",
+                                zh ? "https://example.com/todo-195\n1. 打开\n2. 点一下" : "https://example.com/todo-195\n1. Open it\n2. Tap once"))
             self.receive(letter("todo", "demo-2", zh ? "回 A 还是 B" : "Reply A or B", zh ? "聊天里回一个字" : "One letter in the chat"))
             try? await Task.sleep(nanoseconds: 6_000_000_000)
             self.receive(letter("todo-done", "demo-2", "", ""))

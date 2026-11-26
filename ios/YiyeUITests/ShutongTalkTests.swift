@@ -66,7 +66,8 @@ final class ShutongTalkTests: XCTestCase {
         let undo = app.buttons["Undo this batch"].firstMatch
         check(undo.waitForExistence(timeout: 8), "T1-没做", "说了一句，聊天窗里没出回执（Undo this batch）")
         check(containing(app.staticTexts, "into “Machines”").exists, "T1-回执不对", "回执里没写挪进了「Machines」")
-        check(containing(app.staticTexts, "Put the machine stuff together").exists, "T1-没字幕", "他说的那句没出在聊天窗里")
+        check(app.textViews.matching(NSPredicate(format: "value CONTAINS %@", "Put the machine stuff together")).firstMatch.exists,
+              "T1-没字幕", "他说的那句没出在聊天窗里")                       // 195：气泡里的字是能选的文字框了
         check(app.buttons["shutong.talkFix"].firstMatch.exists, "T1-不能改字", "字幕旁边没有「Fix」")
         shot("T1-开口说回执")
 
