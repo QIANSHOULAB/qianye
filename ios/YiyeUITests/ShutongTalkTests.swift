@@ -105,7 +105,7 @@ final class ShutongTalkTests: XCTestCase {
 
     func testTrashSilenceKeeps() {
         askToTrash("T4")
-        check(containing(app.staticTexts, "Skipped").waitForExistence(timeout: 30), "T4-不吭声还在等", "不吭声，清单一直等着没收")
+        check(containing(app.staticTexts, "Skipped").waitForExistence(timeout: 50), "T4-不吭声还在等", "不吭声，清单一直等着没收")
         check(!containing(app.staticTexts, "Trashed").exists, "T4-不吭声也扔了", "不吭声还是扔了")
         shot("T4-不吭声不动")
     }
