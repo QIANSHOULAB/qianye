@@ -5,6 +5,7 @@ import YiyeKit
 
 /// 162 项目待办：大管家寄来的「要 Song 做的事」变成「项目待办」文件夹里的便签；他扔了 / 放回去，告诉大管家。
 /// 规则在 YiyeKit Todo162.swift（TodoBook）；这里只管动便签、寄请求。
+/// 大管家那头：pc-butler handheld/todo.py（电脑在信箱上电脑寄，电脑掉线掌机接班）。
 @MainActor
 final class TodoDesk {
     static let shared = TodoDesk()
