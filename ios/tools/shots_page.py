@@ -38,7 +38,7 @@ except Exception:
 
 names = {
     "list": "列表", "editor": "写字页", "markdown": "Markdown 五招", "ocr": "拍照认字", "share-note": "分享成图 · 便签",
-    "share-white": "分享成图 · 白纸", "settings": "设置", "butler": "大管家", "voice": "录一段", "voice-note": "录音笔记", "listen": "听力列表", "listen-text": "听力 · 原文", "toolbox": "工具箱（点开）", "dove": "飞鸽传书", "dove-done": "飞鸽传书 · 回信", "secret": "特勤局机密文件", "shutong": "书童 · 回执", "shutong-confirm": "书童 · 先过目", "shutong-slip": "书童 · 清理纸条", "spoken": "原话", "shutong-links": "书童 · 网址", "link-note": "写字页 · 网址", "guide": "书童 · 带路卡",
+    "share-white": "分享成图 · 白纸", "settings": "设置", "butler": "大管家", "voice": "录一段", "voice-note": "录音笔记", "listen": "听力列表", "listen-text": "听力 · 原文", "toolbox": "工具箱（点开）", "dove": "飞鸽传书", "dove-done": "飞鸽传书 · 回信", "secret": "特勤局机密文件", "shutong": "书童 · 回执", "shutong-confirm": "书童 · 先过目", "shutong-slip": "书童 · 清理纸条", "spoken": "原话", "shutong-links": "书童 · 网址", "link-note": "写字页 · 网址", "guide": "书童 · 带路卡", "askok": "书童 · 要你点头",
 }
 sets = {}
 for d in ["zh-light", "zh-dark", "en-light", "en-dark"]:

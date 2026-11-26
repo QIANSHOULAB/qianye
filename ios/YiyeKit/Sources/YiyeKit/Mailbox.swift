@@ -354,6 +354,10 @@ public enum MailAction: Equatable, Sendable {
     case tell(ButlerDelivery)
     /// 请 Song 点一下（197 遥控带路）：小书童里出一张带圈的卡
     case guide(ButlerDelivery, image: Data?)
+    /// 要他点头（203）：小书童里一张「同意 / 不同意」的卡（过期、点过了也从这儿来）
+    case confirm(ButlerDelivery)
+    /// 他点的那一下的回信（203，stage = confirm）
+    case confirmReply(ButlerResult)
     /// 要 Song 做的事（162）：kind=todo 建 / 更新「项目待办」里那条便签，kind=todo-done 那条进废纸篓；都回执
     case todo(ButlerDelivery)
     /// 大管家递来的备用信箱配置（130）：存钥匙串，回「收到」
@@ -380,6 +384,7 @@ public enum MailAction: Equatable, Sendable {
         case .result:
             guard let r = env.result else { return .drop("result 没有 data") }
             if r.stage == "remote" { return .remote(r, image: (r.remote?.image ?? r.file).flatMap { env.files[$0] }) }
+            if r.stage == "confirm" { return .confirmReply(r) }
             if doves.contains(r.id) || r.stage == "key" { return .dove(r) }
             if talks.contains(r.id) || r.stage == "talk" { return .talk(r, audio: r.audio.flatMap { env.files[$0] }) }
             if shutongs.contains(r.id) || r.stage == "shutong" || r.stage == "shutong-hear" { return .shutong(r) }
@@ -396,6 +401,7 @@ public enum MailAction: Equatable, Sendable {
             if d.kind == "secret" { return .secret(d) }
             if d.kind == "tell" { return .tell(d) }                 // 158：不是听力稿，别当听力收
             if d.kind == GuideCard.kind { return .guide(d, image: d.image.flatMap { env.files[$0] }) }   // 197
+            if d.kind == ConfirmCard.kind { return .confirm(d) }                                          // 203
             if d.kind == Todo.kindNew || d.kind == Todo.kindDone { return .todo(d) }   // 162：项目待办，也不是听力稿
             guard let a = d.audio else { return .deliver(d, audio: nil) }
             if let data = env.files[a] ?? localAudio(a) { return .deliver(d, audio: data) }

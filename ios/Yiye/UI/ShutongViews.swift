@@ -207,6 +207,7 @@ struct ShutongBubble: View {
         case "confirm": ShutongConfirmCard(line: line)
         case "butler": butler
         case "guide": ShutongGuideCard(line: line)           // 197
+        case "ask203": ShutongAskCard(line: line)            // 203
         default:
             if Links.find(line.text).isEmpty {
                 Text(line.text)
@@ -381,6 +382,81 @@ struct ShutongGuideCard: View {
         .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color(Ink.danger).opacity(status == "ask" ? 0.45 : 0), lineWidth: 1) }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("shutong.guideCard")
+    }
+}
+
+/// 203 要他点头的卡：大管家说哪台哪单做什么，下面原样一小块（工具 + 命令或路径），「同意」「不同意」。点一下只放这一回
+struct ShutongAskCard: View {
+    let line: ShutongLine
+    @Environment(AppModel.self) private var app
+
+    private var t: Lang { app.lang }
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 15)) { clock in card(at: max(clock.date, Date())) }   // 到点自己变「过期了」
+    }
+
+    private func card(at now: Date) -> some View {
+        let c = line.ask203
+        let status = c?.shown(at: now) ?? "expired"
+        let open = c?.open(at: now) ?? false
+        return VStack(alignment: .leading, spacing: 8) {
+            Text(t.t("shutong.butler") + " · " + When.short(line.at, t))
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color(Ink.text3))
+            Text(line.text)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Color(status == "ask" ? Ink.text : Ink.text2))
+                .fixedSize(horizontal: false, vertical: true)
+            if let d = c?.detail, !d.isEmpty {
+                Text(verbatim: d)
+                    .font(.system(size: 13, design: .monospaced))
+                    .foregroundStyle(Color(Ink.text2))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background { RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color(Ink.text).opacity(0.06)) }
+                    .accessibilityIdentifier("shutong.askDetail")
+            }
+            if open {
+                HStack(spacing: 12) {
+                    Button(t.t("shutong.askYes")) { ShutongModel.shared.tapConfirm(line.id, yes: true) }
+                        .buttonStyle(SmartButtonStyle(prominent: true, minWidth: 96))
+                        .accessibilityIdentifier("shutong.askYes")
+                    Button(t.t("shutong.askNo")) { ShutongModel.shared.tapConfirm(line.id, yes: false) }
+                        .buttonStyle(SmartButtonStyle(minWidth: 96))
+                        .accessibilityIdentifier("shutong.askNo")
+                }
+            } else if c?.said == nil {
+                Text(state(status, sent: c?.sent))
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(Ink.text3))
+                    .accessibilityIdentifier("shutong.askState")
+            }
+            if let said = c?.said, !said.isEmpty {
+                Text(said)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(Ink.text2))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("shutong.askSaid")
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background { RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color(Ink.paper)) }
+        .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color(Ink.danger).opacity(open ? 0.45 : 0), lineWidth: 1) }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("shutong.askCard")
+    }
+
+    private func state(_ status: String, sent: String?) -> String {
+        switch status {
+        case "yes": return t.t("shutong.askYesDone")
+        case "no": return t.t("shutong.askNoDone")
+        case "expired": return t.t("shutong.askExpired")
+        default: return t.t("shutong.askSent")
+        }
     }
 }
 

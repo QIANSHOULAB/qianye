@@ -155,6 +155,13 @@ public struct ButlerDelivery: Codable, Equatable, Sendable {
     public var r: Double?
     public var double: Bool?
     public var image: String?
+    /// kind=confirm（203 要他点头，见 Confirm203.swift）：卡的号、哪张单、要做的那件事、几点过期（status、host 同上）；
+    /// bark = 大管家同时发了 Bark（手机不用自己再弹通知）
+    public var confirm: String?
+    public var order: String?
+    public var detail: String?
+    public var expires: String?
+    public var bark: Bool?
     public init(v: Int = Butler.version, id: String, kind: String = "listen", title: String? = nil, text: String,
                 audio: String?, marks: [ListenMark]?, folder: String? = nil, at: String? = nil, note: String? = nil, request: String? = nil) {
         self.v = v; self.id = id; self.kind = kind; self.title = title; self.text = text

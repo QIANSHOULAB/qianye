@@ -251,6 +251,13 @@ share.saveFailed	Didn’t save: %@
 share.saved	Saved to Photos
 share.share	Share
 share.title	Share as image
+shutong.askExpired	Expired. No tap counts as no.
+shutong.askNo	Deny
+shutong.askNoDone	Denied
+shutong.askSays	The butler needs your OK: %@
+shutong.askSent	Sent. Waiting for the butler.
+shutong.askYes	Allow
+shutong.askYesDone	Allowed, this once
 shutong.auto	New note
 shutong.brainFailed	The scribe fumbled that one.
 shutong.butler	Butler

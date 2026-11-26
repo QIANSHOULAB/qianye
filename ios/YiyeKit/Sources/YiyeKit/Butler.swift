@@ -49,6 +49,8 @@ public struct ButlerRequest: Codable, Equatable, Sendable {
     public var remote: RemoteOp?
     public var `for`: String?
     public var secret: String?
+    /// ask=ok（203）：他在要点头的卡上点了一下（寄给哪台还是 for）
+    public var ok: ConfirmTap?
 
     /// ask：fix = 理顺（结果回 已理顺/）；speak = 配音（0.4.0 起，结果走 送来/，带 note）；word = 会了 / 不会（088，见 WordMark.swift）
     public init(id: String, note: String, kind: ButlerKind, text: String, images: [String]?, unsure: [String]?, ask: String = "fix", at: String, app: String) {
@@ -87,6 +89,8 @@ public struct ButlerResult: Codable, Equatable, Sendable {
     public var shutong: ShutongReply?
     /// 遥控（172，stage = remote）：这一下之后那台的样子、跟着来的截图在 files 里的路径
     public var remote: RemoteState?
+    /// 点头（203，stage = confirm）：哪张卡、收下没有；text 是回他的那句
+    public var confirm: ConfirmReply?
     public init(v: Int = 1, id: String, note: String, ok: Bool, text: String?, changes: String?, error: String?, model: String? = nil, at: String? = nil,
                 audio: String? = nil, timing: [String: Double]? = nil, host: String? = nil, heard: String? = nil,
                 stage: String? = nil, title: String? = nil, re: String? = nil, file: String? = nil, why: String? = nil, shutong: ShutongReply? = nil) {
@@ -97,7 +101,7 @@ public struct ButlerResult: Codable, Equatable, Sendable {
         self.shutong = shutong
     }
 
-    private enum CodingKeys: String, CodingKey { case v, id, note, ok, text, changes, error, model, at, audio, timing, host, heard, stage, title, re, file, why, shutong, remote }
+    private enum CodingKeys: String, CodingKey { case v, id, note, ok, text, changes, error, model, at, audio, timing, host, heard, stage, title, re, file, why, shutong, remote, confirm }
 
     /// 新加的几个字段读不懂就当没有（timing 里混了不是数的，整封信不能因为它作废）
     public init(from decoder: Decoder) throws {
@@ -122,6 +126,7 @@ public struct ButlerResult: Codable, Equatable, Sendable {
         why = try? c.decodeIfPresent(String.self, forKey: .why)
         shutong = try? c.decodeIfPresent(ShutongReply.self, forKey: .shutong)
         remote = try? c.decodeIfPresent(RemoteState.self, forKey: .remote)
+        confirm = try? c.decodeIfPresent(ConfirmReply.self, forKey: .confirm)
     }
 }
 

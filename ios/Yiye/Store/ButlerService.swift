@@ -272,6 +272,12 @@ final class ButlerService {
         case .guide(let d, let image):                      // 197：请他点一下：小书童里一张带圈的卡
             ShutongModel.shared.butlerGuide(d, image: image)
             return true
+        case .confirm(let d):                               // 203：要他点头：小书童里一张「同意 / 不同意」
+            ShutongModel.shared.butlerConfirm(d)
+            return true
+        case .confirmReply(let r):
+            ShutongModel.shared.confirmAnswered(r)
+            return true
         case .todo(let d):                                  // 162：项目待办：建 / 更新 / 扔那条便签，回执
             TodoDesk.shared.receive(d)
             sendTodoOK(of: d.id)
@@ -656,6 +662,18 @@ final class ButlerService {
     func sendRemote(_ req: ButlerRequest) async -> String? {
         if mail == nil { connectMail() }
         guard let mail, app?.demo == nil else { return app?.lang.t("remote.noPair") }
+        do {
+            _ = try await mail.send(.request(req), timeout: 20)
+            return nil
+        } catch {
+            return (error as? MailError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    /// 203：他点的「同意 / 不同意」：只走信箱（晚了就过期了，不走 iCloud）。寄出去了回 nil，没寄出去回一句为什么
+    func sendConfirm(_ req: ButlerRequest) async -> String? {
+        if mail == nil { connectMail() }
+        guard let mail else { return app?.lang.t("shutong.noPair") }
         do {
             _ = try await mail.send(.request(req), timeout: 20)
             return nil

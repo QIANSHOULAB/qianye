@@ -4,7 +4,7 @@
 set -uo pipefail
 SIM="$1"; APP="$2"; OUT="$3"
 BID=lab.qianshou.yiye
-SCREENS="list editor markdown ocr share-note share-white settings butler voice voice-note listen listen-text toolbox batch trash folders-tall listen-loop article article-wait article-done original original-focus markdown-focus dove dove-done secret shutong shutong-confirm shutong-slip spoken call shutong-tell swipe-in swipe-out shutong-links link-note guide"
+SCREENS="list editor markdown ocr share-note share-white settings butler voice voice-note listen listen-text toolbox batch trash folders-tall listen-loop article article-wait article-done original original-focus markdown-focus dove dove-done secret shutong shutong-confirm shutong-slip spoken call shutong-tell swipe-in swipe-out shutong-links link-note guide askok"
 echo "包里的语言：$(ls -d "$APP"/*.lproj 2>/dev/null | xargs -n1 basename | tr '\n' ' ')"
 xcrun simctl boot "$SIM" 2>/dev/null || true
 xcrun simctl bootstatus "$SIM" -b >/dev/null

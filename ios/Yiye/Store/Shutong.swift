@@ -28,6 +28,8 @@ struct ShutongLine: Codable, Identifiable, Equatable {
     var state = ""
     /// guide：197 带路的卡（图存在 guides/<号>.jpg）
     var guide: GuideCard?
+    /// ask203：要他点头的卡
+    var ask203: ConfirmCard?
 }
 
 /// 存在手机里的：聊天记录（最近 200 条）、最近 40 批的快照、这周的清理建议
@@ -852,8 +854,75 @@ final class ShutongModel {
             if !open {
                 app.show(app.lang.f("shutong.guideSays", c.text), action: t("shutong.butlerOpen"), seconds: 8) { [weak self] in self?.open = true }
             }
-        } else {
+        } else if app.demo == nil {                      // Demo 截图别被系统的通知授权框盖住（205 看到的）
             ButlerNotice.post(title: t("shutong.butler"), body: c.text, id: d.id)
+        }
+    }
+
+    // ---------------------------------------------------------------- 203 要他点头：自动工的确认
+    /// 一张要他点头的卡来了（或者过期了、点过了）：同一个号只有一张
+    func butlerConfirm(_ d: ButlerDelivery) {
+        load()
+        guard let c = ConfirmCard(d) else { return }
+        if let i = lines.lastIndex(where: { $0.who == "ask203" && $0.ask203?.id == c.id }) {
+            lines[i].ask203 = lines[i].ask203?.updated(by: c) ?? c
+        } else if c.status == "ask" {
+            var l = ShutongLine(who: "ask203", text: c.text)
+            l.ask203 = c
+            lines.append(l)
+        }
+        if c.status == "ask" && !open { unread = true }
+        save()
+        guard c.status == "ask", let app, app.demo == nil else { return }
+        if UIApplication.shared.applicationState == .active {
+            if !open {
+                app.show(app.lang.f("shutong.askSays", c.text), action: t("shutong.butlerOpen"), seconds: 8) { [weak self] in self?.open = true }
+            }
+        } else if d.bark != true {
+            ButlerNotice.post(title: t("shutong.butler"), body: c.text, id: d.id)
+        }
+    }
+
+    /// 他点了同意 / 不同意：寄给在问的那台；寄不出去按钮放回来
+    func tapConfirm(_ line: UUID, yes: Bool) {
+        guard let app, let i = lines.firstIndex(where: { $0.id == line }), var c = lines[i].ask203, c.open(at: Date()) else { return }
+        c.sent = yes ? "yes" : "no"
+        c.said = nil
+        lines[i].ask203 = c
+        save()
+        if app.demo != nil { demoConfirm(c.id); return }
+        let req = ButlerRequest.confirm(id: UUID().uuidString, card: c, yes: yes, at: ISOTime.string(Date()), app: ButlerService.appVersion)
+        Task {
+            guard let why = await app.butler.sendConfirm(req) else { return }
+            if let j = self.lines.firstIndex(where: { $0.id == line }), var back = self.lines[j].ask203 {
+                back.sent = nil
+                back.said = self.app?.lang.f("shutong.sendFailed", why) ?? why
+                self.lines[j].ask203 = back
+                self.save()
+            }
+        }
+    }
+
+    /// 大管家回他点的那一下：收下了就写定；没收下（过期了、那台不在线）把那句话写在卡上
+    func confirmAnswered(_ r: ButlerResult) {
+        load()
+        guard let a = r.confirm, let i = lines.lastIndex(where: { $0.ask203?.id == a.id }), var c = lines[i].ask203 else { return }
+        if a.taken {
+            if c.status == "ask", let s = c.sent { c.status = s }
+        } else {
+            c.said = r.text
+        }
+        lines[i].ask203 = c
+        save()
+    }
+
+    /// Demo：假大管家过一会儿回「收下了」
+    private func demoConfirm(_ id: String) {
+        Task {
+            try? await Task.sleep(nanoseconds: 600_000_000)
+            var r = ButlerResult(id: "demo203", note: "", ok: true, text: "", changes: nil, error: nil, stage: "confirm")
+            r.confirm = ConfirmReply(id: id, taken: true)
+            self.confirmAnswered(r)
         }
     }
 
@@ -925,6 +994,21 @@ final class ShutongModel {
             var login = ShutongLine(who: "butler", text: (z ? "点这个网址登，登完把那串码整串发我：\n" : "Open this to sign in, then send me the code:\n") + long)
             login.at = Date().addingTimeInterval(-60)
             lines = [he, say, login]
+            open = true
+        case "askok":                                       // 203：一张要他点头的卡
+            let z = app.lang.isZh
+            var d = ButlerDelivery(id: "confirm-demo-1", kind: ConfirmCard.kind,
+                                   text: z ? "掌机 207 单要做一步，等你点头：把测试文件放到桌面上"
+                                           : "Handheld, order 207 needs your OK: put a test file on the desktop",
+                                   audio: nil, marks: nil)
+            d.confirm = "demo203"
+            d.status = "ask"
+            d.host = "handheld"
+            d.order = "207"
+            d.detail = "Bash：echo hello > C:/Users/me/Desktop/test.txt"
+            d.expires = ISOTime.string(Date().addingTimeInterval(1200))
+            lines = []
+            butlerConfirm(d)
             open = true
         case "guide":                                       // 197：一张带路的卡（假屏右上角那块红圈起来）
             let z = app.lang.isZh

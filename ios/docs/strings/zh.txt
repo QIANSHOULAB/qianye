@@ -251,6 +251,13 @@ share.saveFailed	没存上：%@
 share.saved	存进相册了
 share.share	分享
 share.title	分享成图
+shutong.askExpired	过期了，没点当不同意
+shutong.askNo	不同意
+shutong.askNoDone	没同意
+shutong.askSays	大管家要你点头：%@
+shutong.askSent	发出去了，等大管家回话
+shutong.askYes	同意
+shutong.askYesDone	同意了，只放行这一回
 shutong.auto	新便签
 shutong.brainFailed	小书童这回没办成
 shutong.butler	大管家
