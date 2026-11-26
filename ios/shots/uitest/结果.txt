@@ -1,34 +1,35 @@
 # UI 测试：全绿
 
--[YiyeUITests.CallTests testAskThenHangUpByWords]' passed (34.379 seconds).
--[YiyeUITests.CallTests testHangUpButton]' passed (11.377 seconds).
--[YiyeUITests.CallTests testOtherWordsWithHangDontHangUp]' passed (14.311 seconds).
--[YiyeUITests.ListGestureTests testDiagonalScrollsNotTrashes]' passed (12.354 seconds).
--[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting]' passed (26.169 seconds).
--[YiyeUITests.ListGestureTests testListeningOpensText]' passed (11.575 seconds).
--[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (28.159 seconds).
--[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (13.200 seconds).
--[YiyeUITests.ListGestureTests testNoTrashWhileSelecting]' passed (24.136 seconds).
--[YiyeUITests.ListGestureTests testRightSwipeClosesOpenLeftSwipe]' passed (54.880 seconds).
--[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (17.076 seconds).
--[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects]' passed (31.443 seconds).
--[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange]' passed (27.294 seconds).
--[YiyeUITests.ListGestureTests testSweepMiddleScrollsNotSelects]' passed (22.843 seconds).
--[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (15.058 seconds).
--[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (17.185 seconds).
--[YiyeUITests.ListGestureTests testSwipeShortSnapsBack]' passed (15.326 seconds).
--[YiyeUITests.ListGestureTests testTapOpensNote]' passed (14.340 seconds).
--[YiyeUITests.ListenLoopTests testLoopOnlyPickedDay]' passed (40.615 seconds).
--[YiyeUITests.ShutongTalkTests testTalkDoUndoThenBye]' passed (28.601 seconds).
--[YiyeUITests.ShutongTalkTests testTrashSayNo]' passed (23.409 seconds).
--[YiyeUITests.ShutongTalkTests testTrashSayYes]' passed (20.000 seconds).
--[YiyeUITests.ShutongTalkTests testTrashSilenceKeeps]' passed (18.021 seconds).
--[YiyeUITests.ShutongTests testChatReceiptThenUndo]' passed (25.411 seconds).
--[YiyeUITests.ShutongTests testNewVoiceNoteTidiedWithOriginalWords]' passed (16.767 seconds).
--[YiyeUITests.TopBarTests testListenButtonOpensAndDotGoesAfterHearing]' passed (35.834 seconds).
--[YiyeUITests.TopBarTests testToolboxLostListenAndScribe]' passed (16.737 seconds).
+-[YiyeUITests.CallTests testAskThenHangUpByWords]' passed (101.791 seconds).
+-[YiyeUITests.CallTests testHangUpButton]' passed (13.159 seconds).
+-[YiyeUITests.CallTests testOtherWordsWithHangDontHangUp]' passed (15.508 seconds).
+-[YiyeUITests.ListGestureTests testDiagonalScrollsNotTrashes]' passed (19.024 seconds).
+-[YiyeUITests.ListGestureTests testLeftStripWhenNotSelecting]' passed (38.976 seconds).
+-[YiyeUITests.ListGestureTests testListeningOpensText]' passed (13.524 seconds).
+-[YiyeUITests.ListGestureTests testLongPressSelectsAndTapToggles]' passed (32.488 seconds).
+-[YiyeUITests.ListGestureTests testLongPressThenDragSelectsRange]' passed (15.149 seconds).
+-[YiyeUITests.ListGestureTests testNoTrashWhileSelecting]' passed (19.737 seconds).
+-[YiyeUITests.ListGestureTests testRightSwipeClosesOpenLeftSwipe]' passed (17.426 seconds).
+-[YiyeUITests.ListGestureTests testSearchThenTapOpensNote]' passed (31.297 seconds).
+-[YiyeUITests.ListGestureTests testSweepFromSelectedDeselects]' passed (33.358 seconds).
+-[YiyeUITests.ListGestureTests testSweepLeftStripSelectsRange]' passed (26.243 seconds).
+-[YiyeUITests.ListGestureTests testSweepMiddleScrollsNotSelects]' passed (25.606 seconds).
+-[YiyeUITests.ListGestureTests testSwipeLeftPins]' passed (21.644 seconds).
+-[YiyeUITests.ListGestureTests testSwipeRightTrashesAndUndo]' passed (18.200 seconds).
+-[YiyeUITests.ListGestureTests testSwipeShortSnapsBack]' passed (16.679 seconds).
+-[YiyeUITests.ListGestureTests testTapOpensNote]' passed (11.033 seconds).
+-[YiyeUITests.ListenLoopTests testLoopOnlyPickedDay]' passed (42.438 seconds).
+-[YiyeUITests.ShutongTalkTests testTalkDoUndoThenBye]' passed (35.305 seconds).
+-[YiyeUITests.ShutongTalkTests testTrashSayNo]' passed (25.688 seconds).
+-[YiyeUITests.ShutongTalkTests testTrashSayYes]' passed (25.094 seconds).
+-[YiyeUITests.ShutongTalkTests testTrashSilenceKeeps]' passed (26.766 seconds).
+-[YiyeUITests.ShutongTests testChatReceiptThenUndo]' passed (25.430 seconds).
+-[YiyeUITests.ShutongTests testNewVoiceNoteTidiedWithOriginalWords]' passed (19.579 seconds).
+-[YiyeUITests.TodoTests testTodoArrivesDoneTrashesSwipeTellsButler]' passed (23.440 seconds).
+-[YiyeUITests.TopBarTests testListenButtonOpensAndDotGoesAfterHearing]' passed (39.144 seconds).
+-[YiyeUITests.TopBarTests testToolboxLostListenAndScribe]' passed (17.355 seconds).
 
 
-	 Executed 27 tests, with 0 failures (0 unexpected) in 616.500 (616.534) seconds
-	 Executed 27 tests, with 0 failures (0 unexpected) in 616.500 (616.539) seconds
+	 Executed 28 tests, with 0 failures (0 unexpected) in 751.079 (751.142) seconds
+	 Executed 28 tests, with 0 failures (0 unexpected) in 751.079 (751.144) seconds
 ** TEST SUCCEEDED **
