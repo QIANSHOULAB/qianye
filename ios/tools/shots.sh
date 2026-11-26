@@ -21,7 +21,8 @@ UIT_ABS="$(cd "$UIT" && pwd)"
 BEAUTY=cat; command -v xcbeautify >/dev/null && BEAUTY="xcbeautify --renderer github-actions"
 TEST_RUNNER_YIYE_UITEST_SHOTS="$UIT_ABS" xcodebuild test -project "$ROOT/Yiye.xcodeproj" -scheme Yiye \
   -destination "id=$SIM" -derivedDataPath "$DD" -resultBundlePath "$DD/uitest.xcresult" \
-  -only-testing:YiyeUITests -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$DD/uitest.log" | $BEAUTY
+  -only-testing:YiyeUITests -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO \
+  -test-timeouts-enabled YES -default-test-execution-time-allowance 180 -maximum-test-execution-time-allowance 180 2>&1 | tee "$DD/uitest.log" | $BEAUTY
 urc=${PIPESTATUS[0]}
 # 测试自己没存下图：从结果包里把挂的截图倒出来
 if ! ls "$UIT"/*.png >/dev/null 2>&1; then
