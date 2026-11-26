@@ -279,7 +279,7 @@ shutong.noPair	还没跟大管家配对，小书童没大脑可用
 shutong.notHeard	没听清，再说一遍
 shutong.nothingLeft	都划掉了，一条没动
 shutong.placeholder	跟小书童说…
-shutong.queued	大管家不在线，话放信箱里了，它一上线就办
+shutong.queued	大管家这会儿不在线，话放信箱里了，上线就办
 shutong.renameTo	改标题：%1$@ → %2$@
 shutong.retry	再问一次
 shutong.send	发送

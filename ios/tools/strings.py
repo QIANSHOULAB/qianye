@@ -307,7 +307,7 @@ S = {
  "shutong.cancelled": ("没办", "Skipped"),
  "shutong.retry": ("再问一次", "Ask again"),
  "shutong.noAnswer": ("小书童没回话，大管家可能不在", "No answer. The butler may be away."),
- "shutong.queued": ("大管家不在线，话放信箱里了，它一上线就办", "The butler’s away. Your note’s in the mailbox."),
+ "shutong.queued": ("大管家这会儿不在线，话放信箱里了，上线就办", "The butler’s away right now. Your note’s in the mailbox for when it’s back."),
  "shutong.noPair": ("还没跟大管家配对，小书童没大脑可用", "Not paired with the butler yet. No brain, no scribe."),
  "shutong.sendFailed": ("没寄出去：%@", "Couldn’t send: %@"),
  "shutong.brainFailed": ("小书童这回没办成", "The scribe fumbled that one."),

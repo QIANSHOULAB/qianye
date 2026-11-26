@@ -279,7 +279,7 @@ shutong.noPair	Not paired with the butler yet. No brain, no scribe.
 shutong.notHeard	Didn’t catch that.
 shutong.nothingLeft	All crossed out. Nothing changed.
 shutong.placeholder	Tell the scribe…
-shutong.queued	The butler’s away. Your note’s in the mailbox.
+shutong.queued	The butler’s away right now. Your note’s in the mailbox for when it’s back.
 shutong.renameTo	Rename: %1$@ → %2$@
 shutong.retry	Ask again
 shutong.send	Send

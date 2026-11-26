@@ -4682,13 +4682,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The butler’s away. Your note’s in the mailbox."
+            "value": "The butler’s away right now. Your note’s in the mailbox for when it’s back."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "大管家不在线，话放信箱里了，它一上线就办"
+            "value": "大管家这会儿不在线，话放信箱里了，上线就办"
           }
         }
       }
