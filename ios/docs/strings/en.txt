@@ -199,7 +199,7 @@ remote.end	End
 remote.ended	Remote ended
 remote.failed	That one didn't go through
 remote.handheld	Handheld
-remote.hint	Tap = left click, hold = right click, two-finger drag = scroll. While it's on, the machine shows “Phone remote” in its top corner; 5 minutes idle ends it.
+remote.hint	Tap = left click, hold = right click, two-finger drag = scroll. Pinch to zoom, then drag with one finger to move around. While it's on, the machine shows “Phone remote” in its top corner; 5 minutes idle ends it.
 remote.input	Type at the cursor there
 remote.noPair	Not paired with the butler yet
 remote.offline	Offline

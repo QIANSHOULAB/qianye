@@ -249,7 +249,7 @@ S = {
  "remote.desk": ("电脑", "Desktop"),
  "remote.handheld": ("掌机", "Handheld"),
  "remote.offline": ("不在线", "Offline"),
- "remote.hint": ("点一下 = 左键，长按 = 右键，两指上下滑 = 滚轮。遥控开着，那台屏幕右上角一直写着「手机遥控中」；5 分钟不动自己结束。", "Tap = left click, hold = right click, two-finger drag = scroll. While it's on, the machine shows “Phone remote” in its top corner; 5 minutes idle ends it."),
+ "remote.hint": ("点一下 = 左键，长按 = 右键，两指上下滑 = 滚轮。两指张开放大，放大了一指拖着挪。遥控开着，那台屏幕右上角一直写着「手机遥控中」；5 分钟不动自己结束。", "Tap = left click, hold = right click, two-finger drag = scroll. Pinch to zoom, then drag with one finger to move around. While it's on, the machine shows “Phone remote” in its top corner; 5 minutes idle ends it."),
  "remote.connecting": ("在连……", "Connecting…"),
  "remote.end": ("结束", "End"),
  "remote.screen": ("换屏", "Next screen"),

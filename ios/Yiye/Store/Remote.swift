@@ -25,6 +25,8 @@ final class RemoteModel {
     var draft = ""
     /// 密码开关
     var password = false
+    /// 181：手机上放大到几倍、挪到哪儿（只在手机上）。新截图来了不动；换屏、结束、重开遥控才回整屏
+    var zoom = RemoteZoom()
     /// UI 测试看的：上一下寄出去的是什么（Demo 里才写）
     private(set) var lastSent = ""
 
@@ -51,6 +53,7 @@ final class RemoteModel {
         session = UUID().uuidString
         image = nil
         state = RemoteState()
+        zoom = RemoteZoom()
         line = self.t("remote.connecting")
         draft = ""
         password = false
@@ -68,6 +71,7 @@ final class RemoteModel {
         inflight = nil
         waiting = false
         image = nil
+        zoom = RemoteZoom()
         line = nil
         draft = ""
         password = false
@@ -107,6 +111,7 @@ final class RemoteModel {
     func switchScreen() {
         let n = max(1, state.screens ?? 1)
         guard n > 1 else { return }
+        zoom = RemoteZoom()
         send(RemoteOp(op: "shot", session: session, screen: ((state.screen ?? 0) + 1) % n))
     }
 
@@ -169,6 +174,7 @@ final class RemoteModel {
         if let s = st.session, !s.isEmpty, s != session, !session.isEmpty { return }      // 上一场的
         if r.id == inflight { inflight = nil; waiting = false }
         if let data, let img = UIImage(data: data) {
+            if let new = st.screen, let old = state.screen, new != old { zoom = RemoteZoom() }   // 181：换了一块屏
             image = img
             state = st
         } else if st.shot != nil {
@@ -180,6 +186,7 @@ final class RemoteModel {
             line = r.ok ? (r.text ?? t("remote.ended")) : (r.error ?? t("remote.ended"))
             target = nil
             session = ""
+            zoom = RemoteZoom()
             return
         }
         if !r.ok { line = r.error ?? t("remote.failed") }
@@ -188,7 +195,7 @@ final class RemoteModel {
 
     static func describe(_ op: RemoteOp) -> String {
         switch op.op {
-        case "tap", "right": return String(format: "%@ %.2f %.2f", op.op, op.x ?? 0, op.y ?? 0)
+        case "tap", "right": return String(format: "%@ %.3f %.3f", op.op, op.x ?? 0, op.y ?? 0)
         case "scroll": return "scroll \(op.dy ?? 0)"
         case "type": return "type \(op.text ?? "")"
         default: return op.op

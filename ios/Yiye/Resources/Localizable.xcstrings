@@ -3322,13 +3322,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tap = left click, hold = right click, two-finger drag = scroll. While it's on, the machine shows “Phone remote” in its top corner; 5 minutes idle ends it."
+            "value": "Tap = left click, hold = right click, two-finger drag = scroll. Pinch to zoom, then drag with one finger to move around. While it's on, the machine shows “Phone remote” in its top corner; 5 minutes idle ends it."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "点一下 = 左键，长按 = 右键，两指上下滑 = 滚轮。遥控开着，那台屏幕右上角一直写着「手机遥控中」；5 分钟不动自己结束。"
+            "value": "点一下 = 左键，长按 = 右键，两指上下滑 = 滚轮。两指张开放大，放大了一指拖着挪。遥控开着，那台屏幕右上角一直写着「手机遥控中」；5 分钟不动自己结束。"
           }
         }
       }

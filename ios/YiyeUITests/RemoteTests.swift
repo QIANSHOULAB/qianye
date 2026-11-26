@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 
 /// 172 遥控：模拟器里假大管家（Demo）回一张画出来的屏。真点一下、长按一下，看得到寄出去的坐标；
@@ -43,6 +44,103 @@ final class RemoteTests: XCTestCase {
             usleep(300_000)
         } while Date() < end
         return nil
+    }
+
+    // ---------------------------------------------------------------- 181 放大
+
+    /// 「remote.zoom」那一行：倍数、挪了多少（框的几分之几）
+    private func zoomNow() -> (scale: Double, x: Double, y: Double)? {
+        let e = app.staticTexts["remote.zoom"].firstMatch
+        guard e.exists else { return nil }
+        let n = e.label.split(separator: " ").compactMap { Double($0) }
+        return n.count == 3 ? (n[0], n[1], n[2]) : nil
+    }
+
+    private func waitZoom(_ timeout: TimeInterval = 8, _ ok: ((scale: Double, x: Double, y: Double)) -> Bool) -> Bool {
+        let end = Date().addingTimeInterval(timeout)
+        repeat {
+            if let z = zoomNow(), ok(z) { return true }
+            usleep(300_000)
+        } while Date() < end
+        return false
+    }
+
+    /// 手机屏幕上那块红（假大管家画在右上角 x 1020…1250、y 70…120 of 1280×800）的中心，按截图这层的几分之几
+    private func redCenter(_ element: XCUIElement) -> CGVector? {
+        guard let img = element.screenshot().image.cgImage else { return nil }
+        let w = img.width, h = img.height
+        var px = [UInt8](repeating: 0, count: w * h * 4)
+        let drawn = px.withUnsafeMutableBytes { buf -> Bool in
+            guard let ctx = CGContext(data: buf.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                                      space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            ctx.draw(img, in: CGRect(x: 0, y: 0, width: w, height: h))
+            return true
+        }
+        guard drawn else { return nil }
+        var minX = w, maxX = -1, minY = h, maxY = -1
+        for y in 0..<h {
+            for x in 0..<w {
+                let i = (y * w + x) * 4
+                guard px[i] > 150, px[i + 1] < 80, px[i + 2] < 80 else { continue }
+                minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
+            }
+        }
+        guard maxX > minX, maxY > minY else { return nil }
+        return CGVector(dx: Double(minX + maxX + 1) / 2 / Double(w), dy: Double(minY + maxY + 1) / 2 / Double(h))
+    }
+
+    /// 放大约 3 倍，把右上角拖进来，点那块红的正中：寄出去的比例对得上（1% 以内）；张合、挪图什么都不寄；
+    /// 新截图来了倍数不变；点「1×」回整屏
+    func testPinchZoomTapAndReset() {
+        launch()
+        let desk = app.buttons["remote.pick.desk"].firstMatch
+        check(desk.waitForExistence(timeout: 10), "181-01-没有选电脑", "遥控页没有「电脑」那一格")
+        desk.tap()
+        let screen = app.descendants(matching: .any)["remote.screen"].firstMatch
+        check(screen.waitForExistence(timeout: 8), "181-02-没有截图", "选了电脑以后没出截图")
+        check(waitZoom { abs($0.scale - 1) < 0.01 }, "181-03-开头不是整屏", "刚连上就放大着")
+        check(!app.buttons["remote.zoomReset"].exists, "181-04-没放大就有1×", "整屏时不该有「1×」")
+        let before = sent.exists ? sent.label : ""
+
+        screen.pinch(withScale: 3, velocity: 2)
+        check(waitZoom { $0.scale > 1.8 }, "181-05-张开没放大", "两指张开以后是 \(String(describing: zoomNow()))")
+        check((sent.exists ? sent.label : "") == before, "181-06-张开顺带寄了东西", "张开以后寄出去的是 \(sent.label)")
+        check(app.buttons["remote.zoomReset"].waitForExistence(timeout: 3), "181-07-没有1×", "放大了没出「1×」")
+
+        // 一指往左下拖到头：右上角进画面、边贴住
+        for _ in 0..<3 {
+            screen.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.2))
+                .press(forDuration: 0.05, thenDragTo: screen.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.9)),
+                       withVelocity: .slow, thenHoldForDuration: 0.1)
+        }
+        check(waitZoom { abs($0.x - (1 - $0.scale)) < 0.01 && abs($0.y) < 0.01 }, "181-08-没贴住边",
+              "往左下拖到头以后是 \(String(describing: zoomNow()))")
+        check((sent.exists ? sent.label : "") == before, "181-09-挪图寄出去了", "一指拖以后寄出去的是 \(sent.label)")
+
+        // 点哪儿就是哪儿
+        let red = redCenter(screen)
+        check(red != nil, "181-10-找不到红块", "放大挪过以后画面里没有右上角那块红")
+        if let red {
+            screen.coordinate(withNormalizedOffset: red).tap()
+            let tap = sentStarts("tap ")
+            let n = (tap ?? "").split(separator: " ").compactMap { Double($0) }
+            let want = (x: (1020.0 + 1250) / 2 / 1280, y: (70.0 + 120) / 2 / 800)
+            check(n.count == 2 && abs(n[0] - want.x) < 0.01 && abs(n[1] - want.y) < 0.01, "181-11-点偏了",
+                  "点红块正中寄出去的是 \(tap ?? "（没寄）")，应该是 \(want.x) \(want.y)；缩放 \(String(describing: zoomNow()))")
+        }
+
+        // 一两秒换一张新截图：倍数、位置不动
+        let held = zoomNow()
+        sleep(5)
+        let later = zoomNow()
+        check(held != nil && later != nil && held! == later!, "181-12-换图跳回去了", "5 秒前 \(String(describing: held))，现在 \(String(describing: later))")
+
+        app.buttons["remote.zoomReset"].firstMatch.tap()
+        check(waitZoom { abs($0.scale - 1) < 0.001 && $0.x == 0 && $0.y == 0 }, "181-13-1×没回整屏", "点了「1×」还是 \(String(describing: zoomNow()))")
+        check(!app.buttons["remote.zoomReset"].exists, "181-14-1×没收", "回整屏了「1×」还在")
+        screen.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        check(sentStarts("tap 0.50") != nil || sentStarts("tap 0.49") != nil, "181-15-回整屏点不准", "点正中寄出去的是 \(sent.label)")
+        shot("181-放大回整屏")
     }
 
     func testTapPressAndPassword() {
