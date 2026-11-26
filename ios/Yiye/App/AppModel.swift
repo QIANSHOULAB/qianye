@@ -92,6 +92,7 @@ final class AppModel {
         ShutongModel.shared.app = self                      // 136 书童
         ShutongTalker.shared.app = self                     // 137 书童开口说
         EarDiagSender.shared.app = self                     // 170 说话出错、界面卡：诊断寄给大管家
+        RemoteModel.shared.app = self                       // 172 遥控
         TodoDesk.shared.app = self                          // 162 项目待办
         if let demo {
             Demo.seed(self, demo)
@@ -119,6 +120,7 @@ final class AppModel {
         case .background:
             StallWatch.shared.stop()
             ShutongTalker.shared.wentAway()                  // 137：切走了，开口说停（回来接着打字）
+            RemoteModel.shared.wentAway()                    // 172：切走了，遥控结束（那台角上的字消失）
             try? context.save()
             butler.keepFlush(all: true)                      // 111：退到后台前，该抄给电脑的马上寄（写字页里的也算）
             if !companion.holdsButler { butler.stop() }     // 陪玩在听：信箱不断（后台音频让 app 一直醒着）

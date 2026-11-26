@@ -192,6 +192,23 @@ paper.green	豆青
 paper.pink	藕粉
 paper.white	素白
 paper.yellow	米黄
+remote.black	截到的是黑的：多半是锁屏或者系统弹窗，得在机器前点
+remote.connecting	在连……
+remote.desk	电脑
+remote.end	结束
+remote.ended	遥控结束了
+remote.failed	这一下没做成
+remote.handheld	掌机
+remote.hint	点一下 = 左键，长按 = 右键，两指上下滑 = 滚轮。遥控开着，那台屏幕右上角一直写着「手机遥控中」；5 分钟不动自己结束。
+remote.input	在那台的光标处打字
+remote.noPair	还没跟大管家配对
+remote.offline	不在线
+remote.passInput	密码（只显示点点）
+remote.password	密码
+remote.pick	遥控哪一台？
+remote.screen	换屏
+remote.send	发送
+remote.title	遥控
 secret.burn	阅后即焚，关了就没了
 secret.close	关闭
 secret.copied	已复制，2 分钟后清掉
@@ -300,6 +317,7 @@ toast.deleted	删了「%@」
 toast.undo	撤销
 tools.deep	深聊
 tools.dove	飞鸽传书
+tools.remote	遥控
 tools.shutong	小书童
 tools.title	工具箱
 trash.days	还剩 %lld 天

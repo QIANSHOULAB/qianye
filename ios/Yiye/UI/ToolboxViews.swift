@@ -4,7 +4,7 @@ import YiyeKit
 /// 工具箱（105，Song 11-24）：顶栏只留便签的按钮（话筒、相机、+），不是便签的功能全收进这个箱子。
 /// 以后新的非便签功能往 `Tool` 里加一格就行。157（Song 11-25 21:19）：听力、小书童常用，挪到顶栏上，箱子里不再放
 enum Tool: CaseIterable, Identifiable {
-    case companion, deep, dove, settings
+    case companion, deep, dove, remote, settings
     var id: Self { self }
 
     var symbol: String {
@@ -12,6 +12,7 @@ enum Tool: CaseIterable, Identifiable {
         case .companion: return "dot.radiowaves.left.and.right"
         case .deep: return "brain.head.profile"
         case .dove: return "bird"
+        case .remote: return "display"
         case .settings: return "gearshape"
         }
     }
@@ -21,6 +22,7 @@ enum Tool: CaseIterable, Identifiable {
         case .companion: return "settings.companion"
         case .deep: return "tools.deep"
         case .dove: return "tools.dove"
+        case .remote: return "tools.remote"
         case .settings: return "settings.title"
         }
     }

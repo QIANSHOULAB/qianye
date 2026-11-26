@@ -47,6 +47,8 @@ final class ButlerService {
     @ObservationIgnored private var fbTaking: Set<String> = []
     /// 信箱说电脑（desk）在线（111：只寄给电脑，掌机不存文件）
     private(set) var deskOn = false
+    /// 信箱说在线的大管家（desk / handheld；172 遥控只让选在线的）
+    private(set) var machines: [String] = []
     /// 抄到电脑（111）：寄出去、回信还没来的「便签 → 寄的那版 modifiedAt、寄的时间」
     @ObservationIgnored private var keepInflight: [UUID: (modified: Date, sentAt: Date)] = [:]
     /// 请求 id → 「便签 id|寄的那版 modifiedAt（秒数）」，存起来：app 被杀了回信来了也认得
@@ -240,6 +242,9 @@ final class ButlerService {
         case .talk(let r, let audio):                       // 137 书童开口说：一句话的回信 / 插嘴对声纹
             talks.remove(r.id)
             ShutongTalker.shared.answer(r, audio: audio)
+            return true
+        case .remote(let r, let image):                     // 172 遥控：那台的样子、截图
+            RemoteModel.shared.answer(r, image: image)
             return true
         case .deliver(let d, let audio):
             app.addDelivery(d, audio: audio)
@@ -460,6 +465,7 @@ final class ButlerService {
     /// 信箱报哪几台大管家在线：pcs 里有 desk 才寄。刚变成在线，马上把攒着的寄出去
     private func setMachines(_ pcs: [String]) {
         let was = deskOn
+        if machines != pcs { machines = pcs }
         deskOn = pcs.contains("desk")
         if deskOn && !was { keepFlush() }
     }
@@ -583,6 +589,20 @@ final class ButlerService {
         guard let mail else { return }
         let req = ButlerRequest.fbConfigOK(id: UUID().uuidString, of: cfg, at: ISOTime.string(Date()), app: ButlerService.appVersion)
         Task { _ = try? await mail.send(.request(req), timeout: 20) }
+    }
+
+    // ---------------------------------------------------------------- 遥控（172）
+    /// 一个遥控动作：只走信箱（不走 iCloud：密码不进 iCloud，慢了也没用）。寄出去了回 nil，没寄出去回一句为什么。
+    /// 请求不落盘、不进 UserDefaults；回信按 stage=remote 认，不用记 id
+    func sendRemote(_ req: ButlerRequest) async -> String? {
+        if mail == nil { connectMail() }
+        guard let mail, app?.demo == nil else { return app?.lang.t("remote.noPair") }
+        do {
+            _ = try await mail.send(.request(req), timeout: 20)
+            return nil
+        } catch {
+            return (error as? MailError)?.errorDescription ?? error.localizedDescription
+        }
     }
 
     // ---------------------------------------------------------------- 飞鸽传书（128）

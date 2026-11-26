@@ -355,6 +355,8 @@ public enum MailAction: Equatable, Sendable {
     case shutong(ButlerResult)
     /// 书童开口说的回信（137）：cmd、动作、配好音的一句（stage = talk）；插嘴时对声纹的回信（stage = who，id 是开口说寄的）
     case talk(ButlerResult, audio: Data?)
+    /// 遥控的回信（172，stage = remote）：那台的样子、跟着来的截图
+    case remote(ButlerResult, image: Data?)
     /// 送来的听力稿 / 配好的音
     case deliver(ButlerDelivery, audio: Data?)
     /// 送来的录音信里没带、本地也没有：先别 ack，下回再拿
@@ -370,6 +372,7 @@ public enum MailAction: Equatable, Sendable {
         switch env.kind {
         case .result:
             guard let r = env.result else { return .drop("result 没有 data") }
+            if r.stage == "remote" { return .remote(r, image: (r.remote?.image ?? r.file).flatMap { env.files[$0] }) }
             if doves.contains(r.id) || r.stage == "key" { return .dove(r) }
             if talks.contains(r.id) || r.stage == "talk" { return .talk(r, audio: r.audio.flatMap { env.files[$0] }) }
             if shutongs.contains(r.id) || r.stage == "shutong" || r.stage == "shutong-hear" { return .shutong(r) }

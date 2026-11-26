@@ -29,6 +29,7 @@ struct RootView: View {
         @Bindable var app = app
         @Bindable var dove = DoveModel.shared
         @Bindable var shutong = ShutongModel.shared
+        @Bindable var remote = RemoteModel.shared
         NavigationStack(path: $app.path) {
             ListScreen()
                 .navigationDestination(for: Route.self) { r in
@@ -50,6 +51,7 @@ struct RootView: View {
         .background { Color.clear.sheet(isPresented: $dove.open) { DoveSheet() } }                 // 128 飞鸽传书
         .background { Color.clear.sheet(item: $dove.secret) { c in SecretCardView(card: c) } }    // 128 特勤局机密文件
         .background { Color.clear.sheet(isPresented: $shutong.open) { ShutongSheet() } }           // 136 书童
+        .background { Color.clear.sheet(isPresented: $remote.open) { RemoteSheet() } }             // 172 遥控
         .task {                                                                                    // 截图、UI 测试用
             if let s = app.demo?.screen, ["shutong", "shutong-confirm", "shutong-slip", "shutong-tell"].contains(s) {
                 app.started()

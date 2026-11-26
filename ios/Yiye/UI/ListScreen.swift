@@ -383,6 +383,8 @@ struct ListScreen: View {
             app.companion.toggleDeep()
         case .dove:
             DoveModel.shared.open = true             // 128：飞鸽传书（RootView 里的 sheet）
+        case .remote:
+            RemoteModel.shared.open = true           // 172：遥控（RootView 里的 sheet）
         }
     }
 

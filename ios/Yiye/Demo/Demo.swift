@@ -257,6 +257,7 @@ enum Demo {
             app.listening = ListenOpen(startNote: listenFirst)
         case "listen-text": app.listening = ListenOpen(startNote: listenFirst, showText: true)
         case "call": app.companion.startCall()
+        case "remote": RemoteModel.shared.open = true        // 172：遥控（假大管家回画出来的屏）
         case "todo": TodoDesk.shared.demo(zh: zh)          // 162：两条待办寄到，第二条 6 秒后「办完了」
         case "swipe-in": UserDefaults.standard.set(0.5, forKey: "YiyeSwipeDemo")    // 160：右滑停在线内（五成）
         case "swipe-out": UserDefaults.standard.set(0.8, forKey: "YiyeSwipeDemo")   // 160：右滑过了线（八成），垃圾桶跟着纸条走                  // 139：假接通（-YiyeCallSay 给他说的几句，| 隔开）
