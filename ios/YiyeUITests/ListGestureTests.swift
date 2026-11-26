@@ -208,12 +208,12 @@ final class ListGestureTests: XCTestCase {
     func testLeftStripWhenNotSelecting() {
         launch()
         // 右滑：从左边那一条起手往右拖过七成（160），照样扔进废纸篓。
-        // 撤销 testSwipeRightTrashesAndUndo 测过；这里 CI 模拟器慢，Undo 只亮 5 秒，等查到常常已经没了（11-25 第二轮），在就顺手点掉，不卡它
+        // 撤销 testSwipeRightTrashesAndUndo 测过；这里 CI 模拟器慢，Undo 只亮 5 秒：查到了、点下去那一刻常常已经没了
+        // （11-25 第二轮、11-26 143 那轮「Failed to get matching snapshot」），所以不点，等它自己下去再往下测
         let r = row("Handover, Nov 3")
         drag(r, 0.8, fromX: 0.04)
         check(r.waitForNonExistence(timeout: 4), "11-左边那一条右滑没扔掉", "从左边那一条右拖过七成以后这条还在列表里")
-        let undo = app.buttons["Undo"]
-        if undo.exists { undo.tap() }
+        _ = app.buttons["Undo"].waitForNonExistence(timeout: 10)
         // 左滑：从左边那一条起手往左划，露出置顶
         let w = row("Weekly sync")
         spot(w, x: 70).press(forDuration: 0.05, thenDragTo: spot(w, x: -10), withVelocity: .fast, thenHoldForDuration: 0)
