@@ -94,6 +94,7 @@ final class AppModel {
         EarDiagSender.shared.app = self                     // 170 说话出错、界面卡：诊断寄给大管家
         RemoteModel.shared.app = self                       // 172 遥控
         TodoDesk.shared.app = self                          // 162 项目待办
+        BarkModel.shared.start(self)                        // 204 提醒走 Bark
         if let demo {
             Demo.seed(self, demo)
         } else {

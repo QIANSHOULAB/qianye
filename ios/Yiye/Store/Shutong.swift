@@ -810,11 +810,12 @@ final class ShutongModel {
         if !open { unread = true }
         save()
         guard let app else { return }
+        let local = app.demo != nil || BarkNotice.heard(bark: d.bark, in: .standard)    // 204：Bark 响过了就别再弹一条
         if UIApplication.shared.applicationState == .active {
             if !open {
                 app.show(app.lang.f("shutong.butlerSays", d.text), action: t("shutong.butlerOpen"), seconds: 8) { [weak self] in self?.open = true }
             }
-        } else {
+        } else if local {
             ButlerNotice.post(title: t("shutong.butler"), body: d.text, id: d.id)
         }
     }
@@ -854,7 +855,7 @@ final class ShutongModel {
             if !open {
                 app.show(app.lang.f("shutong.guideSays", c.text), action: t("shutong.butlerOpen"), seconds: 8) { [weak self] in self?.open = true }
             }
-        } else if app.demo == nil {                      // Demo 截图别被系统的通知授权框盖住（205 看到的）
+        } else if app.demo == nil && d.bark != true {    // Demo 截图别被系统的通知授权框盖住（205 看到的）；204：Bark 响过的不弹
             ButlerNotice.post(title: t("shutong.butler"), body: c.text, id: d.id)
         }
     }

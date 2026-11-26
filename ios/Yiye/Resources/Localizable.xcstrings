@@ -341,6 +341,176 @@
         }
       }
     },
+    "bark.copied": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key copied. It clears itself in 10 minutes."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "钥匙拷好了，10 分钟后自己消失"
+          }
+        }
+      }
+    },
+    "bark.copyAgain": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy the key again"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "再拷一次钥匙"
+          }
+        }
+      }
+    },
+    "bark.demoOff": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Got it: no message text in alerts."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鸽子到了：提醒里不带内容了"
+          }
+        }
+      }
+    },
+    "bark.noPair": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not paired with the butler yet."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没跟大管家配对"
+          }
+        }
+      }
+    },
+    "bark.offNote": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerts come through Bark and only give a shout. Not one word of the message."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提醒走 Bark，只喊一声，原话一个字不带。"
+          }
+        }
+      }
+    },
+    "bark.queued": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The butler’s away. It waits in the mailbox, locked."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大管家这会儿不在线，信在信箱里等着（锁着的）"
+          }
+        }
+      }
+    },
+    "bark.sending": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sending…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "钥匙在路上…"
+          }
+        }
+      }
+    },
+    "bark.show": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show message text in alerts"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提醒里显示内容"
+          }
+        }
+      }
+    },
+    "bark.steps": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key copied. In Bark: Push Encryption › Encryption Settings on the home screen, Algorithm AES128, Mode CBC, paste into Key, Done."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "钥匙拷好了。打开 Bark：首页「推送加密」点「加密设置」，算法选 AES128，模式选 CBC，Key 里粘贴，点「完成」。"
+          }
+        }
+      }
+    },
+    "bark.waiting": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Handed to the butler. Waiting to hear back."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "交给大管家了，等它回话"
+          }
+        }
+      }
+    },
     "batch.all": {
       "extractionState": "manual",
       "localizations": {
@@ -3686,6 +3856,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "走备用通道"
+          }
+        }
+      }
+    },
+    "settings.bark": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerts"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提醒"
           }
         }
       }

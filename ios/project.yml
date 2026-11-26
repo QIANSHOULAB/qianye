@@ -9,8 +9,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.7.36"
-    CURRENT_PROJECT_VERSION: "37"
+    MARKETING_VERSION: "0.7.37"
+    CURRENT_PROJECT_VERSION: "38"
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
     ENABLE_USER_SCRIPT_SANDBOXING: YES
@@ -43,6 +43,10 @@ targets:
         UIDesignRequiresCompatibility: true
         UILaunchScreen:
           UIColorName: LaunchPaper
+        # 204：Bark 提醒点一下直接进来（yiye://shutong?id=… / yiye://todo）
+        CFBundleURLTypes:
+          - CFBundleURLName: lab.qianshou.yiye
+            CFBundleURLSchemes: [yiye]
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]

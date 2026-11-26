@@ -26,6 +26,7 @@ struct SettingsScreen: View {
                 EmptyView()
             }
 
+            ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     section(t.t("settings.mirror")) {
@@ -133,6 +134,10 @@ struct SettingsScreen: View {
                         }
                     }
 
+                    if app.butler.pairing != nil || app.demo != nil {        // 204：提醒走 Bark
+                        section(t.t("settings.bark")) { BarkSettings() }.id("bark")
+                    }
+
                     section(t.t("settings.companion")) {
                         Text(t.t("settings.companionNote"))
                             .font(.system(size: 13))
@@ -168,6 +173,12 @@ struct SettingsScreen: View {
                 .padding(.vertical, 8)
             }
             .defaultScrollAnchor(app.demo?.screen == "settings-theme" ? .bottom : .top)      // 截图用：拉到最底，看得到配色那一排
+            .task {                                                          // 204 截图、UI 测试：拉到「提醒」那一节
+                guard app.demo?.screen == "settings-bark" else { return }
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                proxy.scrollTo("bark", anchor: .center)
+            }
+            }
         }
         .background(PaperBackground().ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)

@@ -254,7 +254,7 @@ enum Demo {
         case "editor": app.path = [.editor(plain.id)]
         case "markdown": app.path = [.editor(mdNote.id)]
         case "share-note", "share-white", "butler": app.path = [.editor(photo.id)]
-        case "settings", "settings-theme": app.path = [.settings]
+        case "settings", "settings-theme", "settings-bark": app.path = [.settings]
         case "voice": app.voiceTarget = .new
         case "listen": app.listening = ListenOpen(startNote: listenFirst)
         case "listen-loop":

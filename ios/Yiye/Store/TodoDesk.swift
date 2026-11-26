@@ -99,9 +99,17 @@ final class TodoDesk {
         let zh = app.lang.isZh
         if UIApplication.shared.applicationState == .active {
             app.show(zh ? "项目待办 +1：\(title)" : "To-do +1: \(title)", seconds: 6)
-        } else {
+        } else if BarkNotice.todoNeedsLocal(in: .standard) {             // 204：Bark 响过了就别再弹一条
             ButlerNotice.post(title: zh ? "项目待办 +1" : "To-do +1", body: title, id: id)
         }
+    }
+
+    /// 204：从提醒点进来（yiye://todo）：回到列表、翻到「项目待办」（那条待办也许还在路上：夹子先建好）
+    func showFolder() {
+        guard let app, let f = folder() else { return }
+        try? app.context.save()
+        app.settings.folderID = f.id.uuidString
+        app.path = []
     }
 
     // ---------------------------------------------------------------- 他动了

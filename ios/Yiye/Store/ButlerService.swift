@@ -260,6 +260,7 @@ final class ButlerService {
             return true
         case .dove(let r):                                  // 128：钥匙的回信
             doves.remove(r.id)
+            if BarkModel.shared.answered(r) { return true }         // 204：加密钥匙的回信归设置里那个开关
             DoveModel.shared.answered(DoveReply.from(r))
             return true
         case .secret(let d):                                // 128：大管家递来的一次性机密：弹一张卡，不存
@@ -687,10 +688,10 @@ final class ButlerService {
 
     /// 把一把钥匙寄给大管家：只走信箱，不走 iCloud（钥匙不进 iCloud）。寄不出去就是没交，钥匙还在调用的人手里。
     /// 请求、钥匙都不落盘、不进 UserDefaults；这里只记请求 id 等回信
-    func sendKey(key: String, name: String) async -> DoveSent {
+    func sendKey(key: String, name: String, id: String = UUID().uuidString) async -> DoveSent {
         if mail == nil { connectMail() }
         guard let mail else { return .noPair }
-        let req = ButlerRequest.dove(id: UUID().uuidString, key: key, name: name, at: ISOTime.string(Date()), app: ButlerService.appVersion)
+        let req = ButlerRequest.dove(id: id, key: key, name: name, at: ISOTime.string(Date()), app: ButlerService.appVersion)
         doves.insert(req.id)
         do {
             let sent = try await mail.send(.request(req), timeout: 20)

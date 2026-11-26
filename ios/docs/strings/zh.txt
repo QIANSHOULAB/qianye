@@ -24,6 +24,16 @@ article.silent	大管家没回话，用现在的字也行
 article.simplified	简写好了，点这里去听
 article.simplify	简写
 article.simplifying	大管家在简写，写好了配上音
+bark.copied	钥匙拷好了，10 分钟后自己消失
+bark.copyAgain	再拷一次钥匙
+bark.demoOff	鸽子到了：提醒里不带内容了
+bark.noPair	还没跟大管家配对
+bark.offNote	提醒走 Bark，只喊一声，原话一个字不带。
+bark.queued	大管家这会儿不在线，信在信箱里等着（锁着的）
+bark.sending	钥匙在路上…
+bark.show	提醒里显示内容
+bark.steps	钥匙拷好了。打开 Bark：首页「推送加密」点「加密设置」，算法选 AES128，模式选 CBC，Key 里粘贴，点「完成」。
+bark.waiting	交给大管家了，等它回话
 batch.all	全选
 batch.cancel	取消
 batch.move	挪到…
@@ -221,6 +231,7 @@ secret.title	特勤局机密文件
 settings.appearance	外观
 settings.backupHave	备用通道：有
 settings.backupOn	走备用通道
+settings.bark	提醒
 settings.butler	大管家
 settings.butlerAuto	拍照、录音的自动交给大管家
 settings.butlerNote	手写认歪的字，交给大管家对着原图理顺，几秒后送回一份干净的。走加密信箱，两头上锁；信箱断了就走镜像文件夹。手机里一把 AI 钥匙都不放。

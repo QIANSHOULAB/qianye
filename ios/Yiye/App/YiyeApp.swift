@@ -62,6 +62,14 @@ struct RootView: View {
         .task {                                                                                    // 截图用
             if let s = app.demo?.screen, ["dove", "dove-done", "secret"].contains(s) { DoveModel.shared.demo(s) }
         }
+        .task {                                                                                    // 204 UI 测试：装作从提醒点进来
+            if let s = app.demo?.screen, ["link-shutong", "link-todo"].contains(s) {
+                app.started()
+                try? await Task.sleep(nanoseconds: 800_000_000)
+                BarkModel.shared.demoLink(s)
+            }
+        }
+        .onOpenURL { app.openLink($0) }                                                            // 204：Bark 提醒点进来
         .onAppear { app.started() }
     }
 }

@@ -54,8 +54,11 @@ struct ShutongSheet: View {
                     .padding(.vertical, 8)
                 }
                 .scrollDismissesKeyboard(.interactively)
-                .onAppear { proxy.scrollTo("bottom", anchor: .bottom) }
-                .onChange(of: m.lines.count) { _, _ in withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("bottom", anchor: .bottom) } }
+                .onAppear { if !toFocus(proxy) { proxy.scrollTo("bottom", anchor: .bottom) } }
+                .onChange(of: m.lines.count) { _, _ in
+                    if !toFocus(proxy) { withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("bottom", anchor: .bottom) } }
+                }
+                .onChange(of: BarkModel.shared.focus) { _, _ in _ = toFocus(proxy) }        // 204：窗开着时又点了一条提醒
                 .onChange(of: m.thinking) { _, _ in withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("bottom", anchor: .bottom) } }
             }
 
@@ -65,8 +68,19 @@ struct ShutongSheet: View {
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .onAppear { m.load(); m.markRead() }                         // 158：开了窗，大管家的话都算看过
-        .onDisappear { m.open = false; if m.recording { m.stopRecording() }; ShutongTalker.shared.stop() }
+        .onDisappear { m.open = false; BarkModel.shared.focus = nil; if m.recording { m.stopRecording() }; ShutongTalker.shared.stop() }
         .sheet(isPresented: $remote.guideOpen) { RemoteSheet() }     // 197：从带路卡上开遥控，叠在小书童上面
+    }
+
+    /// 204：从提醒点进来要看的那条在不在：在就等版面排好滚过去，返回 true；还没到（信在路上）返回 false
+    private func toFocus(_ proxy: ScrollViewProxy) -> Bool {
+        guard let want = BarkModel.shared.focus, let line = ShutongModel.shared.lines.last(where: { $0.rid == want }) else { return false }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 450_000_000)
+            withAnimation(.easeOut(duration: 0.25)) { proxy.scrollTo(line.id, anchor: .center) }
+            if BarkModel.shared.focus == want { BarkModel.shared.focus = nil }
+        }
+        return true
     }
 
     /// 137 开口说：一按像打电话，再按一下退出
