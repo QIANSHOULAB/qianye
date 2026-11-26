@@ -68,6 +68,8 @@ final class ShutongModel {
     @ObservationIgnored private var chatWait: [String: (line: UUID, round: Int, at: Date)] = [:]
     @ObservationIgnored private var hearWait: Set<String> = []
     @ObservationIgnored private var nextTry: [UUID: Date] = [:]
+    /// 143：收拾请求正在寄着的几条
+    @ObservationIgnored private var tidySending: Set<UUID> = []
     @ObservationIgnored private var recorder: AVAudioRecorder?
     @ObservationIgnored private var recURL: URL?
     @ObservationIgnored private var recStart = Date.distantPast
@@ -431,6 +433,11 @@ final class ShutongModel {
                 if n.kind != "voice", case .editor(let id)? = app.path.last, id == n.id { continue }   // 打字的：离开写字页再收拾
                 due.append(n)
             }
+            // 143：信箱不让寄就先不寄（Demo 里不碰信箱）
+            if app.demo == nil {
+                let picked = Set(app.butler.autoPick(due.map { "tidy|\($0.id.uuidString)" }, inflight: tidySending.count))
+                due = due.filter { picked.contains("tidy|\($0.id.uuidString)") }
+            }
             for n in due.prefix(max(0, 3 - inflight)) { sendTidy(n) }
         }
         sweepIfSunday(now)
@@ -452,14 +459,18 @@ final class ShutongModel {
         let req = ButlerRequest.shutong(id: rid, text: "", ask: ask, at: ISOTime.string(Date()), app: ButlerService.appVersion)
         if app.demo != nil { fake(req); return }
         let nid = n.id
+        tidySending.insert(nid)
         Task {
+            defer { self.tidySending.remove(nid) }
             switch await app.butler.sendShutong(req) {
-            case .sent: break                                         // 大管家不在：信在信箱里等它，不打扰他
+            case .sent: app.butler.autoDone("tidy|\(nid.uuidString)", ok: true)   // 大管家不在：信在信箱里等它，不打扰他
             case .noPair, .failed:
+                app.butler.autoDone("tidy|\(nid.uuidString)", ok: false)
                 guard let n = app.note(nid) else { return }
                 var s = n.shutongState
                 guard s.rid == rid else { return }
                 s.phase = "queued"                                   // 寄不出去：原样留着，排队，通了再收拾
+                s.tries = max(0, s.tries - 1)                        // 143：没寄到不算试过一次
                 n.shutongState = s
                 try? app.context.save()
                 self.nextTry[nid] = Date().addingTimeInterval(120)
@@ -507,6 +518,7 @@ final class ShutongModel {
         let wk = ShutongModel.weekKey(now)
         guard app.settings.shutongSweepWeek != wk, sweepRid == nil else { return }
         guard app.allNotes().filter({ !$0.trashed && $0.kind != "listen" }).count >= 5 else { return }
+        guard !app.butler.autoPick(["sweep"]).isEmpty else { return }        // 143：寄不出去别 5 秒问一次
         app.settings.shutongSweepWeek = wk
         askSweep()
     }
@@ -520,8 +532,9 @@ final class ShutongModel {
         save()
         Task {
             switch await app.butler.sendShutong(req) {
-            case .sent: break
+            case .sent: app.butler.autoDone("sweep", ok: true)
             case .noPair, .failed:
+                app.butler.autoDone("sweep", ok: false)
                 self.sweepRid = nil
                 self.app?.settings.shutongSweepWeek = ""                  // 没寄出去：下回再问
                 self.save()

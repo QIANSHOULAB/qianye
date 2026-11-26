@@ -412,9 +412,9 @@ public final class FbPipe: @unchecked Sendable {
 }
 
 // ================================================================ 听
-/// 一直听 to_phone：来一封到齐的信就交出去；断了按 2、5、10、30、60 秒退避重连；75 秒没有任何东西当断了；令牌快到点（50 分钟）主动重连
+/// 一直听 to_phone：来一封到齐的信就交出去；断了退避重连（143：2、5、10、30、60、120、300 秒，连上稳住 60 秒才从头数）；
+/// 75 秒没有任何东西当断了；令牌快到点（50 分钟）主动重连
 public final class FbListener: @unchecked Sendable {
-    public static let backoff: [Double] = [2, 5, 10, 30, 60]
     let pipe: FbPipe
     let dir: String
     let onLetter: @Sendable (FbLetterBody) -> Void
@@ -457,18 +457,19 @@ public final class FbListener: @unchecked Sendable {
     }
 
     private func loop() async {
-        var attempt = 0
+        var back = Backoff()
         while !Task.isCancelled {
             let got = Flag()
+            let started = Date()
             do {
                 try await session { got.set() }
             } catch {
                 // 断了：退避重连
             }
             if Task.isCancelled { return }
-            if got.value { attempt = 0 }
-            let w = FbListener.backoff[min(attempt, FbListener.backoff.count - 1)]
-            attempt += 1
+            back.wake()
+            if got.value { back.succeeded(started) }                       // 从连上那会儿起算稳没稳 60 秒
+            let w = back.failed(Date())
             try? await Task.sleep(nanoseconds: UInt64(w * 1_000_000_000))
         }
     }
@@ -568,6 +569,7 @@ public struct BackupGate: Equatable, Sendable {
         if let e = error as? MailError {
             switch e {
             case .http(let code, _): return code != 413 && code >= 400
+            case .held: return true                     // 143：信箱叫等着：走备胎，不干等
             case .gone, .crypto, .badLetter, .badPairing, .tooBig: return false
             }
         }

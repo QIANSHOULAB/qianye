@@ -85,7 +85,7 @@ final class RemoteModel {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_500_000_000)
                 guard let self, self.target != nil else { return }
-                if self.inflight == nil || Date().timeIntervalSince(self.sentAt) > 8 {
+                if self.inflight == nil || Date().timeIntervalSince(self.sentAt) > 8, self.app?.butler.remoteMayAsk() ?? true {   // 143：寄不出去就退避
                     self.send(RemoteOp(op: "shot", session: self.session))
                 }
             }
@@ -147,7 +147,9 @@ final class RemoteModel {
         sentAt = Date()
         waiting = true
         Task {
-            if let why = await app.butler.sendRemote(req) {
+            let why = await app.butler.sendRemote(req)
+            app.butler.autoDone("remote", ok: why == nil)
+            if let why {
                 if self.inflight == req.id { self.inflight = nil; self.waiting = false }
                 self.line = why
             }

@@ -106,6 +106,13 @@ public struct WordQueue: Codable, Equatable, Sendable {
         items[i].sentAt = nil
     }
 
+    /// 信箱的毛病（断网、额度用光、叫等一会儿）：这回不算次数，通了再寄（143：以前 5 秒撞一次，30 次就把这个词放弃了）
+    public mutating func deferred(_ id: String) {
+        guard let i = items.firstIndex(where: { $0.request == id }) else { return }
+        items[i].sentAt = nil
+        items[i].tries = max(0, items[i].tries - 1)
+    }
+
     /// 大管家回了：ok 就出队；不 ok 隔一会儿再寄。返回是不是在等它（不是就当没看见）
     @discardableResult
     public mutating func answered(_ id: String, ok: Bool, at: Date = Date()) -> Bool {

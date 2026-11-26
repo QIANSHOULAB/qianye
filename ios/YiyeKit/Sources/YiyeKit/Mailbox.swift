@@ -242,6 +242,8 @@ public enum MailError: Error, Equatable, LocalizedError {
     case tooBig(Int)
     case http(Int, String)
     case badLetter(String)
+    /// 143：信箱叫等着（Retry-After），或者今天额度用光了：没到点之前不敲它
+    case held(RelayHold)
 
     public var errorDescription: String? {
         switch self {
@@ -251,6 +253,9 @@ public enum MailError: Error, Equatable, LocalizedError {
         case .tooBig(let n): return "信太大了：\(n) 字节"
         case .http(let c, let s): return c == 0 ? s : "信箱回了 \(c)：\(s)"
         case .badLetter(let s): return s
+        case .held(let h):
+            if h.quota { return RelayRules.quotaLine(h.until, spare: .none, zh: true) }
+            return "信箱叫等一会儿（\(h.status)），\(RelayRules.clockWords(h.until, zh: false)) 再来"
         }
     }
 
@@ -424,13 +429,34 @@ public enum MailCrypto {
 /// 发 HTTP 这一层抽出来：手机上走 URLSession，测试里换成假的信箱
 public protocol MailHTTP: Sendable {
     func send(_ req: URLRequest) async throws -> (Data, Int)
+    /// 143：连 Retry-After 一起带回来
+    func exchange(_ req: URLRequest) async throws -> MailReply
+}
+
+public struct MailReply: Sendable {
+    public var data: Data
+    public var status: Int
+    public var retryAfter: String?
+    public init(data: Data, status: Int, retryAfter: String? = nil) { self.data = data; self.status = status; self.retryAfter = retryAfter }
+}
+
+public extension MailHTTP {
+    func exchange(_ req: URLRequest) async throws -> MailReply {
+        let (d, code) = try await send(req)
+        return MailReply(data: d, status: code)
+    }
 }
 
 public struct URLSessionHTTP: MailHTTP {
     public init() {}
     public func send(_ req: URLRequest) async throws -> (Data, Int) {
+        let r = try await exchange(req)
+        return (r.data, r.status)
+    }
+    public func exchange(_ req: URLRequest) async throws -> MailReply {
         let (d, r) = try await URLSession.shared.data(for: req)
-        return (d, (r as? HTTPURLResponse)?.statusCode ?? 0)
+        let h = r as? HTTPURLResponse
+        return MailReply(data: d, status: h?.statusCode ?? 0, retryAfter: h?.value(forHTTPHeaderField: "Retry-After"))
     }
 }
 
@@ -450,10 +476,48 @@ public final class MailClient: Sendable {
     let keyBytes: Data
     /// 备用管子（130）：没有就只走 Cloudflare
     public let backup: MailBackup?
+    /// 退避、叫等一会儿、额度用光（143）。app 里跟长连接共用一个
+    public let brake: MailBrake
 
-    public init?(pairing: MailPairing, role: String = "phone", http: MailHTTP = URLSessionHTTP(), backup: MailBackup? = nil) {
+    public init?(pairing: MailPairing, role: String = "phone", http: MailHTTP = URLSessionHTTP(), backup: MailBackup? = nil,
+                 brake: MailBrake = MailBrake()) {
         guard pairing.isValid, let k = pairing.keyData, role == "phone" || role == "pc" else { return nil }
-        self.pairing = pairing; self.role = role; self.http = http; self.keyBytes = k; self.backup = backup
+        self.pairing = pairing; self.role = role; self.http = http; self.keyBytes = k; self.backup = backup; self.brake = brake
+    }
+
+    /// 自动寄的那些（抄给电脑、会了不会、待办、小书童收拾、遥控看屏幕）现在能不能寄：总退避到点了；
+    /// 信箱叫等着的时候得有备用管子
+    public var autoReady: Bool { brake.autoWait() <= 0 && (brake.held(.http) == nil || (backup?.hasPipe ?? false)) }
+    /// 一轮最多几封：上一封没寄出去，就先拿一封探路
+    public var autoLimit: Int { brake.autoProbing ? 1 : 5 }
+
+    /// 敲一下信箱。信箱叫等着：不敲，直接说。连不上、429、5xx 记进退避
+    private func knock(_ req: URLRequest) async throws -> (Data, Int) {
+        if let h = brake.held(.http) { throw MailError.held(h) }
+        let r: MailReply
+        do {
+            r = try await http.exchange(req)
+        } catch {
+            if !(error is CancellationError), (error as? URLError)?.code != .cancelled { brake.unreachable(.http) }
+            throw error
+        }
+        if r.status == 200 {
+            brake.ok(.http)
+        } else {
+            brake.refused(.http, status: r.status, retryAfter: r.retryAfter, body: r.data)
+            if r.status == 503, let q = brake.quota() { throw MailError.held(q) }
+        }
+        return (r.data, r.status)
+    }
+
+    /// 是信箱（或者网）的毛病，不是这一封自己的：自动寄的总闸只认这种
+    public static func sick(_ error: Error) -> Bool {
+        guard let e = error as? MailError else { return true }
+        switch e {
+        case .http(let code, _): return code == 0 || code == 429 || code >= 500
+        case .held: return true
+        case .badPairing, .crypto, .gone, .tooBig, .badLetter: return false
+        }
     }
 
     /// 寄给谁：手机寄给 pc，掌机寄给 phone
@@ -502,18 +566,25 @@ public final class MailClient: Sendable {
         let mid = try MailClient.safeID(env.id)
         let fits = body.count <= FbChunk.maxRaw
         if let b = backup, b.isOn, fits, b.hasPipe {
-            if let sent = try? await b.put(body, mid: mid, to: peer) { return sent }
+            if let sent = try? await b.put(body, mid: mid, to: peer) { brake.sendOK(); return sent }
         }
         do {
             let sent = try await putCloudflare(body, mid: mid, timeout: timeout)
             backup?.socketUp()
+            brake.sendOK()
             return sent
         } catch {
-            guard let b = backup, b.hasPipe, fits, BackupGate.failsOver(error) else { throw error }
+            guard let b = backup, b.hasPipe, fits, BackupGate.failsOver(error) else {
+                if MailClient.sick(error) { brake.sendFailed() }
+                throw error
+            }
             b.sendFailed()
             do {
-                return try await b.put(body, mid: mid, to: peer)
+                let sent = try await b.put(body, mid: mid, to: peer)
+                brake.sendOK()
+                return sent
             } catch let e2 {
+                brake.sendFailed()
                 let why = (e2 as? FbError)?.errorDescription ?? e2.localizedDescription
                 let first = (error as? MailError)?.errorDescription ?? error.localizedDescription
                 throw MailError.http(0, "\(first)；备用也不成：\(why)")
@@ -527,7 +598,7 @@ public final class MailClient: Sendable {
         req.httpMethod = "PUT"
         req.httpBody = body
         req.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
-        let (d, code) = try await http.send(req)
+        let (d, code) = try await knock(req)
         guard code == 200 else { throw MailError.http(code, String(decoding: d.prefix(300), as: UTF8.self)) }
         struct R: Decodable { var seq: Int; var again: Bool?; var pc: Bool? }
         guard let r = try? JSONDecoder().decode(R.self, from: d) else { throw MailError.http(code, "回的不是 JSON") }
@@ -538,7 +609,7 @@ public final class MailClient: Sendable {
     public func receive(_ item: MailItem, timeout: TimeInterval = 30) async throws -> MailEnvelope {
         if let b = item.data, let d = Data(base64Encoded: b) { return try open(d) }
         let u = try url("msg/\(item.seq)")
-        let (d, code) = try await http.send(URLRequest(url: u, timeoutInterval: timeout))
+        let (d, code) = try await knock(URLRequest(url: u, timeoutInterval: timeout))
         if code == 404 { throw MailError.gone }
         guard code == 200 else { throw MailError.http(code, String(decoding: d.prefix(300), as: UTF8.self)) }
         return try open(d)
@@ -549,14 +620,14 @@ public final class MailClient: Sendable {
         let u = try url("msg/\(seq)")
         var req = URLRequest(url: u, timeoutInterval: timeout)
         req.httpMethod = "DELETE"
-        let (d, code) = try await http.send(req)
+        let (d, code) = try await knock(req)
         guard code == 200 else { throw MailError.http(code, String(decoding: d.prefix(300), as: UTF8.self)) }
     }
 
     /// 寄给自己、还没取的（连不上 WebSocket 时用）
     public func pending(timeout: TimeInterval = 15) async throws -> [MailItem] {
         let u = try url("msgs?for=\(role)")
-        let (d, code) = try await http.send(URLRequest(url: u, timeoutInterval: timeout))
+        let (d, code) = try await knock(URLRequest(url: u, timeoutInterval: timeout))
         guard code == 200 else { throw MailError.http(code, String(decoding: d.prefix(300), as: UTF8.self)) }
         return try JSONDecoder().decode([MailItem].self, from: d)
     }
@@ -564,7 +635,7 @@ public final class MailClient: Sendable {
     /// 大管家在不在、上次在线
     public func state(timeout: TimeInterval = 15) async throws -> (pc: Bool, pcSeen: Date?) {
         let u = try url("state")
-        let (d, code) = try await http.send(URLRequest(url: u, timeoutInterval: timeout))
+        let (d, code) = try await knock(URLRequest(url: u, timeoutInterval: timeout))
         guard code == 200 else { throw MailError.http(code, String(decoding: d.prefix(300), as: UTF8.self)) }
         struct S: Decodable { var pc: Bool; var pcSeen: Double? }
         let s = try JSONDecoder().decode(S.self, from: d)
@@ -606,7 +677,8 @@ public enum ButlerOutbox {
 }
 
 // ================================================================ 长连接
-/// 连着信箱的那根 WebSocket。断了自己重连（等 2、5、10、30、60 秒），每 keepAliveEvery 秒发一句 keepAlive（保活，顺便问状态）。
+/// 连着信箱的那根 WebSocket。断了自己重连（143：等 2、5、10、30、60、120、300 秒，连上稳住 60 秒才从头数；
+/// 信箱叫等的照它等，额度用光等到 UTC 0 点以后），每 keepAliveEvery 秒发一句 keepAlive（保活，顺便问状态）。
 /// 130：保活发文本 "ping"（站里自动回 pong，不叫醒信箱、不算额度）；{"t":"state"}（问大管家在不在）每 stateEvery 次保活才发一回。
 public final class MailSocket: @unchecked Sendable {
     public let url: URL
@@ -623,20 +695,33 @@ public final class MailSocket: @unchecked Sendable {
     private var task: URLSessionWebSocketTask?
     private var timer: DispatchSourceTimer?
     private var running = false
-    private var attempt = 0
+    private var heard = false
     private var gen = 0
+    /// 退避、叫等一会儿、额度用光（143）
+    public let brake: MailBrake
+    /// 握手回 503（长连接看不到回的话）：问一次 HTTP 才知道是不是额度用光
+    public var onRefused503: (@Sendable () -> Void)?
 
-    public init(url: URL, onPush: @escaping @Sendable (MailPush) -> Void, onDown: @escaping @Sendable (String) -> Void) {
-        self.url = url; self.onPush = onPush; self.onDown = onDown
+    public init(url: URL, brake: MailBrake = MailBrake(), onPush: @escaping @Sendable (MailPush) -> Void,
+                onDown: @escaping @Sendable (String) -> Void) {
+        self.url = url; self.brake = brake; self.onPush = onPush; self.onDown = onDown
     }
 
     public func start() {
         q.async {
             guard !self.running else { return }
             self.running = true
-            self.attempt = 0
-            self.connect()
+            self.gen += 1
+            self.retry(self.gen)
         }
+    }
+
+    /// 到点了就连；信箱叫等着、还在退避就等（最多 30 秒看一眼：手机睡过去的钟不走）
+    private func retry(_ g: Int) {
+        guard running, gen == g else { return }
+        let w = brake.wait(.ws)
+        guard w > 0.05 else { return connect() }
+        q.asyncAfter(deadline: .now() + min(w, 30)) { [weak self] in self?.retry(g) }
     }
 
     public func stop() {
@@ -657,6 +742,7 @@ public final class MailSocket: @unchecked Sendable {
     private func connect() {
         gen += 1
         let g = gen
+        heard = false
         let t = URLSession.shared.webSocketTask(with: url)
         task = t
         t.resume()
@@ -671,7 +757,8 @@ public final class MailSocket: @unchecked Sendable {
                 guard g == self.gen, self.running else { return }
                 switch result {
                 case .success(let m):
-                    self.attempt = 0
+                    self.brake.ok(.ws)
+                    if !self.heard { self.heard = true; self.brake.connected() }
                     switch m {
                     case .string(let s): self.onText?(s); self.onPush(MailPush.parse(s))
                     case .data(let d): let s = String(decoding: d, as: UTF8.self); self.onText?(s); self.onPush(MailPush.parse(s))
@@ -690,16 +777,16 @@ public final class MailSocket: @unchecked Sendable {
         timer?.cancel()
         timer = nil
         task = nil
+        if let r = t.response as? HTTPURLResponse, r.statusCode != 101 {
+            brake.refused(.ws, status: r.statusCode, retryAfter: r.value(forHTTPHeaderField: "Retry-After"))
+            if r.statusCode == 503, brake.quota() == nil { onRefused503?() }
+        } else {
+            brake.unreachable(.ws)
+        }
         onDown(why)
-        let waits: [Double] = [2, 5, 10, 30, 60]
-        let w = waits[min(attempt, waits.count - 1)]
-        attempt += 1
         gen += 1
         let g = gen
-        q.asyncAfter(deadline: .now() + w) { [weak self] in
-            guard let self, self.running, self.gen == g else { return }
-            self.connect()
-        }
+        q.asyncAfter(deadline: .now() + 1) { [weak self] in self?.retry(g) }
     }
 
     private func startTimer(_ g: Int) {
@@ -710,7 +797,7 @@ public final class MailSocket: @unchecked Sendable {
             guard let self, self.gen == g, let t = self.task else { return }
             self.ticks += 1
             t.send(.string(self.keepAlive)) { _ in }
-            if self.stateEvery > 0, self.ticks % self.stateEvery == 0 { t.send(.string(self.stateText)) { _ in } }
+            if self.stateEvery > 0, self.ticks % self.stateEvery == 0, self.brake.quota() == nil { t.send(.string(self.stateText)) { _ in } }
         }
         tm.resume()
         timer = tm

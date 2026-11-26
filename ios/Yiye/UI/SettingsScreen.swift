@@ -74,6 +74,7 @@ struct SettingsScreen: View {
                             HStack(spacing: 10) {
                                 Circle().fill(Color(presenceColor)).frame(width: 9, height: 9)
                                 Text(presenceText).font(.system(size: 16)).foregroundStyle(Color(Ink.text))
+                                    .fixedSize(horizontal: false, vertical: true)
                                 Spacer()
                             }
                             .frame(minHeight: 32)
@@ -207,6 +208,10 @@ struct SettingsScreen: View {
 
     private var presenceText: String {
         guard app.mirror.isOn || app.butler.pairing != nil else { return t.t("butler.needMirrorShort") }
+        if let until = app.butler.quotaUntil, app.butler.pairing != nil {      // 143：信箱今天的额度用光了
+            let spare: RelayRules.Spare = app.butler.backup.hasConfig ? .backup : (app.mirror.isOn ? .icloud : .none)
+            return RelayRules.quotaLine(until, spare: spare, zh: t.isZh)
+        }
         switch app.butler.presence {
         case .never: return t.t("butler.absent")
         case .online: return t.t("butler.online")
@@ -216,6 +221,7 @@ struct SettingsScreen: View {
     }
 
     private var presenceColor: UIColor {
+        if app.butler.quotaUntil != nil, app.butler.pairing != nil { return .dyn(0xFF9F0A, 0xFFD60A) }
         switch app.butler.presence {
         case .online: return .dyn(0x34C759, 0x30D158)
         case .seen(_, let off): return off ? Ink.text3 : .dyn(0xFF9F0A, 0xFFD60A)

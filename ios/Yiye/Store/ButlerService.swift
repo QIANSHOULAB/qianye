@@ -53,6 +53,15 @@ final class ButlerService {
     @ObservationIgnored private var keepInflight: [UUID: (modified: Date, sentAt: Date)] = [:]
     /// 请求 id → 「便签 id|寄的那版 modifiedAt（秒数）」，存起来：app 被杀了回信来了也认得
     @ObservationIgnored private var keepWait: [String: String] = (UserDefaults.standard.dictionary(forKey: "yiye.keepWait") as? [String: String]) ?? [:]
+    /// 143：敲信箱的退避、信箱叫等一会儿、额度用光（寄信和长连接共用，换配对也不忘）
+    let brake = MailBrake()
+    /// 143：自动寄的那些，每一条各自退避
+    @ObservationIgnored private var auto = ItemGate()
+    /// 143：没取下来的信（信箱叫等着、网断了一下）：到点了再取，不用等下回连上
+    @ObservationIgnored private var stalled: [Int: MailItem] = [:]
+    @ObservationIgnored private var keepSending: Set<UUID> = []
+    /// 信箱今天的额度用光了：到几点恢复（设置里大管家那一行写出来）
+    private(set) var quotaUntil: Date?
 
     enum LookSent: Equatable { case sent(Bool), noPair, failed(String) }
 
@@ -62,6 +71,8 @@ final class ButlerService {
         backup.service = self
         backup.resume()
         guard timer == nil else { return }
+        brake.onChange = { [weak self] in Task { @MainActor in self?.refreshQuota() } }
+        brake.wake()                                        // 143：回到前台，退避的这一下不等（信箱叫等的照等）
         if pairing == nil, app?.demo == nil, let d = Keychain.read(ButlerService.pairingAccount) { pairing = MailPairing.parse(d) }
         backup.configure(box: pairing?.box)
         connectMail()
@@ -84,13 +95,15 @@ final class ButlerService {
 
     // ---------------------------------------------------------------- 信箱（v2）
     private func connectMail() {
-        guard socket == nil, app?.demo == nil, let p = pairing, let client = MailClient(pairing: p, backup: backup.hub), let url = client.socketURL else { return }
+        guard socket == nil, app?.demo == nil, let p = pairing, let client = MailClient(pairing: p, backup: backup.hub, brake: brake),
+              let url = client.socketURL else { return }
         mail = client
-        let s = MailSocket(url: url, onPush: { [weak self] push in
+        let s = MailSocket(url: url, brake: brake, onPush: { [weak self] push in
             Task { @MainActor in self?.onPush(push) }
         }, onDown: { [weak self] _ in
             Task { @MainActor in self?.relayDown() }
         })
+        s.onRefused503 = { Task { _ = try? await client.state() } }       // 143：问一次是不是额度用光（HTTP 看得到原因）
         s.onText = { [weak self] text in
             guard let pcs = KeepPlan.machines(in: text) else { return }
             Task { @MainActor in self?.setMachines(pcs) }
@@ -102,6 +115,7 @@ final class ButlerService {
     private func disconnectMail() {
         socket?.stop()
         socket = nil
+        stalled = [:]                              // 下回连上 hello 里还有
         relayDown(deliberate: true)
         backup.hub.socketStopped()                 // 自己关的（退到后台）不算断
         backup.suspend()
@@ -111,7 +125,36 @@ final class ButlerService {
         relayUp = false
         deskOn = false
         if !deliberate { backup.hub.socketDown() }
+        refreshQuota()
         refreshPresence()
+    }
+
+    // ---------------------------------------------------------------- 别敲成风暴（143）
+    private func refreshQuota() {
+        let u = brake.quota()?.until
+        if u != quotaUntil { quotaUntil = u }
+    }
+
+    /// 自动寄的那些：这一轮寄哪几条。信箱不让寄就是空的；上一封没寄出去只给一条探路。
+    /// force：他刚离开写字页、要退到后台，没在探路就全给
+    func autoPick(_ keys: [String], inflight: Int = 0, force: Bool = false) -> [String] {
+        guard let mail else { return [] }
+        let limit = force && !mail.brake.autoProbing ? Int.max : mail.autoLimit
+        return auto.pick(keys, ready: mail.autoReady, limit: limit, inflight: inflight)
+    }
+
+    func autoDone(_ key: String, ok: Bool) {
+        if ok { auto.succeeded(key) } else { auto.failed(key) }
+    }
+
+    /// 遥控画面一两秒要一张：现在能不能要（信箱还没连过的让它去连）
+    func remoteMayAsk() -> Bool { mail == nil || !autoPick(["remote"]).isEmpty }
+
+    private func retryStalled() {
+        guard mail != nil, !stalled.isEmpty, brake.wait(.http) <= 0 else { return }
+        let some = stalled.values.sorted { $0.seq < $1.seq }
+        stalled = [:]
+        for it in some { take(it) }
     }
 
     /// 横条听谁的：信箱连着听信箱的，连不上看 iCloud 心跳
@@ -142,8 +185,9 @@ final class ButlerService {
             relayOn = pc
             if let seen { relaySeen = seen }
             refreshPresence()
-        case .gone(_, let mid, let to, _):
+        case .gone(let seq, let mid, let to, _):
             if to == "pc" { forgetSeq(mid) }      // 大管家取走了（或者过期了）：撤回不了了
+            if to == "phone" { stalled[seq] = nil }
         case .pong, .other:
             break
         }
@@ -165,7 +209,8 @@ final class ButlerService {
             } catch let e as MailError where e.isPermanent {
                 if e != .gone { try? await mail.ack(it.seq) }
             } catch {
-                // 网不通：下次连上，hello 里还有它
+                // 网不通、信箱叫等着：到点了再取（143），下次连上 hello 里也还有它
+                if MailClient.sick(error) { self.stalled[it.seq] = it }
             }
         }
     }
@@ -263,6 +308,7 @@ final class ButlerService {
         backup.configure(box: p.box)
         disconnectMail()
         mail = nil
+        auto = ItemGate()
         seqs = [:]
         UserDefaults.standard.set(seqs, forKey: ButlerService.seqsKey)
         pairing = p
@@ -436,7 +482,9 @@ final class ButlerService {
     /// 该寄的寄出去（只走信箱：电脑上没有 iCloud，掌机老版本也不认）
     func flushWords() {
         guard let mail, app?.demo == nil else { return }
-        for p in words.due() where !wordSending.contains(WordMark.key(p.word)) {
+        let due = words.due().filter { !wordSending.contains(WordMark.key($0.word)) }
+        let picked = Set(autoPick(due.map { "word|\(WordMark.key($0.word))" }, inflight: wordSending.count))
+        for p in due where picked.contains("word|\(WordMark.key(p.word))") {
             let id = UUID().uuidString
             let key = WordMark.key(p.word)
             words.sending(p.word, id: id)
@@ -447,8 +495,10 @@ final class ButlerService {
                 do {
                     _ = try await mail.send(.request(req))
                     self.words.sent(id)
+                    self.autoDone("word|\(key)", ok: true)
                 } catch {
-                    self.words.notSent(id)
+                    if MailClient.sick(error) { self.words.deferred(id) } else { self.words.notSent(id) }   // 信箱的毛病不算他这个词的次数
+                    self.autoDone("word|\(key)", ok: false)
                 }
                 self.saveWords()
             }
@@ -479,7 +529,9 @@ final class ButlerService {
         if case .editor(let id)? = app.path.last { editing = id }
         let forced = all ? Set(cands.map(\.id)) : force
         let ids = KeepPlan.due(cands, now: Date(), desk: deskOn, editing: editing, force: forced, inflight: keepInflight)
-        for id in ids { sendKeep(id) }
+        // 143：寄不出去就退避，不再每 5 秒每条撞一下
+        let picked = Set(autoPick(ids.map { "keep|\($0.uuidString)" }, inflight: keepSending.count, force: all || !force.isEmpty))
+        for id in ids where picked.contains("keep|\(id.uuidString)") { sendKeep(id) }
     }
 
     private func sendKeep(_ id: UUID) {
@@ -495,10 +547,14 @@ final class ButlerService {
             for k in keepWait.keys.sorted().prefix(keepWait.count - 60) { keepWait[k] = nil }
         }
         saveKeepWait()
+        keepSending.insert(id)
         Task {
+            defer { self.keepSending.remove(id) }
             do {
                 _ = try await mail.send(.request(req), timeout: 20)
+                self.autoDone("keep|\(id.uuidString)", ok: true)
             } catch {
+                self.autoDone("keep|\(id.uuidString)", ok: false)
                 self.keepWait[rid] = nil
                 self.keepInflight[id] = nil
                 self.saveKeepWait()
@@ -820,6 +876,8 @@ final class ButlerService {
         guard let app else { return }
         ShutongModel.shared.tick()                          // 136：新便签该收拾的寄出去
         backup.hub.tick()
+        refreshQuota()
+        retryStalled()
         checkPairing()
         keepFlush()
         if !words.items.isEmpty { flushWords() }

@@ -141,12 +141,15 @@ final class TodoDesk {
             return
         }
         guard let service else { return }
-        for item in out where !sending.contains(item) {
+        let waiting = out.filter { !sending.contains($0) }
+        let picked = Set(service.autoPick(waiting.map { "todo|\($0)" }, inflight: sending.count))   // 143：寄不出去就退避
+        for item in waiting where picked.contains("todo|\(item)") {
             let parts = item.split(separator: "|", maxSplits: 1).map(String.init)
             guard parts.count == 2 else { continue }
             sending.insert(item)
             Task {
                 let ok = await service.sendTodo(ask: parts[0], todo: parts[1])
+                service.autoDone("todo|\(item)", ok: ok)
                 self.sending.remove(item)
                 if ok {
                     self.out.removeAll { $0 == item }
