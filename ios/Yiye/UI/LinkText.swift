@@ -86,7 +86,7 @@ struct LinkTitles {
     var share = "Share…"
     var cancel = "Cancel"
 
-    static func of(_ t: Lang) -> LinkTitles {
+    @MainActor static func of(_ t: Lang) -> LinkTitles {
         LinkTitles(open: t.t("link.open"), copy: t.t("link.copy"), share: t.t("link.share"), cancel: t.t("common.cancel"))
     }
 }
