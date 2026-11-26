@@ -435,7 +435,7 @@ final class ShutongTalker {
     /// 念完「要扔这几条，对吗？」：20 秒不吭声就不办
     private func armNod() {
         nodTask?.cancel()
-        let wait = demo ? 8.0 : TalkTiming.confirmWait            // Demo（UI 测试）短一点
+        let wait = demo ? 14.0 : TalkTiming.confirmWait           // Demo（UI 测试）短一点；143：8 秒时 CI 模拟器打「yes」还没打完就到点了
         nodTask = Task {
             try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
             guard !Task.isCancelled, self.on, self.current == nil, self.phase == .listening, self.m.talkPending != nil else { return }

@@ -72,10 +72,11 @@ final class ListenLoopTests: XCTestCase {
         reveal(d2, up: false)
         check(d2.exists && d2.value as? String == "off", "144-06-前天不对", "前天应该是灭的")
         d2.tap()
-        check(waitValue(d2, "on", 3), "144-07-前天点不亮", "点了前天的小圈没亮")
+        // 143：CI 模拟器慢的那轮小圈亮了但超过 3 秒才读到（11-26 29b77a3），放到 8 秒
+        check(waitValue(d2, "on", 8), "144-07-前天点不亮", "点了前天的小圈没亮")
         reveal(d0, up: true)
         d0.tap()
-        check(waitValue(d0, "off", 3), "144-08-今天点不灭", "点了今天的小圈没灭")
+        check(waitValue(d0, "off", 8), "144-08-今天点不灭", "点了今天的小圈没灭")
 
         // 每篇 1 遍、1.25 倍
         app.buttons.matching(NSPredicate(format: "label == %@", "1×")).element(boundBy: 0).tap()
