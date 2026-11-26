@@ -37,6 +37,12 @@ final class BarkTests: XCTestCase {
         app.buttons.matching(NSPredicate(format: "label CONTAINS %@", title)).firstMatch
     }
 
+    /// 开关在这一行最右头，照屏幕坐标点它：按「开关元素」自己的比例点没落在开关上（11-27 CI 红过）
+    private func flip(_ toggle: XCUIElement) {
+        let wide = app.windows.firstMatch.frame.width
+        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: wide - 50, dy: toggle.frame.midY)).tap()
+    }
+
     func testLinkScrollsToTheMessage() {
         launch("link-shutong")
         let want = app.textViews.matching(NSPredicate(format: "value CONTAINS %@", "第 3 条来话")).firstMatch   // 气泡是只读的 UITextView
@@ -60,12 +66,12 @@ final class BarkTests: XCTestCase {
         let steps = app.staticTexts["bark.steps"].firstMatch
         check(steps.waitForExistence(timeout: 5), "204-S2-没写步骤", "开着的时候要写在 Bark 里粘到哪")
         shot("204-开着")
-        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.94, dy: 0.5)).tap()
+        flip(toggle)
         check(steps.waitForNonExistence(timeout: 8), "204-S3-关不掉", "关了开关，步骤还在")
         let off = app.staticTexts.matching(NSPredicate(format: "label == %@", "鸽子到了：提醒里不带内容了")).firstMatch
         check(off.waitForExistence(timeout: 8), "204-S4-没回话", "关了以后没看到大管家那句")
         shot("204-关了")
-        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.94, dy: 0.5)).tap()
+        flip(toggle)
         check(steps.waitForExistence(timeout: 8), "204-S5-开不回来", "再开一次，步骤没回来")
     }
 }
