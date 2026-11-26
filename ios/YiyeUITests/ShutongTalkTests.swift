@@ -91,8 +91,8 @@ final class ShutongTalkTests: XCTestCase {
     func testTrashSayYes() {
         askToTrash("T2")
         shot("T2-要扔先问")
-        say("yes")
-        check(containing(app.staticTexts, "Trashed").waitForExistence(timeout: 6), "T2-说对没扔", "说了「对」，没扔（回执里没有「Trashed」）")
+        say("yes")                                                // 172：CI 模拟器慢的那轮（29 条 700 秒）6 秒等不到「Trashed」，放到 12 秒
+        check(containing(app.staticTexts, "Trashed").waitForExistence(timeout: 12), "T2-说对没扔", "说了「对」，没扔（回执里没有「Trashed」）")
     }
 
     func testTrashSayNo() {
