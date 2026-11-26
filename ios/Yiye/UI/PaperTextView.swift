@@ -89,22 +89,7 @@ final class PaperTextView: UITextView {
 
     // ---------------------------------------------------------------- 195 网址
     /// 手指下面是哪个链接（连它在哪一块地方）
-    func link(at p: CGPoint) -> (url: URL, rect: CGRect)? {
-        let st = textStorage
-        var hit: (url: URL, rect: CGRect)?
-        st.enumerateAttribute(.yiyeLink, in: NSRange(location: 0, length: st.length), options: []) { v, r, stop in
-            guard let url = v as? URL,
-                  let a = position(from: beginningOfDocument, offset: r.location),
-                  let b = position(from: a, offset: r.length),
-                  let range = textRange(from: a, to: b) else { return }
-            for s in selectionRects(for: range) where s.rect.width > 1 && s.rect.insetBy(dx: -4, dy: -2).contains(p) {
-                hit = (url, s.rect)
-                stop.pointee = true
-                return
-            }
-        }
-        return hit
-    }
+    func link(at p: CGPoint) -> (url: URL, rect: CGRect)? { linkHit(.yiyeLink, at: p) }
 
     func isLinkGesture(_ g: UIGestureRecognizer) -> Bool { g === linkTap || g === linkHold }
 

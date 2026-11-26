@@ -211,7 +211,7 @@ struct ShutongBubble: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
-                LinkText(line.text, size: 13, color: Ink.text3)
+                LinkText(line.text, size: 13, color: Ink.text3, titles: .of(t))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -224,7 +224,7 @@ struct ShutongBubble: View {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Color(Ink.text3))
             }
-            LinkText(line.text, color: Ink.text)                   // 195：网址能点，字能选一段
+            LinkText(line.text, color: Ink.text, titles: .of(t))   // 195：网址能点，字能选一段
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background { RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(Ink.accent).opacity(0.16)) }
@@ -259,7 +259,7 @@ struct ShutongBubble: View {
                     .foregroundStyle(Color(Ink.text3))
             }
             VStack(alignment: .leading, spacing: 8) {
-                LinkText(line.text, color: Ink.text)
+                LinkText(line.text, color: Ink.text, titles: .of(t))
                 // 195 续登那种登录网址：旁边一个「打开」，点了直接开浏览器（码照旧贴回下面的输入框）
                 ForEach(Links.signIns(line.text), id: \.self) { url in
                     Button(t.t("link.open")) { LinkOpener.open(url) }
@@ -278,7 +278,7 @@ struct ShutongBubble: View {
     }
 
     private var say: some View {
-        LinkText(line.text, color: Ink.text)
+        LinkText(line.text, color: Ink.text, titles: .of(t))
             .padding(.trailing, 32)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -424,7 +424,7 @@ struct SpokenPanel: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("shutong.spoken")
         } else {
-            LinkText(note.spoken, size: 15, color: Ink.text2)      // 195
+            LinkText(note.spoken, size: 15, color: Ink.text2, titles: .of(app.lang))   // 195
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("shutong.spoken")
         }

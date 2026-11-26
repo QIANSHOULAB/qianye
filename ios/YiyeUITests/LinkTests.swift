@@ -3,7 +3,7 @@ import XCTest
 /// 195 网址能点、能单独拷。用的是假网址（example.com），不真登；Demo 下「打开」不跳出去，打开过什么写在 link.opened 那行
 /// （「第几次|网址」），拷到什么写在 link.pasted 那行。
 /// 1. 小书童里续登那种长网址：折行不撑破；点它打开的是整条；旁边的「Open」也开它
-/// 2. 长按气泡里的链接：系统菜单里有「Copy Link」，拷到的是那条网址
+/// 2. 长按气泡里的链接：弹「Open / Copy Link / Share…」，Copy Link 拷到的是那条网址
 /// 3. 气泡里的字能只拷一段
 /// 4. 便签正文：没弹键盘时点链接就打开；长按弹菜单拷链接；点别处照旧打字，打字时点链接不跳走
 /// 5. 项目待办的便签正文一样
@@ -98,7 +98,7 @@ final class LinkTests: XCTestCase {
               "L1-打开没反应", "点「Open」没打开那条网址，实际「\(tag("link.opened"))」")
     }
 
-    // ---------------------------------------------------------------- 2. 长按链接：系统菜单拷链接
+    // ---------------------------------------------------------------- 2. 长按链接：菜单拷链接
     func testHoldLinkInBubbleCopiesLink() {
         let login = openLinksChat()
         point(login, 6, login.frame.height - 8).press(forDuration: 1.2)

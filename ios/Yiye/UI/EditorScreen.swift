@@ -188,8 +188,7 @@ struct EditorScreen: View {
         controller.onChange = { scheduleSave() }
         controller.onFocus = { f in withAnimation(.easeOut(duration: 0.2)) { focused = f } }
         controller.wordTitles = (app.t.t("word.markKnown"), app.t.t("word.markLearning"))
-        controller.tv?.linkTitles = LinkTitles(open: app.t.t("link.open"), copy: app.t.t("link.copy"), share: app.t.t("link.share"),
-                                               cancel: app.t.t("common.cancel"))
+        controller.tv?.linkTitles = LinkTitles.of(app.t)
         let nid = n.id
         controller.onWord = { w, m in app.markWord(w, m, note: nid) }
         if app.freshNoteID == n.id {
