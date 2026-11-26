@@ -56,6 +56,7 @@ final class ButlerService {
 
     func start() {
         DoveModel.shared.service = self
+        TodoDesk.shared.service = self                      // 162：他扔了 / 放回去的待办，靠信箱寄
         backup.service = self
         backup.resume()
         guard timer == nil else { return }
@@ -64,7 +65,10 @@ final class ButlerService {
         connectMail()
         look()
         let t = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.look() }
+            Task { @MainActor in
+                self?.look()
+                TodoDesk.shared.flush()                     // 162：没寄出去的 todo-done / todo-undo
+            }
         }
         RunLoop.main.add(t, forMode: .common)
         timer = t
@@ -217,6 +221,10 @@ final class ButlerService {
         case .tell(let d):                                  // 158：大管家要跟 Song 说的：进小书童聊天窗、弹通知、回执
             ShutongModel.shared.butlerSaid(d)
             sendTellOK(of: d.id)
+            return true
+        case .todo(let d):                                  // 162：项目待办：建 / 更新 / 扔那条便签，回执
+            TodoDesk.shared.receive(d)
+            sendTodoOK(of: d.id)
             return true
         case .fbConfig(let c):                              // 130：备用信箱的配置：存钥匙串，回「收到」
             backup.adopt(c.config, box: pairing?.box)
@@ -548,6 +556,27 @@ final class ButlerService {
         guard let mail else { return }
         let req = ButlerRequest.tellOK(id: UUID().uuidString, of: tell, at: ISOTime.string(Date()), app: ButlerService.appVersion)
         Task { _ = try? await mail.send(.request(req), timeout: 20) }
+    }
+
+    /// 162：待办的信收到了（大管家 30 分钟没收到回执就再寄一次）
+    private func sendTodoOK(of letter: String) {
+        guard let mail else { return }
+        let req = ButlerRequest.todoOK(id: UUID().uuidString, of: letter, at: ISOTime.string(Date()), app: ButlerService.appVersion)
+        Task { _ = try? await mail.send(.request(req), timeout: 20) }
+    }
+
+    /// 162：他扔了 / 放回去了一条待办。寄成了 true；没配对、寄不出去 false（TodoDesk 留着下回再寄）
+    func sendTodo(ask: String, todo: String) async -> Bool {
+        guard let mail, app?.demo == nil else { return false }
+        let id = UUID().uuidString, at = ISOTime.string(Date())
+        let req = ask == "todo-undo" ? ButlerRequest.todoUndo(id: id, todo: todo, at: at, app: ButlerService.appVersion)
+                                     : ButlerRequest.todoDone(id: id, todo: todo, at: at, app: ButlerService.appVersion)
+        do {
+            _ = try await mail.send(.request(req), timeout: 20)
+            return true
+        } catch {
+            return false
+        }
     }
 
     private func sendFbConfigOK(of cfg: String) {

@@ -24,6 +24,8 @@ final class Dove128Tests: XCTestCase {
         XCTAssertEqual(Dove.guess("secret_" + String(repeating: "x", count: 30)), "Notion")
         XCTAssertEqual(Dove.guess("AIzaSyB" + String(repeating: "q", count: 30)), "Gemini")
         XCTAssertEqual(Dove.guess("sk-proj-" + String(repeating: "q", count: 30)), "OpenAI")
+        XCTAssertEqual(Dove.guess("sk-ant-api03-" + String(repeating: "q", count: 40)), "Claude")          // 162：别被 sk- 抢走
+        XCTAssertEqual(Dove.guess("sk-ant-oat01-" + String(repeating: "q", count: 40)), "Claude 令牌")
         XCTAssertEqual(Dove.guess("sk_" + String(repeating: "q", count: 30)), "ElevenLabs")
         XCTAssertEqual(Dove.guess("xai-" + String(repeating: "q", count: 30)), "xAI")
         XCTAssertEqual(Dove.guess("ghp_" + String(repeating: "q", count: 30)), "GitHub")

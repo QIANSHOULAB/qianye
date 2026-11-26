@@ -178,8 +178,8 @@ final class ShutongModel {
         n.trashed = s.trashed
         n.trashedAt = s.trashedAt
         n.modifiedAt = s.modifiedAt
-        if s.trashed && !wasTrashed { app.mirror.trash(n.id) }
-        else if !s.trashed && wasTrashed { app.mirror.restoreFromTrash(n.id) }
+        if s.trashed && !wasTrashed { app.mirror.trash(n.id); TodoDesk.shared.trashed([n]) }          // 162：小书童扔的也算
+        else if !s.trashed && wasTrashed { app.mirror.restoreFromTrash(n.id); TodoDesk.shared.putBack([n.id]) }
         else if !s.trashed { app.mirror.saveSoon(n, attachments: app.attachments) }
     }
 

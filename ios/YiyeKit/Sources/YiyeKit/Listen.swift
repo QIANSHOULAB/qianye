@@ -143,6 +143,8 @@ public struct ButlerDelivery: Codable, Equatable, Sendable {
     public var hint: String?
     /// kind=tell（158 大管家找 Song）：急的（Telegram 也发了）
     public var urgent: Bool?
+    /// kind=todo / todo-done（162 项目待办）：待办 id（orders 分支 项目待办/<id>.md 的 <id>）；信的 id 每封都不一样
+    public var todo: String?
     public init(v: Int = Butler.version, id: String, kind: String = "listen", title: String? = nil, text: String,
                 audio: String?, marks: [ListenMark]?, folder: String? = nil, at: String? = nil, note: String? = nil, request: String? = nil) {
         self.v = v; self.id = id; self.kind = kind; self.title = title; self.text = text

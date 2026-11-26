@@ -25,8 +25,10 @@ public enum Dove {
     /// 看开头认是哪家的（跟大管家 actions/keys.py 的 PREFIXES 一个意思）。认不出 nil。只是灰字提示，不替他填
     public static func guess(_ pasted: String) -> String? {
         let k = clean(pasted)
+        // 按顺序挑：sk-ant-… 要排在 sk- 前面，不然被 OpenAI 抢走（162 / 167）
         let table: [(String, String)] = [("github_pat_", "GitHub"), ("secret_", "Notion"), ("ghp_", "GitHub"), ("ntn_", "Notion"), ("xai-", "xAI"),
-                                         ("AIza", "Gemini"), ("sk-", "OpenAI"), ("sk_", "ElevenLabs"), ("AQ.", "Gemini")]
+                                         ("AIza", "Gemini"), ("sk-ant-api", "Claude"), ("sk-ant-oat", "Claude 令牌"), ("sk-", "OpenAI"),
+                                         ("sk_", "ElevenLabs"), ("AQ.", "Gemini")]
         for (prefix, name) in table where k.hasPrefix(prefix) { return name }
         if k.range(of: #"^\d{5,}:[A-Za-z0-9_-]{20,}$"#, options: .regularExpression) != nil { return "Telegram" }
         return nil

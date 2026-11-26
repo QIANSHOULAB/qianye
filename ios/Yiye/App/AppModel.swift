@@ -92,6 +92,7 @@ final class AppModel {
         ShutongModel.shared.app = self                      // 136 书童
         ShutongTalker.shared.app = self                     // 137 书童开口说
         EarDiagSender.shared.app = self                     // 170 说话出错、界面卡：诊断寄给大管家
+        TodoDesk.shared.app = self                          // 162 项目待办
         if let demo {
             Demo.seed(self, demo)
         } else {
@@ -237,6 +238,7 @@ final class AppModel {
             mirror.trash(n.id)
         }
         try? context.save()
+        TodoDesk.shared.trashed(notes)                      // 162：扔的是项目待办里的，告诉大管家
         if quiet { return }
         let ids = notes.map(\.id)
         let text: String
@@ -263,6 +265,7 @@ final class AppModel {
             mirror.restoreFromTrash(id)
         }
         try? context.save()
+        TodoDesk.shared.putBack(ids)                        // 162：放回去的是待办，告诉大管家
     }
 
     /// 现在就删：真删，镜像里那份也删（他自己划的，不再问）
