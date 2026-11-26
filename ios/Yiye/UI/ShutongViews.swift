@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import YiyeKit
 
 /// 136 书童的聊天窗：从下面升起半屏。能打字，能按住说（大管家用 SenseVoice 认，认出的字先放进输入框给他看一眼）。
@@ -14,6 +15,7 @@ struct ShutongSheet: View {
 
     var body: some View {
         @Bindable var m = ShutongModel.shared
+        @Bindable var remote = RemoteModel.shared
         VStack(spacing: 0) {
             HStack(spacing: 8) {
                 Image(systemName: "studentdesk")
@@ -64,6 +66,7 @@ struct ShutongSheet: View {
         .presentationDragIndicator(.visible)
         .onAppear { m.load(); m.markRead() }                         // 158：开了窗，大管家的话都算看过
         .onDisappear { m.open = false; if m.recording { m.stopRecording() }; ShutongTalker.shared.stop() }
+        .sheet(isPresented: $remote.guideOpen) { RemoteSheet() }     // 197：从带路卡上开遥控，叠在小书童上面
     }
 
     /// 137 开口说：一按像打电话，再按一下退出
@@ -203,6 +206,7 @@ struct ShutongBubble: View {
         case "receipt": receipt
         case "confirm": ShutongConfirmCard(line: line)
         case "butler": butler
+        case "guide": ShutongGuideCard(line: line)           // 197
         default:
             if Links.find(line.text).isEmpty {
                 Text(line.text)
@@ -311,6 +315,72 @@ struct ShutongBubble: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background { RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color(Ink.paper)) }
         .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color(Ink.paperEdge), lineWidth: 0.75) }
+    }
+}
+
+/// 197 卡上的小图：等比放，圈画在上面
+struct GuideThumb: View {
+    let card: GuideCard
+    let image: UIImage
+
+    var body: some View {
+        Image(uiImage: image)
+            .resizable()
+            .aspectRatio(image.size.width / max(image.size.height, 1), contentMode: .fit)
+            .overlay {
+                GeometryReader { g in
+                    if let x = card.x, let y = card.y {
+                        let d = max(22.0, 2 * (card.r ?? 0.04) * Double(g.size.width))
+                        GuideRing()
+                            .frame(width: d, height: d)
+                            .position(x: x * Double(g.size.width), y: y * Double(g.size.height))
+                    }
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .frame(maxHeight: 190, alignment: .leading)
+    }
+}
+
+/// 197 带路卡：大管家请他点一下。小图上画着圈，「去点」开那台的遥控
+struct ShutongGuideCard: View {
+    let line: ShutongLine
+    @Environment(AppModel.self) private var app
+
+    private var t: Lang { app.lang }
+
+    var body: some View {
+        let c = line.guide
+        let status = c?.status ?? "done"
+        VStack(alignment: .leading, spacing: 8) {
+            Text(t.t("shutong.butler") + " · " + When.short(line.at, t))
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color(Ink.text3))
+            Text(line.text)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Color(status == "ask" ? Ink.text : Ink.text2))
+                .fixedSize(horizontal: false, vertical: true)
+            if let c, let img = ShutongModel.shared.guideImage(c.id) {
+                GuideThumb(card: c, image: img)
+                    .opacity(status == "ask" ? 1 : 0.55)
+            }
+            if status == "ask", let c {
+                Button(t.t("shutong.guideGo")) { RemoteModel.shared.openGuide(c) }
+                    .buttonStyle(SmartButtonStyle(prominent: true, minWidth: 88))
+                    .accessibilityIdentifier("shutong.guideGo")
+            } else {
+                Text(status == "stuck" ? t.t("shutong.guideStuck") : t.t("shutong.guideDone"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(Ink.text3))
+                    .accessibilityIdentifier("shutong.guideState")
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background { RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color(Ink.paper)) }
+        .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color(Ink.danger).opacity(status == "ask" ? 0.45 : 0), lineWidth: 1) }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("shutong.guideCard")
     }
 }
 

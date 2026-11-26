@@ -8,7 +8,7 @@ import Foundation
 
 /// 一个遥控动作（请求里的 remote）
 public struct RemoteOp: Codable, Equatable, Sendable {
-    /// open / shot / tap / right / scroll / type / pass / close
+    /// open / shot / tap / double（197 双击）/ right / scroll / type / pass / close
     public var op: String
     /// 这一场的号（open 时定，之后每个动作都带）
     public var session: String?
@@ -23,14 +23,17 @@ public struct RemoteOp: Codable, Equatable, Sendable {
     public var dy: Int?
     /// type：打的字（密码不走这里，走请求的 secret）
     public var text: String?
+    /// 197：这一下是照哪张带路的卡点的
+    public var guide: String?
 
     public init(op: String, session: String? = nil, screen: Int? = nil, shot: Int? = nil, x: Double? = nil, y: Double? = nil,
-                dy: Int? = nil, text: String? = nil) {
+                dy: Int? = nil, text: String? = nil, guide: String? = nil) {
         self.op = op; self.session = session; self.screen = screen; self.shot = shot; self.x = x; self.y = y; self.dy = dy; self.text = text
+        self.guide = guide
     }
 
     /// 算「动作」的（5 分钟没有这些，那台自己结束遥控）；截图不算
-    public var isMove: Bool { ["open", "tap", "right", "scroll", "type", "pass"].contains(op) }
+    public var isMove: Bool { ["open", "tap", "double", "right", "scroll", "type", "pass"].contains(op) }
 }
 
 /// 回信里的 remote：这一下之后那台的样子

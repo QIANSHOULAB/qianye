@@ -1,3 +1,4 @@
+0.7.35：大管家点不了的地方会请你点。小书童里来一张卡，截图上画着红圈和一句话，点「去点」就是那台的屏幕，在圈里点一下就行（要双击的它替你按双击算）；点完它自己看成没成，没成会换一句再请。遥控也能双击了：图上连点两下。When the butler can’t click something, it sends a card with the spot circled; tap inside the circle. Remote now supports double-click.
 0.7.34：网址能点、能单独拷了。小书童、便签、项目待办里的网址自动变成链接：点一下用浏览器打开，长按是「拷贝链接 / 分享」；气泡里的字可以只选一段来拷。续登那条网址下面多一个「打开」，点了直接去登，码照旧贴回输入框。Links are now tappable and copyable on their own, in the scribe chat and in notes; select just part of a message; sign-in links get an Open button.
 0.7.33：小书童里大管家不在线时那句改成「大管家这会儿不在线，话放信箱里了，上线就办」。大管家那头一起修了：电脑、掌机明明开着、手机走备用通道时，不再说它们不在线。The butler-away line is clearer, and the butler no longer reads as away just because the phone switched to the backup route.
 0.7.32：遥控的截图能放大了。两指张开放大（最多 5 倍）、合拢缩小，放大了一根手指拖着看；点和长按还是点在手指下面那一点，右下角「1×」回整屏。两指一起上下滑照旧是滚轮。Remote: pinch to zoom the screenshot, drag to move around, taps land where your finger is.

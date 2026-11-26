@@ -27,6 +27,7 @@ struct RemoteSheet: View {
                         .accessibilityIdentifier("remote.end")
                 }
                 Button(t.t("common.done")) { m.stop(); dismiss() }.buttonStyle(PlainTextButtonStyle())
+                    .accessibilityIdentifier("remote.done")
             }
             .padding(.horizontal, 16)
             .frame(height: 52)
@@ -88,6 +89,15 @@ struct RemoteSheet: View {
     // ---------------------------------------------------------------- 那台的屏
     private func screen(_ m: RemoteModel) -> some View {
         VStack(spacing: 6) {
+            if let c = m.guide, c.target == m.target, c.status == "ask" {            // 197：大管家请他点什么
+                Text(c.text)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color(Ink.text))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 16)
+                    .accessibilityIdentifier("remote.guideText")
+            }
             ZStack {
                 if let img = m.image {
                     // 框 = 整张图等比放进去的那一块；放大是把图在框里放大、挪，框外面裁掉
@@ -95,11 +105,17 @@ struct RemoteSheet: View {
                         .aspectRatio(img.size.width / max(img.size.height, 1), contentMode: .fit)
                         .overlay {
                             GeometryReader { g in
-                                Image(uiImage: img)
-                                    .resizable()
-                                    .frame(width: g.size.width, height: g.size.height)
-                                    .scaleEffect(m.zoom.scale, anchor: .topLeading)
-                                    .offset(x: m.zoom.x * g.size.width, y: m.zoom.y * g.size.height)
+                                ZStack(alignment: .topLeading) {
+                                    Image(uiImage: img)
+                                        .resizable()
+                                        .frame(width: g.size.width, height: g.size.height)
+                                        .scaleEffect(m.zoom.scale, anchor: .topLeading)
+                                        .offset(x: m.zoom.x * g.size.width, y: m.zoom.y * g.size.height)
+                                    if let c = m.guide, c.status == "ask", c.target == m.target, c.screen == (m.state.screen ?? 0) {
+                                        GuideOnScreen(card: c, zoom: m.zoom, size: g.size)       // 197：圈跟着放大、挪
+                                    }
+                                }
+                                .frame(width: g.size.width, height: g.size.height, alignment: .topLeading)
                             }
                         }
                         .clipped()
@@ -108,6 +124,7 @@ struct RemoteSheet: View {
                                       zoom: m.zoom,
                                       setZoom: { m.zoom = $0 },
                                       tap: { x, y in m.tap(x, y) },
+                                      twice: { x, y in m.doubleTap(x, y) },
                                       press: { x, y in m.tap(x, y, right: true) },
                                       scroll: { x, y, n in m.scroll(x, y, notches: n) })
                         }
@@ -208,6 +225,8 @@ struct RemotePad: UIViewRepresentable {
     let zoom: RemoteZoom
     let setZoom: (RemoteZoom) -> Void
     let tap: (Double, Double) -> Void
+    /// 197：连点两下 = 双击
+    let twice: (Double, Double) -> Void
     let press: (Double, Double) -> Void
     let scroll: (Double, Double, Int) -> Void
 
@@ -224,6 +243,11 @@ struct RemotePad: UIViewRepresentable {
         lp.minimumPressDuration = 0.5
         let tp = UITapGestureRecognizer(target: c, action: #selector(Coordinator.tapped(_:)))
         tp.require(toFail: lp)                         // 松得快：长按马上作废，点不慢
+        let dt = UITapGestureRecognizer(target: c, action: #selector(Coordinator.doubled(_:)))   // 197：双击
+        dt.numberOfTapsRequired = 2
+        dt.require(toFail: lp)
+        tp.require(toFail: dt)
+        dt.delegate = c
         let drag = RemoteDrag(target: c, action: #selector(Coordinator.dragged(_:)))
         drag.canPan = { [weak c] in c?.parent.zoom.zoomed ?? false }
         drag.delegate = c
@@ -232,6 +256,7 @@ struct RemotePad: UIViewRepresentable {
         v.isMultipleTouchEnabled = true
         v.addGestureRecognizer(lp)
         v.addGestureRecognizer(tp)
+        v.addGestureRecognizer(dt)
         v.addGestureRecognizer(drag)
         return v
     }
@@ -270,6 +295,11 @@ struct RemotePad: UIViewRepresentable {
         @objc func tapped(_ g: UITapGestureRecognizer) {
             guard g.state == .ended, let p = where_(g) else { return }
             parent.tap(p.0, p.1)
+        }
+
+        @objc func doubled(_ g: UITapGestureRecognizer) {
+            guard g.state == .ended, let p = where_(g) else { return }
+            parent.twice(p.0, p.1)
         }
 
         @objc func pressed(_ g: UILongPressGestureRecognizer) {
@@ -316,6 +346,36 @@ struct RemotePad: UIViewRepresentable {
         /// 外面的拖（这一页往下拖关掉）等我们认不认：放大了挪图、两指缩放的时候不让它抢
         func gestureRecognizer(_ g: UIGestureRecognizer, shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
             g is RemoteDrag && other is UIPanGestureRecognizer && other.view !== g.view
+        }
+    }
+}
+
+/// 197：遥控画面上那个圈（按图上的比例放，跟着放大、挪；不挡手指）
+struct GuideOnScreen: View {
+    let card: GuideCard
+    let zoom: RemoteZoom
+    let size: CGSize
+
+    var body: some View {
+        if let x = card.x, let y = card.y {
+            let width = Double(size.width), height = Double(size.height)
+            let d = max(36.0, 2 * (card.r ?? 0.04) * width * zoom.scale)
+            GuideRing()
+                .frame(width: d, height: d)
+                .accessibilityElement()
+                .accessibilityIdentifier("remote.circle")
+                .position(x: (zoom.x + x * zoom.scale) * width, y: (zoom.y + y * zoom.scale) * height)
+                .allowsHitTesting(false)
+        }
+    }
+}
+
+/// 197 带路的圈：红的、外面一圈白边，醒目、中间空着不挡字
+struct GuideRing: View {
+    var body: some View {
+        ZStack {
+            Circle().stroke(Color.white, lineWidth: 7)
+            Circle().stroke(Color(Ink.danger), lineWidth: 4)
         }
     }
 }

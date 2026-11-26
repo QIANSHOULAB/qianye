@@ -4404,6 +4404,74 @@
         }
       }
     },
+    "shutong.guideDone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点上了"
+          }
+        }
+      }
+    },
+    "shutong.guideGo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go tap"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "去点"
+          }
+        }
+      }
+    },
+    "shutong.guideSays": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The butler needs a tap: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大管家请你点一下：%@"
+          }
+        }
+      }
+    },
+    "shutong.guideStuck": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Didn’t work. Check it in person."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没成，到跟前看一眼"
+          }
+        }
+      }
+    },
     "shutong.hearOffline": {
       "extractionState": "manual",
       "localizations": {

@@ -26,6 +26,8 @@ struct ShutongLine: Codable, Identifiable, Equatable {
     var struck: [Int] = []
     /// he：waiting / answered / failed；confirm：pending / done / cancelled
     var state = ""
+    /// guide：197 带路的卡（图存在 guides/<号>.jpg）
+    var guide: GuideCard?
 }
 
 /// 存在手机里的：聊天记录（最近 200 条）、最近 40 批的快照、这周的清理建议
@@ -74,6 +76,8 @@ final class ShutongModel {
     @ObservationIgnored private var recURL: URL?
     @ObservationIgnored private var recStart = Date.distantPast
     @ObservationIgnored private var loaded = false
+    /// 197：带路卡的小图
+    @ObservationIgnored private var guidePictures: [String: Data] = [:]
 
     private var zh: Bool { app?.lang.isZh ?? true }
     private func t(_ k: String) -> String { app?.lang.t(k) ?? k }
@@ -813,6 +817,66 @@ final class ShutongModel {
         }
     }
 
+    // ---------------------------------------------------------------- 197 带路：请他点一下
+    /// 一张带路的卡来了（或者换一句、点上了）：同一个号只有一张，新的请求挪到最下面
+    func butlerGuide(_ d: ButlerDelivery, image: Data?) {
+        load()
+        guard let c = GuideCard(d) else { return }
+        if let image { storeGuideImage(c.id, image) }
+        if let i = lines.lastIndex(where: { $0.who == "guide" && $0.guide?.id == c.id }) {
+            var l = lines[i]
+            if c.status == "ask" {
+                lines.remove(at: i)
+                l.guide = c
+                l.text = c.text
+                l.at = Date()
+                lines.append(l)
+            } else {
+                var done = l.guide ?? c                  // 点上了：圈、图照旧留着，换状态和那句话
+                done.status = c.status
+                done.text = c.text
+                l.guide = done
+                l.text = c.text
+                lines[i] = l
+            }
+        } else if c.status == "ask" {
+            var l = ShutongLine(who: "guide", text: c.text)
+            l.guide = c
+            lines.append(l)
+        }
+        RemoteModel.shared.guideUpdate(c)
+        if c.status == "ask" && !open { unread = true }
+        save()
+        guard c.status == "ask", let app else { return }
+        if UIApplication.shared.applicationState == .active {
+            if !open {
+                app.show(app.lang.f("shutong.guideSays", c.text), action: t("shutong.butlerOpen"), seconds: 8) { [weak self] in self?.open = true }
+            }
+        } else {
+            ButlerNotice.post(title: t("shutong.butler"), body: c.text, id: d.id)
+        }
+    }
+
+    /// 卡上的小图（Demo 里画的、真的存在手机里）
+    func guideImage(_ id: String) -> UIImage? {
+        if let d = guidePictures[id] { return UIImage(data: d) }
+        guard let u = guideFile(id), let d = try? Data(contentsOf: u) else { return nil }
+        guidePictures[id] = d
+        return UIImage(data: d)
+    }
+
+    private func guideFile(_ id: String) -> URL? {
+        guard app?.demo == nil, let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
+        let folder = dir.appendingPathComponent("guides", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        return folder.appendingPathComponent(id.filter { $0.isLetter || $0.isNumber } + ".jpg")
+    }
+
+    private func storeGuideImage(_ id: String, _ data: Data) {
+        guidePictures[id] = data
+        if let u = guideFile(id) { try? data.write(to: u, options: .atomic) }
+    }
+
     /// 打开一叶笺时：有没看的大管家的话，先弹出小书童窗
     func showUnread() {
         load()
@@ -861,6 +925,22 @@ final class ShutongModel {
             var login = ShutongLine(who: "butler", text: (z ? "点这个网址登，登完把那串码整串发我：\n" : "Open this to sign in, then send me the code:\n") + long)
             login.at = Date().addingTimeInterval(-60)
             lines = [he, say, login]
+            open = true
+        case "guide":                                       // 197：一张带路的卡（假屏右上角那块红圈起来）
+            let z = app.lang.isZh
+            var d = ButlerDelivery(id: "guide-demo-1", kind: GuideCard.kind,
+                                   text: z ? "双击右上角那个红色的「安装」" : "Double-click the red “Install” at the top right",
+                                   audio: nil, marks: nil)
+            d.guide = "demo197"
+            d.status = "ask"
+            d.host = "handheld"
+            d.screen = 0
+            d.x = 1135.0 / 1280
+            d.y = 95.0 / 800
+            d.r = 0.1
+            d.double = true
+            lines = []
+            butlerGuide(d, image: RemoteModel.demoScreen(1).jpegData(compressionQuality: 0.7))
             open = true
         case "shutong-slip":
             let z = app.lang.isZh

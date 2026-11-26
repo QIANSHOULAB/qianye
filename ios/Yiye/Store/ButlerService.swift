@@ -269,6 +269,9 @@ final class ButlerService {
             ShutongModel.shared.butlerSaid(d)
             sendTellOK(of: d.id)
             return true
+        case .guide(let d, let image):                      // 197：请他点一下：小书童里一张带圈的卡
+            ShutongModel.shared.butlerGuide(d, image: image)
+            return true
         case .todo(let d):                                  // 162：项目待办：建 / 更新 / 扔那条便签，回执
             TodoDesk.shared.receive(d)
             sendTodoOK(of: d.id)

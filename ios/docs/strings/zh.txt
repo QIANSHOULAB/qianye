@@ -263,6 +263,10 @@ shutong.confirm	这几条要动，你点头才办：
 shutong.doIt	照办
 shutong.done	办了
 shutong.folderCap	小书童自己建的文件夹满 10 个了，这条先放在全部。要新夹子跟我说一声。
+shutong.guideDone	点上了
+shutong.guideGo	去点
+shutong.guideSays	大管家请你点一下：%@
+shutong.guideStuck	没成，到跟前看一眼
 shutong.hearOffline	大管家不在线，没法认字，先打字吧
 shutong.hearTimeout	认字超时了，再说一遍或者打字
 shutong.hearing	大管家在认字…

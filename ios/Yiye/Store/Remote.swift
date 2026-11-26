@@ -29,6 +29,10 @@ final class RemoteModel {
     var zoom = RemoteZoom()
     /// UI 测试看的：上一下寄出去的是什么（Demo 里才写）
     private(set) var lastSent = ""
+    /// 197 带路：正照着哪张卡点（圈画在那台的截图上）
+    private(set) var guide: GuideCard?
+    /// 197：从小书童的卡片上开的那一页
+    var guideOpen = false
 
     @ObservationIgnored weak var app: AppModel?
     @ObservationIgnored private var session = ""
@@ -57,8 +61,28 @@ final class RemoteModel {
         line = self.t("remote.connecting")
         draft = ""
         password = false
-        send(RemoteOp(op: "open", session: session))
+        send(RemoteOp(op: "open", session: session, screen: guide?.target == t ? guide?.screen : nil))
         loop()
+    }
+
+    // ---------------------------------------------------------------- 197 带路
+    /// 小书童的卡片上点了「去点」：开那台的遥控，圈画在上面
+    func openGuide(_ c: GuideCard) {
+        if target != nil { stop() }
+        guide = c
+        guideOpen = true
+        if online.contains(c.target) { start(c.target) } else { line = t("remote.offline") }
+    }
+
+    /// 同一张带路来了新的（换一句、点上了、不用点了）
+    func guideUpdate(_ c: GuideCard) {
+        guard guide?.id == c.id else { return }
+        if c.status == "ask" {
+            guide = c
+        } else {
+            guide = nil
+            line = c.text
+        }
     }
 
     /// 结束这一场（回到选机器）
@@ -75,6 +99,7 @@ final class RemoteModel {
         line = nil
         draft = ""
         password = false
+        guide = nil
     }
 
     /// 退到后台：结束
@@ -100,7 +125,25 @@ final class RemoteModel {
     /// 在图上点了一下（x、y 是那张图上的比例）
     func tap(_ x: Double, _ y: Double, right: Bool = false) {
         guard let shot = state.shot else { return }
+        if !right, let g = guide, g.target == target, g.screen == (state.screen ?? 0) {   // 197：圈里的那一下按卡片说的发
+            let how = g.tapPlan(x, y, aspect: aspect)
+            send(RemoteOp(op: how.op, session: session, shot: shot, x: x, y: y, guide: how.guide))
+            return
+        }
         send(RemoteOp(op: right ? "right" : "tap", session: session, shot: shot, x: x, y: y))
+    }
+
+    /// 197：在图上连点两下 = 双击
+    func doubleTap(_ x: Double, _ y: Double) {
+        guard let shot = state.shot else { return }
+        var g: String?
+        if let c = guide, c.target == target, c.contains(x, y, aspect: aspect) { g = c.id }
+        send(RemoteOp(op: "double", session: session, shot: shot, x: x, y: y, guide: g))
+    }
+
+    private var aspect: Double {
+        guard let s = image?.size, s.width > 0 else { return 0.625 }
+        return Double(s.height / s.width)
     }
 
     func scroll(_ x: Double, _ y: Double, notches: Int) {
@@ -141,6 +184,7 @@ final class RemoteModel {
         if op.op != "shot" { line = nil }
         if demo {
             if op.op != "shot" { lastSent = Self.describe(op) }     // 一两秒一张的截图不盖掉上一下
+            if let g = op.guide { demoGuideDone(g) }
             return demoAnswer(id: id, op: op)
         }
         post(ButlerRequest.remote(id: id, op: op, target: t, at: ISOTime.string(Date()), app: ButlerService.appVersion))
@@ -195,10 +239,37 @@ final class RemoteModel {
 
     static func describe(_ op: RemoteOp) -> String {
         switch op.op {
-        case "tap", "right": return String(format: "%@ %.3f %.3f", op.op, op.x ?? 0, op.y ?? 0)
+        case "tap", "double", "right": return String(format: "%@ %.3f %.3f", op.op, op.x ?? 0, op.y ?? 0) + (op.guide == nil ? "" : " g")
         case "scroll": return "scroll \(op.dy ?? 0)"
         case "type": return "type \(op.text ?? "")"
         default: return op.op
+        }
+    }
+
+    /// 197 Demo：假大管家 1 秒后说「点上了」
+    private func demoGuideDone(_ g: String) {
+        Task {
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            var d = ButlerDelivery(id: "guide-demo-done", kind: GuideCard.kind, text: self.app?.lang.isZh == false ? "Got it. Carrying on." : "点上了，我接着干",
+                                   audio: nil, marks: nil)
+            d.guide = g
+            d.status = "done"
+            ShutongModel.shared.butlerGuide(d, image: nil)
+        }
+    }
+
+    /// 画出来的假屏：右上角一块红
+    static func demoScreen(_ n: Int) -> UIImage {
+        let size = CGSize(width: 1280, height: 800)
+        return UIGraphicsImageRenderer(size: size).image { ctx in
+            UIColor(white: 0.94, alpha: 1).setFill()
+            ctx.fill(CGRect(origin: .zero, size: size))
+            UIColor(red: 0.13, green: 0.33, blue: 0.6, alpha: 1).setFill()
+            ctx.fill(CGRect(x: 0, y: 0, width: size.width, height: 56))
+            let a: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 34, weight: .medium), .foregroundColor: UIColor.darkGray]
+            ("Desktop · \(n)" as NSString).draw(at: CGPoint(x: 60, y: 120), withAttributes: a)
+            UIColor(red: 0.78, green: 0.16, blue: 0.16, alpha: 1).setFill()
+            ctx.fill(CGRect(x: 1020, y: 70, width: 230, height: 50))
         }
     }
 
@@ -206,17 +277,7 @@ final class RemoteModel {
     private func demoAnswer(id: String, op: RemoteOp) {
         if op.op == "close" { return }
         demoShot += 1
-        let size = CGSize(width: 1280, height: 800)
-        let img = UIGraphicsImageRenderer(size: size).image { ctx in
-            UIColor(white: 0.94, alpha: 1).setFill()
-            ctx.fill(CGRect(origin: .zero, size: size))
-            UIColor(red: 0.13, green: 0.33, blue: 0.6, alpha: 1).setFill()
-            ctx.fill(CGRect(x: 0, y: 0, width: size.width, height: 56))
-            let a: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 34, weight: .medium), .foregroundColor: UIColor.darkGray]
-            ("Desktop · \(demoShot)" as NSString).draw(at: CGPoint(x: 60, y: 120), withAttributes: a)
-            UIColor(red: 0.78, green: 0.16, blue: 0.16, alpha: 1).setFill()
-            ctx.fill(CGRect(x: 1020, y: 70, width: 230, height: 50))
-        }
+        let img = Self.demoScreen(demoShot)
         let path = "遥控/demo-\(demoShot).jpg"
         let st = RemoteState(on: true, session: session, screen: 0, shot: demoShot, w: 2560, h: 1600, screens: 1, image: path)
         let r = ButlerResult(id: id, note: "", ok: true, text: "", changes: nil, error: nil, stage: "remote")

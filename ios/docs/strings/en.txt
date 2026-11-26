@@ -263,6 +263,10 @@ shutong.confirm	These need your nod first:
 shutong.doIt	Do it
 shutong.done	Done
 shutong.folderCap	I’ve made 10 folders already, so this one stays in All Notes. Say the word if you want another.
+shutong.guideDone	Done
+shutong.guideGo	Go tap
+shutong.guideSays	The butler needs a tap: %@
+shutong.guideStuck	Didn’t work. Check it in person.
 shutong.hearOffline	The butler’s away. Type it for now.
 shutong.hearTimeout	That took too long. Try again or type.
 shutong.hearing	The butler’s listening…
