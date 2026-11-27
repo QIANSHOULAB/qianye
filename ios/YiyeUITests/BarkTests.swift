@@ -72,6 +72,8 @@ final class BarkTests: XCTestCase {
         check(off.waitForExistence(timeout: 8), "204-S4-没回话", "关了以后没看到大管家那句")
         shot("204-关了")
         flip(toggle)
-        check(steps.waitForExistence(timeout: 8), "204-S5-开不回来", "再开一次，步骤没回来")
+        // 222：CI 慢的那轮这一下没点上（11-27 a247f69）：开关还是关着的才补点一下
+        if !steps.waitForExistence(timeout: 8), toggle.value as? String == "0" { flip(toggle) }
+        check(steps.waitForExistence(timeout: 15), "204-S5-开不回来", "再开一次，步骤没回来")
     }
 }

@@ -97,7 +97,8 @@ final class ListenLoopTests: XCTestCase {
         check(waitValue(tokyo, "playing", 8), "144-12-下一篇不对", "London 下一篇应该是 Tokyo")
 
         // 自己放完（9 秒 ÷ 1.25）：回前天第一篇
-        check(waitValue(london, "playing", 25), "144-13-放完没回那天第一篇", "Tokyo 放完应该回 London，不进别的天")
+        // 222：CI 慢的那轮 25 秒只放到第 4 秒（11-27 454a1a4），放到 60 秒
+        check(waitValue(london, "playing", 60), "144-13-放完没回那天第一篇", "Tokyo 放完应该回 London，不进别的天")
         shot("144-循环只在前天")
     }
 }
