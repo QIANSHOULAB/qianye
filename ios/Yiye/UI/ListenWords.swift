@@ -333,17 +333,18 @@ struct SentenceText: UIViewRepresentable {
         @objc func tapped(_ g: UITapGestureRecognizer) {
             guard let p = parent, let tv else { return }
             p.onTouch()
+            let at = g.location(in: tv)
+            // 点两下要先认：这时候系统多半已经顺手选上了一个词（CI 模拟器上就是这样），不能当成「收掉选中」
+            if taps.tap(x: Double(at.x), y: Double(at.y), at: CACurrentMediaTime()) == 2 {
+                doubleAt = CACurrentMediaTime()
+                tv.selectedTextRange = nil
+                p.onTap(.sentence)
+                return
+            }
             // 长按选着字：这一下只收掉选中和菜单
             if tv.selectedRange.length > 0 {
                 tv.selectedTextRange = nil
                 taps = TapCount()
-                return
-            }
-            let at = g.location(in: tv)
-            if taps.tap(x: Double(at.x), y: Double(at.y), at: CACurrentMediaTime()) == 2 {
-                doubleAt = CACurrentMediaTime()
-                p.onTap(.sentence)
-                DispatchQueue.main.async { [weak tv] in tv?.selectedTextRange = nil }
                 return
             }
             let text = tv.textStorage.string
@@ -368,15 +369,18 @@ struct SentenceText: UIViewRepresentable {
         func gestureRecognizer(_ g: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
 
         func textViewDidChangeSelection(_ textView: UITextView) {
-            let on = textView.selectedRange.length > 0
-            if on && justDouble {
-                DispatchQueue.main.async { [weak textView] in textView?.selectedTextRange = nil }
-                return
+            // 重画途中也会走到这儿：等这一轮画完再看现在选没选着、再告诉页面
+            DispatchQueue.main.async { [weak self, weak textView] in
+                guard let self, let textView else { return }
+                let on = textView.selectedRange.length > 0
+                if on && self.justDouble {          // 点两下之后系统才选上的：抹掉
+                    textView.selectedTextRange = nil
+                    return
+                }
+                guard on != self.selecting else { return }
+                self.selecting = on
+                self.parent?.onSelecting(on)
             }
-            guard on != selecting else { return }
-            selecting = on
-            // 重画途中也会走到这儿：等这一轮画完再告诉页面
-            DispatchQueue.main.async { [weak self] in self?.parent?.onSelecting(on) }
         }
 
         func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {

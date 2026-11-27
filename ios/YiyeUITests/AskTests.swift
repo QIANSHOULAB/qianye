@@ -43,7 +43,8 @@ final class AskTests: XCTestCase {
         app.buttons[button].firstMatch.tap()
         let state = app.staticTexts["shutong.askState"].firstMatch
         let said = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true AND label == %@", words), object: state)
-        check(XCTWaiter().wait(for: [said], timeout: 10) == .completed, "203-\(tag)4-卡没变",
+        // 222：CI 模拟器慢的那轮字改过来了但 10 秒没读到（11-27 cd27893，这条跑了 93 秒），放到 30 秒
+        check(XCTWaiter().wait(for: [said], timeout: 30) == .completed, "203-\(tag)4-卡没变",
               "点完应该写「\(words)」，现在是 \(state.exists ? state.label : "（没有）")")
         check(!yes.exists, "203-\(tag)5-按钮还在", "点过了按钮要收")
         shot("203-\(tag)点完")
