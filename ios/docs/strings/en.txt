@@ -208,15 +208,26 @@ paper.green	Sage
 paper.pink	Blush
 paper.white	White
 paper.yellow	Cream
+remote.ask	Ask the butler
 remote.black	The picture is black: likely a lock screen or a system prompt. Do it at the machine.
 remote.connecting	Connecting…
 remote.desk	Desktop
 remote.end	End
 remote.ended	Remote ended
 remote.failed	That one didn't go through
+remote.fb.asking	Asked. The butler is looking…
+remote.fb.changed	The screen changed
+remote.fb.done	That worked
+remote.fb.noAnswer	The butler couldn't tell
+remote.fb.none	Nothing happened. Tap again?
+remote.fb.scrolled	Scrolled
+remote.fb.tapped	Tapped
+remote.fb.typed	Typed in
+remote.fb.unchanged	The screen didn't change
+remote.fb.waiting	Waiting for the screen to change…
 remote.handheld	Handheld
-remote.hint	Tap = left click, hold = right click, two-finger drag = scroll. Pinch to zoom, then drag with one finger to move around. While it's on, the machine shows “Phone remote” in its top corner; 5 minutes idle ends it.
-remote.input	Type at the cursor there
+remote.hint	Tap = left click, hold = right click, two-finger drag = scroll. Pinch to zoom, then drag with one finger to move around. Type in the box below: “Ask the butler” whether it worked or where it's stuck, or type the text in at the cursor. While it's on, the machine shows “Phone remote” in its top corner; 5 minutes idle ends it.
+remote.input	Ask “did it work?”, or text to type in
 remote.noPair	Not paired with the butler yet
 remote.offline	Offline
 remote.passInput	Password (dots only)
@@ -224,7 +235,10 @@ remote.password	Password
 remote.pick	Which machine?
 remote.screen	Next screen
 remote.send	Send
+remote.stale	Last time
 remote.title	Remote
+remote.typeDesk	Type on desktop
+remote.typeHandheld	Type on handheld
 secret.burn	Burn after reading. Gone once closed.
 secret.close	Close
 secret.copied	Copied. Clears in 2 min

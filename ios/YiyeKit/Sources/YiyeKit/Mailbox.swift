@@ -372,6 +372,8 @@ public enum MailAction: Equatable, Sendable {
     case talk(ButlerResult, audio: Data?)
     /// 遥控的回信（172，stage = remote）：那台的样子、跟着来的截图
     case remote(ButlerResult, image: Data?)
+    /// 240：遥控的回信只带了变了的块：路径 → JPEG
+    case remoteTiles(ButlerResult, tiles: [String: Data])
     /// 送来的听力稿 / 配好的音
     case deliver(ButlerDelivery, audio: Data?)
     /// 送来的录音信里没带、本地也没有：先别 ack，下回再拿
@@ -388,7 +390,14 @@ public enum MailAction: Equatable, Sendable {
         switch env.kind {
         case .result:
             guard let r = env.result else { return .drop("result 没有 data") }
-            if r.stage == "remote" { return .remote(r, image: (r.remote?.image ?? r.file).flatMap { env.files[$0] }) }
+            if r.stage == "remote" {
+                if let t = r.remote?.tiles, !t.isEmpty {                       // 240：只寄了变了的块
+                    var got: [String: Data] = [:]
+                    for tile in t { if let d = env.files[tile.path] { got[tile.path] = d } }
+                    return .remoteTiles(r, tiles: got)
+                }
+                return .remote(r, image: (r.remote?.image ?? r.file).flatMap { env.files[$0] })
+            }
             if r.stage == "confirm" { return .confirmReply(r) }
             if doves.contains(r.id) || r.stage == "key" { return .dove(r) }
             if talks.contains(r.id) || r.stage == "talk" { return .talk(r, audio: r.audio.flatMap { env.files[$0] }) }

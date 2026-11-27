@@ -3469,6 +3469,23 @@
         }
       }
     },
+    "remote.ask": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask the butler"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "问大管家"
+          }
+        }
+      }
+    },
     "remote.black": {
       "extractionState": "manual",
       "localizations": {
@@ -3571,6 +3588,176 @@
         }
       }
     },
+    "remote.fb.asking": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asked. The butler is looking…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "问了，大管家在看…"
+          }
+        }
+      }
+    },
+    "remote.fb.changed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The screen changed"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画面变了"
+          }
+        }
+      }
+    },
+    "remote.fb.done": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That worked"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点上了"
+          }
+        }
+      }
+    },
+    "remote.fb.noAnswer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The butler couldn't tell"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大管家没看出什么"
+          }
+        }
+      }
+    },
+    "remote.fb.none": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing happened. Tap again?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没反应，再点一次？"
+          }
+        }
+      }
+    },
+    "remote.fb.scrolled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scrolled"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "滚了"
+          }
+        }
+      }
+    },
+    "remote.fb.tapped": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tapped"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点了"
+          }
+        }
+      }
+    },
+    "remote.fb.typed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Typed in"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "敲进去了"
+          }
+        }
+      }
+    },
+    "remote.fb.unchanged": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The screen didn't change"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画面没变"
+          }
+        }
+      }
+    },
+    "remote.fb.waiting": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for the screen to change…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等画面变…"
+          }
+        }
+      }
+    },
     "remote.handheld": {
       "extractionState": "manual",
       "localizations": {
@@ -3594,13 +3781,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tap = left click, hold = right click, two-finger drag = scroll. Pinch to zoom, then drag with one finger to move around. While it's on, the machine shows “Phone remote” in its top corner; 5 minutes idle ends it."
+            "value": "Tap = left click, hold = right click, two-finger drag = scroll. Pinch to zoom, then drag with one finger to move around. Type in the box below: “Ask the butler” whether it worked or where it's stuck, or type the text in at the cursor. While it's on, the machine shows “Phone remote” in its top corner; 5 minutes idle ends it."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "点一下 = 左键，长按 = 右键，两指上下滑 = 滚轮。两指张开放大，放大了一指拖着挪。遥控开着，那台屏幕右上角一直写着「手机遥控中」；5 分钟不动自己结束。"
+            "value": "点一下 = 左键，长按 = 右键，两指上下滑 = 滚轮。两指张开放大，放大了一指拖着挪。底下框里打字：「问大管家」问他点上没、卡在哪，「敲进电脑」把字敲到那台的光标处。遥控开着，那台屏幕右上角一直写着「手机遥控中」；5 分钟不动自己结束。"
           }
         }
       }
@@ -3611,13 +3798,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Type at the cursor there"
+            "value": "Ask “did it work?”, or text to type in"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在那台的光标处打字"
+            "value": "问「点上没」，或者要敲进去的字"
           }
         }
       }
@@ -3741,6 +3928,23 @@
         }
       }
     },
+    "remote.stale": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last time"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上回"
+          }
+        }
+      }
+    },
     "remote.title": {
       "extractionState": "manual",
       "localizations": {
@@ -3754,6 +3958,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "遥控"
+          }
+        }
+      }
+    },
+    "remote.typeDesk": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type on desktop"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "敲进电脑"
+          }
+        }
+      }
+    },
+    "remote.typeHandheld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type on handheld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "敲进掌机"
           }
         }
       }

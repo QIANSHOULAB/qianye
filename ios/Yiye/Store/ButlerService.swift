@@ -314,6 +314,9 @@ final class ButlerService {
         case .remote(let r, let image):                     // 172 遥控：那台的样子、截图
             RemoteModel.shared.answer(r, image: image)
             return true
+        case .remoteTiles(let r, let tiles):                // 240 遥控：只寄了变了的块
+            RemoteModel.shared.answer(r, image: nil, tiles: tiles)
+            return true
         case .deliver(let d, let audio):
             app.addDelivery(d, audio: audio)
             return true

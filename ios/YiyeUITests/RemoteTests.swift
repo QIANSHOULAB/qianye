@@ -196,4 +196,76 @@ final class RemoteTests: XCTestCase {
         app.buttons["remote.end"].firstMatch.tap()
         check(desk.waitForExistence(timeout: 5), "172-13-结束没回到选机器", "点了结束没回到选电脑 / 掌机")
     }
+
+    // ---------------------------------------------------------------- 240 反馈栏、问大管家、连拍、上回
+
+    private var feedback: XCUIElement { app.staticTexts["remote.feedback"].firstMatch }
+
+    private func feedbackHas(_ word: String, _ timeout: TimeInterval = 8) -> Bool {
+        let end = Date().addingTimeInterval(timeout)
+        repeat {
+            if feedback.exists, feedback.label.contains(word) { return true }
+            usleep(150_000)
+        } while Date() < end
+        return false
+    }
+
+    /// 中文界面：点一下 → 反馈栏「点了」「等画面变…」「点上了」，0.2 / 0.6 / 1.2 秒各截一张；问「点上没」→ 反馈栏出回答；
+    /// 结束再进 → 先显示上回那张（「上回」），新图来了收掉
+    func testFeedbackAskAndLastTime() {
+        let a = XCUIApplication()
+        a.launchArguments = ["-YiyeDemo", "YES", "-YiyeScreen", "remote", "-YiyeLang", "zh-Hans", "-YiyeAppearance", "light",
+                             "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        a.launch()
+        app = a
+        let desk = app.buttons["remote.pick.desk"].firstMatch
+        check(desk.waitForExistence(timeout: 10), "240-01-没有选电脑", "遥控页没有「电脑」那一格")
+        desk.tap()
+        let screen = app.descendants(matching: .any)["remote.screen"].firstMatch
+        check(screen.waitForExistence(timeout: 8), "240-02-没有截图", "选了电脑以后没出截图")
+        check(app.buttons["remote.ask"].exists && app.buttons["remote.send"].exists, "240-03-没有两个按钮", "底下该有「问大管家」「敲进电脑」")
+        sleep(1)
+
+        // 点一下：连拍三张
+        let t0 = Date()
+        screen.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.4)).tap()
+        for (k, at) in [(1, 0.2), (2, 0.6), (3, 1.2)] {
+            let wait = at - Date().timeIntervalSince(t0)
+            if wait > 0 { usleep(UInt32(wait * 1_000_000)) }
+            shot("240-连拍\(k)-\(at)秒")
+        }
+        check(feedbackHas("点上了"), "240-04-没说点上了", "点完反馈栏是「\(feedback.label)」")
+        shot("240-反馈栏")
+
+        // 问大管家
+        let input = app.textFields["remote.input"].firstMatch
+        check(input.waitForExistence(timeout: 5), "240-05-没有输入框", "底下没有输入框")
+        input.tap()
+        input.typeText("点上没")
+        app.buttons["remote.ask"].firstMatch.tap()
+        check(sentStarts("ask 点上没", 3) != nil, "240-06-问的没寄", "寄出去的是 \(sent.label)")
+        check(feedbackHas("大管家在看", 3), "240-07-问了没说在看", "反馈栏是「\(feedback.label)」")
+        check(feedbackHas("右上角", 6), "240-08-没有回答", "反馈栏是「\(feedback.label)」")
+        shot("240-问点上没")
+
+        // 密码开着不让问
+        app.buttons["remote.passToggle"].firstMatch.tap()
+        let secure = app.secureTextFields["remote.input.secure"].firstMatch
+        check(secure.waitForExistence(timeout: 5), "240-09-密码框没换上", "开了密码开关，框没变成点点的")
+        secure.tap()
+        secure.typeText("FakePw240")
+        check(!app.buttons["remote.ask"].firstMatch.isEnabled, "240-10-密码能问大管家", "密码开着「问大管家」还点得动")
+        app.buttons["remote.passToggle"].firstMatch.tap()
+
+        // 结束再进：先是上回那张
+        app.buttons["remote.end"].firstMatch.tap()
+        check(desk.waitForExistence(timeout: 5), "240-11-结束没回到选机器", "点了结束没回到选电脑 / 掌机")
+        desk.tap()
+        let stale = app.descendants(matching: .any)["remote.stale"].firstMatch
+        check(stale.waitForExistence(timeout: 2), "240-12-没显示上回", "再进遥控没先显示上回那张")
+        shot("240-上回")
+        let end = Date().addingTimeInterval(6)
+        while stale.exists && Date() < end { usleep(200_000) }
+        check(!stale.exists, "240-13-上回没收", "新图来了「上回」还在")
+    }
 }

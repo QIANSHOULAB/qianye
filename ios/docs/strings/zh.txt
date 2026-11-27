@@ -208,15 +208,26 @@ paper.green	豆青
 paper.pink	藕粉
 paper.white	素白
 paper.yellow	米黄
+remote.ask	问大管家
 remote.black	截到的是黑的：多半是锁屏或者系统弹窗，得在机器前点
 remote.connecting	在连……
 remote.desk	电脑
 remote.end	结束
 remote.ended	遥控结束了
 remote.failed	这一下没做成
+remote.fb.asking	问了，大管家在看…
+remote.fb.changed	画面变了
+remote.fb.done	点上了
+remote.fb.noAnswer	大管家没看出什么
+remote.fb.none	没反应，再点一次？
+remote.fb.scrolled	滚了
+remote.fb.tapped	点了
+remote.fb.typed	敲进去了
+remote.fb.unchanged	画面没变
+remote.fb.waiting	等画面变…
 remote.handheld	掌机
-remote.hint	点一下 = 左键，长按 = 右键，两指上下滑 = 滚轮。两指张开放大，放大了一指拖着挪。遥控开着，那台屏幕右上角一直写着「手机遥控中」；5 分钟不动自己结束。
-remote.input	在那台的光标处打字
+remote.hint	点一下 = 左键，长按 = 右键，两指上下滑 = 滚轮。两指张开放大，放大了一指拖着挪。底下框里打字：「问大管家」问他点上没、卡在哪，「敲进电脑」把字敲到那台的光标处。遥控开着，那台屏幕右上角一直写着「手机遥控中」；5 分钟不动自己结束。
+remote.input	问「点上没」，或者要敲进去的字
 remote.noPair	还没跟大管家配对
 remote.offline	不在线
 remote.passInput	密码（只显示点点）
@@ -224,7 +235,10 @@ remote.password	密码
 remote.pick	遥控哪一台？
 remote.screen	换屏
 remote.send	发送
+remote.stale	上回
 remote.title	遥控
+remote.typeDesk	敲进电脑
+remote.typeHandheld	敲进掌机
 secret.burn	阅后即焚，关了就没了
 secret.close	关闭
 secret.copied	已复制，2 分钟后清掉

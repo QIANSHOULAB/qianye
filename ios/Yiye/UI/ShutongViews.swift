@@ -69,7 +69,7 @@ struct ShutongSheet: View {
         .presentationDragIndicator(.visible)
         .onAppear { m.load(); m.markRead() }                         // 158：开了窗，大管家的话都算看过
         .onDisappear { m.open = false; BarkModel.shared.focus = nil; if m.recording { m.stopRecording() }; ShutongTalker.shared.stop() }
-        .sheet(isPresented: $remote.guideOpen) { RemoteSheet() }     // 197：从带路卡上开遥控，叠在小书童上面
+        .fullScreenCover(isPresented: $remote.guideOpen) { RemoteSheet() }     // 197：从带路卡上开遥控，叠在小书童上面（240 盖满）
     }
 
     /// 204：从提醒点进来要看的那条在不在：在就等版面排好滚过去，返回 true；还没到（信在路上）返回 false

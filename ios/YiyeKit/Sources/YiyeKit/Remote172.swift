@@ -25,11 +25,17 @@ public struct RemoteOp: Codable, Equatable, Sendable {
     public var text: String?
     /// 197：这一下是照哪张带路的卡点的
     public var guide: String?
+    /// 240：手机现在显示的是第几张（0 = 还没有）。带了它，大管家就走聪明截图：先小图、只寄变了的块、点完连拍
+    public var have: Int?
+    /// 240：shot 等着要：画面变了（或者到点了）大管家才回
+    public var wait: Bool?
+    /// 240：手机要多宽的图（像素）；不带 = 1280
+    public var px: Int?
 
     public init(op: String, session: String? = nil, screen: Int? = nil, shot: Int? = nil, x: Double? = nil, y: Double? = nil,
-                dy: Int? = nil, text: String? = nil, guide: String? = nil) {
+                dy: Int? = nil, text: String? = nil, guide: String? = nil, have: Int? = nil, wait: Bool? = nil, px: Int? = nil) {
         self.op = op; self.session = session; self.screen = screen; self.shot = shot; self.x = x; self.y = y; self.dy = dy; self.text = text
-        self.guide = guide
+        self.guide = guide; self.have = have; self.wait = wait; self.px = px
     }
 
     /// 算「动作」的（5 分钟没有这些，那台自己结束遥控）；截图不算
@@ -56,6 +62,22 @@ public struct RemoteState: Codable, Equatable, Sendable {
     public var blocked: Bool?
     /// 遥控结束了（手机点了结束、5 分钟没动作、开关关着、那台不在线）
     public var ended: Bool?
+    /// 240：这台会聪明截图（手机收到回信马上要下一张，大管家等画面变了才回）
+    public var live: Bool? = nil
+    /// 240：这张是进遥控先发的小图（下一张补清楚的）
+    public var small: Bool? = nil
+    /// 240：跟手机那张（have）比没变：不带图，shot 就是 have
+    public var same: Bool? = nil
+    /// 240：只寄了变了的块：拼在第 base 张上，拼完就是第 shot 张
+    public var base: Int? = nil
+    public var tiles: [RemoteTile]? = nil
+    /// 240：图本身多大（像素）
+    public var iw: Int? = nil
+    public var ih: Int? = nil
+    /// 240：刚做的那一下：moved 画面变了 / wait 还在等 / none 1.2 秒了还没变
+    public var after: String? = nil
+    /// 240：这封是问大管家的回答（text / error 放反馈栏）
+    public var answer: Bool? = nil
 
     public init(on: Bool? = nil, session: String? = nil, screen: Int? = nil, shot: Int? = nil, w: Int? = nil, h: Int? = nil,
                 screens: Int? = nil, image: String? = nil, black: Bool? = nil, blocked: Bool? = nil, ended: Bool? = nil) {

@@ -1,3 +1,4 @@
+0.7.44：遥控快多了、也有回话了。画面盖满整屏，进来先亮上回那张（压暗、写「上回」），新的一到就换；点一下底下那条马上说「点了」「等画面变…」「点上了」，点空了说「没反应，再点一次？」。画面只寄变了的那几块，动的时候一秒三四张、不动就歇着。电脑开着时遥控掌机，以前每点一下要等 20 秒，现在跟遥控电脑一样快。底下框里打字有两个按钮：「问大管家」问他点上没、卡在哪，回答写在那条上；「敲进电脑 / 掌机」照旧把字敲过去。Remote is much faster and now talks back: full-screen view, a status line after every tap, only changed parts of the screen are sent, and you can ask the butler whether it worked.
 0.7.43：名字改成大写 ONE（桌面、设置里、分享图落款、网页版）。出图两处认得更准：开头的「各位同事：」当正文排，不再变成小标题；结尾的单位和日期一起靠右。念出来的声音照旧。Now spelled ONE. Greetings stay in the body, sign-offs sit bottom right.
 0.7.42：大管家有了自己的看板便签：一条便签原地一直更新，头一个是「游戏记录」，躺在「游戏」文件夹里，这周打了几个小时一清二楚（大管家那头跟上就寄来）。它是大管家的地盘，你手记的字下回照样盖掉；扔了也行，下回再给你新开一条。Board notes: your butler keeps one note up to date in place, starting with your game log.
 0.7.41：一叶笺改名叫 one。手机桌面、设置里、分享图落款、网页版都换了新名字；图标还是那片叶子，一叶就是 one。便签、iCloud 里的「一叶笺」文件夹、大管家照旧认，啥都不用搬。Yiye is now “one”. Same leaf, same notes, same iCloud folder.

@@ -6,6 +6,8 @@ import YiyeKit
 /// 172 遥控：工具箱里的一格。先选电脑 / 掌机（只有在线的点得动），然后是那台的截图：
 /// 点一下 = 左键，长按 = 右键，两指上下滑 = 滚轮；底下打字发送，「密码」开着只显示点点。关掉这一页 = 结束。
 /// 181：两指张合在手机上放大缩小截图（1×…5×，不寄给那台）；放大了一指拖 = 挪图，点哪儿还是哪儿；右下角「1×」回整屏。
+/// 240：整页盖满（fullScreenCover），画面占满中间、黑底；底下一条反馈栏（一句人话，跟着状态变）、输入框和两个按钮：
+/// 「问大管家」（回答出现在反馈栏）、「敲进电脑 / 掌机」（原来的打字）。进遥控先显示上回那张，压暗、角上写「上回」。
 struct RemoteSheet: View {
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
@@ -36,6 +38,7 @@ struct RemoteSheet: View {
                 pick(m)
             } else {
                 screen(m)
+                feedback(m)
                 bottom(m)
             }
         }
@@ -99,6 +102,7 @@ struct RemoteSheet: View {
                     .accessibilityIdentifier("remote.guideText")
             }
             ZStack {
+                Color.black
                 if let img = m.image {
                     // 框 = 整张图等比放进去的那一块；放大是把图在框里放大、挪，框外面裁掉
                     Color.clear
@@ -119,6 +123,22 @@ struct RemoteSheet: View {
                             }
                         }
                         .clipped()
+                        .overlay {                                           // 240：上回那张：压暗、角上写「上回」
+                            if m.stale {
+                                ZStack(alignment: .topLeading) {
+                                    Color.black.opacity(0.45)
+                                    Text(t.t("remote.stale"))
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 3)
+                                        .background(Capsule().fill(Color.black.opacity(0.6)))
+                                        .padding(8)
+                                        .accessibilityIdentifier("remote.stale")
+                                }
+                                .allowsHitTesting(false)
+                            }
+                        }
                         .overlay {
                             RemotePad(imageSize: img.size,
                                       zoom: m.zoom,
@@ -129,35 +149,11 @@ struct RemoteSheet: View {
                                       scroll: { x, y, n in m.scroll(x, y, notches: n) })
                         }
                 } else {
-                    ProgressView()
+                    ProgressView().tint(.white)
                 }
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .frame(minHeight: 160)
-            HStack(spacing: 6) {
-                if m.waiting { ProgressView().controlSize(.mini) }
-                Text(m.line ?? "")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color(Ink.text2))
-                    .lineLimit(2)
-                Spacer()
-                if m.zoom.zoomed {                                 // 181：放在图右下角外面，不盖住画面（边角上的叉要点得到）
-                    Button { m.zoom = RemoteZoom() } label: {
-                        Text("1×")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Color(Ink.accent))
-                            .padding(.horizontal, 14)
-                            .frame(height: 30)
-                            .background(Capsule().fill(Color(Ink.btnTop)))
-                            .overlay(Capsule().strokeBorder(Color(Ink.paperEdge), lineWidth: 0.75))
-                            .contentShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("remote.zoomReset")
-                }
-            }
-            .frame(minHeight: 30)
-            .padding(.horizontal, 16)
             if app.demo != nil {                                   // UI 测试看：上一下寄出去的（不含密码）、放大到哪儿
                 Text(m.lastSent)
                     .font(.system(size: 11, design: .monospaced))
@@ -168,14 +164,46 @@ struct RemoteSheet: View {
                     .foregroundStyle(Color(Ink.text2))
                     .accessibilityIdentifier("remote.zoom")
             }
-            Spacer(minLength: 0)
         }
+    }
+
+    // ---------------------------------------------------------------- 240 反馈栏
+    private func feedback(_ m: RemoteModel) -> some View {
+        HStack(alignment: .center, spacing: 8) {
+            if m.waiting || m.asking { ProgressView().controlSize(.small) }
+            Text(m.line ?? " ")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Color(Ink.text))
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("remote.feedback")
+            if m.zoom.zoomed {                                 // 181：放在图外面，不盖住画面（边角上的叉要点得到）
+                Button { m.zoom = RemoteZoom() } label: {
+                    Text("1×")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color(Ink.accent))
+                        .padding(.horizontal, 14)
+                        .frame(height: 30)
+                        .background(Capsule().fill(Color(Ink.btnTop)))
+                        .overlay(Capsule().strokeBorder(Color(Ink.paperEdge), lineWidth: 0.75))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("remote.zoomReset")
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .frame(minHeight: 44)
+        .background(Color(Ink.paper))
+        .overlay(alignment: .top) { Rectangle().fill(Color(Ink.paperEdge)).frame(height: 0.5) }
     }
 
     // ---------------------------------------------------------------- 打字、密码
     private func bottom(_ m: RemoteModel) -> some View {
         @Bindable var m = m
-        return HStack(spacing: 8) {
+        let row = HStack(spacing: 8) {
             Group {
                 if m.password {
                     SecureField(t.t("remote.passInput"), text: $m.draft)
@@ -188,8 +216,7 @@ struct RemoteSheet: View {
             .font(.system(size: 17))
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
-            .submitLabel(.send)
-            .onSubmit { m.sendDraft() }
+            .submitLabel(.done)
             .padding(.horizontal, 12)
             .frame(height: 42)
             .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color(Ink.btnTop)))
@@ -206,14 +233,42 @@ struct RemoteSheet: View {
             .accessibilityLabel(t.t("remote.password"))
             .accessibilityValue(m.password ? "on" : "off")
             .accessibilityIdentifier("remote.passToggle")
-
-            Button(t.t("remote.send")) { m.sendDraft() }
-                .buttonStyle(PlainTextButtonStyle())
-                .disabled(m.draft.isEmpty)
-                .accessibilityIdentifier("remote.send")
         }
         .padding(.horizontal, 16)
+        return VStack(spacing: 6) {
+            row
+            HStack(spacing: 10) {                              // 240：两件事两个按钮，照直写
+                Button(t.t("remote.ask")) { m.askDraft() }
+                    .buttonStyle(RemoteWideButton(filled: false))
+                    .disabled(m.draft.trimmingCharacters(in: .whitespaces).isEmpty || m.password)
+                    .accessibilityIdentifier("remote.ask")
+                Button(t.t(m.target == .handheld ? "remote.typeHandheld" : "remote.typeDesk")) { m.sendDraft() }
+                    .buttonStyle(RemoteWideButton(filled: true))
+                    .disabled(m.draft.isEmpty)
+                    .accessibilityIdentifier("remote.send")
+            }
+            .padding(.horizontal, 16)
+        }
         .padding(.bottom, 10)
+        .background(Color(Ink.paper))
+    }
+}
+
+/// 240：底下那两个宽按钮（「问大管家」空心、「敲进电脑」实心）
+struct RemoteWideButton: ButtonStyle {
+    let filled: Bool
+    @Environment(\.isEnabled) private var enabled
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(filled ? Color.white : Color(Ink.accent))
+            .frame(maxWidth: .infinity, minHeight: 40)
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(filled ? Color(Ink.accent) : Color(Ink.btnTop)))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Color(Ink.accent).opacity(filled ? 0 : 0.6), lineWidth: 1))
+            .opacity(enabled ? (configuration.isPressed ? 0.6 : 1) : 0.4)
+            .contentShape(Rectangle())
     }
 }
 
