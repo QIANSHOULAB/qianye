@@ -1,8 +1,8 @@
-# one · Pretty Notes
+# ONE · Pretty Notes
 
-**Messy notes in. Pretty picture out.** Snap a handwritten page or paste a wall of text, and “one” lays it out as an image worth sharing: titles, number columns, lists, nine paper styles. Opens in English; switch to 中文 top right (it remembers). https://qianshoulab.github.io/qianye/
+**Messy notes in. Pretty picture out.** Snap a handwritten page or paste a wall of text, and “ONE” lays it out as an image worth sharing: titles, number columns, lists, nine paper styles. Opens in English; switch to 中文 top right (it remembers). https://qianshoulab.github.io/qianye/
 
-2026-11-27 改名 one（原名一叶笺 / Yiye）；一叶笺原名千叶，2026-11-03 改名（Song 圈定）；再往前 012 施工时叫誊抄僧。网址不变 https://qianshoulab.github.io/qianye/ ，本机文件夹还叫 誊抄僧。
+2026-11-27 改名 one（原名一叶笺 / Yiye），当晚定为大写 ONE；一叶笺原名千叶，2026-11-03 改名（Song 圈定）；再往前 012 施工时叫誊抄僧。网址不变 https://qianshoulab.github.io/qianye/ ，本机文件夹还叫 誊抄僧。
 
 **随手成画。** 手写拍照或打字粘贴，自动装裱成一张体面好图，拿去分享倍儿有面子。
 
@@ -11,7 +11,7 @@
 整页只有一张纸（0.3.0 起，施工单 013）：写在这张纸上，看也在这张纸上。纸上的字直接就是排好版的样子（标题放大、数字对成一列、纸的底色和纹理都是），点哪改哪，长按一行这行当标题。底下一排版式，点哪个这张纸就换成哪个，字和光标都不动。分享出去的图就是这张纸，一个像素都不差。平时不画图，点「保存相册」「分享」那一下才画、才出文件。
 
 - 网址：https://qianshoulab.github.io/qianye/
-- 中英两套（0.3.4 起）：默认英文，第二语言中文，右上角 EN / 中文 选过就记住，不跟浏览器语言走。界面文字全在 `strings.js`；出图落款中英文都是「one」，存图文件名 `one_日期_时间.png`。
+- 中英两套（0.3.4 起）：默认英文，第二语言中文，右上角 EN / 中文 选过就记住，不跟浏览器语言走。界面文字全在 `strings.js`；出图落款中英文都是「ONE」，存图文件名 `ONE_日期_时间.png`。
 - 一个 `index.html` 加一个 `strings.js`，手机优先。打字到分享点 1 下，拍照、改一个黄字、分享点 3 下（手机上键盘弹着时底下那条收起来不挡字，所以先点键盘上的 ✓ 收键盘，各多 1 下）。
 - 选字、复制、粘贴（0.3.6 起）：手机上双击选词、三击选一行，两头把手拖着改范围，上面一条「复制 / 全选」；点一下光标弹「全选 / 粘贴」。电脑上拖着选、双击、三击，右键是浏览器自己的剪切 / 复制 / 粘贴。长按一行照旧是「这行当标题」。
 - 提意见（0.3.5 起）：页脚末尾、设置（齿轮）底下各一个「提意见 / Feedback」，点了打开邮件，收件人、标题（带版本）、三行提示都填好，最后一行自动带上版本和设备（比如「0.3.5 · iOS 18 · Safari 18」）。只是 mailto，不收任何数据。

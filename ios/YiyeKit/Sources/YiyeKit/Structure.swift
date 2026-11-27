@@ -96,7 +96,25 @@ public enum Structure {
     static let sentenceRe = Re("[,，。;；]")
     static let numParseRe = Re("^([-+]?)([¥$€£￥]?)([0-9][0-9,]*)(\\.[0-9]+)?$")
 
+    // 238：称呼词开头（「致谢」不算；「To do」「To buy」是清单名，也不算）
+    static let saluteStartRe = Re("^(?:各位|尊敬的|亲爱的|致(?!谢)|(?:dear|hi|hello|to(?![ -]?(?:do|buy)s?\\b))(?![a-z]))", [.caseInsensitive])
+    // 238：落款认的日期：2026年11月26日、11月26日、2026-11-26、2026.11.26（斜线一样），后面可以带星期
+    static let signDateRe = Re("^\\s*(?:(?:[0-9]{4}\\s*年\\s*)?[0-9]{1,2}\\s*月\\s*[0-9]{1,2}\\s*[日号]|[0-9]{4}\\s*([./-])\\s*[0-9]{1,2}\\s*\\1\\s*[0-9]{1,2})\\s*(?:[（(]?(?:星期|周)[一二三四五六日天][）)]?)?\\s*$")
+
     // ---------------------------------------------------------------- 小件
+    /// 称呼行（238）：冒号结尾、称呼词开头、整行不超过 20 个字
+    static func isSalute(_ s: String) -> Bool {
+        let t = s.trimmed
+        return t.count <= 20 && colonEndRe.test(t) && saluteStartRe.test(t)
+    }
+
+    /// 日期上面那行能不能算落款（238）：不超过 15 个字、不带句号；清单、数字行、键值、小标题不算
+    static func signName(_ s: String) -> Bool {
+        let t = s.trimmed
+        if t.isEmpty || t.count > 15 || t.contains("。") || endPunctRe.test(t) || colonEndRe.test(t) { return false }
+        return asPair(t) == nil && asList(t) == nil && !kvRe.test(t) && !cnNumRe.test(t) && !bracketSubRe.test(t)
+    }
+
     public static func parseNum(_ raw: String) -> Num? {
         let s = half(raw).replacingOccurrences(of: "，", with: ",").replacingOccurrences(of: "．", with: ".")
         guard let m = numParseRe.match(s) else { return nil }
@@ -276,9 +294,9 @@ public enum Structure {
             else if md.block == .plain && md.centered && md.bold.isEmpty && live.count > 1 && dw(plainOf(runs(of: md))) <= 30 { tIdx = live[0]; titleCenter = true }
         } else {
             let second = live.count > 1 ? lines[live[1]] : nil
-            if dateOnlyRe.test(first.s), let sec = second, sec.md == nil, titleish(sec.s), live.count > 2 {
+            if dateOnlyRe.test(first.s), let sec = second, sec.md == nil, titleish(sec.s), !isSalute(sec.s), live.count > 2 {
                 tIdx = live[1]; meta = first.s
-            } else if titleish(first.s) && live.count > 1 {
+            } else if titleish(first.s) && !isSalute(first.s) && live.count > 1 {      // 称呼不是标题（238）
                 tIdx = live[0]
             }
         }
@@ -306,10 +324,19 @@ public enum Structure {
         while let f = body.first, f.s.isEmpty { body.removeFirst() }
         while let l = body.last, l.s.isEmpty { body.removeLast() }
 
-        // 落款：最后一两行短字，前面空一行、或者以「——」开头、或者里面有日期；上面得有正文
+        // 落款，两种认法：
+        // 1. 全文最后一行是日期：它靠右；紧挨着的上一行是短名字（signName）就一起靠右（238）。不看正文长短
+        // 2. 最后一行不是上面那种日期：最后一两行短字，前面空一行、或者以「——」开头、或者最后是「11/26」这样的日期；上面得有长正文
         let hasPara = body.contains { $0.md == nil && !$0.s.isEmpty && asPair($0.s) == nil && asList($0.s) == nil && !kvRe.test($0.s) && dw($0.s) > 30 }
         var sign: [Line] = []
-        if hasPara {
+        if let last = body.last, last.md == nil, signDateRe.test(last.s), tIdx >= 0 || body.count > 1 {
+            sign = [last]
+            body.removeLast()
+            if let name = body.last, name.md == nil, signName(name.s) {
+                sign.insert(name, at: 0)
+                body.removeLast()
+            }
+        } else if hasPara {
             var k = body.count - 1
             var cand: [Line] = []
             while k >= 0 && cand.count < 2 {
@@ -318,7 +345,7 @@ public enum Structure {
                 cand.insert(l, at: 0); k -= 1
             }
             let before: Line? = k >= 0 ? body[k] : nil
-            if !cand.isEmpty && ((before.map { $0.s.isEmpty } ?? false) || dashStartRe.test(cand[0].s) || cand.contains { dateOnlyRe.test($0.s) }) {
+            if let end = cand.last, (before.map { $0.s.isEmpty } ?? false) || dashStartRe.test(cand[0].s) || dateOnlyRe.test(end.s) {
                 sign = cand
                 body.removeLast(cand.count)
             }
@@ -419,12 +446,14 @@ public enum Structure {
             i += 1
         }
 
-        // 称呼：正文第一行「各车间：」，下面接着正文 → 当正文排
+        // 称呼：只认正文第一行。「各位同事：」这类（isSalute，238）后面空不空行都当正文排；
+        // 别的冒号行（「各车间：」）下面紧接着正文，也当正文排
         if let fb = blocks.firstIndex(where: { b in
             switch b { case .title, .meta, .gap: return false; default: return true }
-        }), case .sub(let packed) = blocks[fb], packed.contains("\u{0}"), fb + 1 < blocks.count, case .para = blocks[fb + 1] {
+        }), case .sub(let packed) = blocks[fb], packed.contains("\u{0}") {
             let raw = String(packed.split(separator: "\u{0}", omittingEmptySubsequences: false).last ?? "")
-            blocks[fb] = .para([Run(raw)], quote: false, center: false, salute: true)
+            let followed: Bool = { if fb + 1 < blocks.count, case .para = blocks[fb + 1] { return true }; return false }()
+            if followed || isSalute(raw) { blocks[fb] = .para([Run(raw)], quote: false, center: false, salute: true) }
         }
         // sub 里带的原样去掉
         blocks = blocks.map { b in

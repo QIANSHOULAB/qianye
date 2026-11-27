@@ -113,7 +113,7 @@ public struct ShareLayout {
     let m: TextMeasurer
     let latin: Bool
 
-    /// mark：落款（中文「一叶笺」，英文「Yiye」）；imageSize：图片路径 → 原始宽高（拿不到就不画那张）
+    /// mark：落款（中英文都是「ONE」）；imageSize：图片路径 → 原始宽高（拿不到就不画那张）
     public static func layout(_ model: SModel, theme: ShareTheme, measurer: TextMeasurer, mark: String, latinMark: Bool = false,
                               imageSize: (String) -> (w: Double, h: Double)? = { _ in nil }) -> ShareLayoutResult {
         ShareLayout(t: theme, m: measurer, latin: latinMark).run(model, mark: mark, imageSize: imageSize)

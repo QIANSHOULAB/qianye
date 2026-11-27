@@ -1,16 +1,16 @@
-CFBundleDisplayName	one
-CFBundleName	one
-NSCameraUsageDescription	拍一页纸，one 在手机上把字认出来。
+CFBundleDisplayName	ONE
+CFBundleName	ONE
+NSCameraUsageDescription	拍一页纸，ONE 在手机上把字认出来。
 NSMicrophoneUsageDescription	录你说的话，跟笔记存在一起。
 NSPhotoLibraryAddUsageDescription	把笔记做成的图存进相册。
 NSSpeechRecognitionUsageDescription	在手机上把你说的话转成字，不上传。
 album.failed	这张图没取出来：%@
-app.name	one
+app.name	ONE
 appearance.dark	深色
 appearance.paper	纸
 appearance.system	跟随系统
 article.fetching	大管家在扒正文
-article.intent	存进 one
+article.intent	存进 ONE
 article.intentDesc	把网页或一段文字存成一条便签。网页的正文，大管家去扒。
 article.needPair	存好了。大管家还没接上，正文先不扒。
 article.needPairShort	大管家还没接上，用现在的字也行。
@@ -39,6 +39,7 @@ batch.cancel	取消
 batch.move	挪到…
 batch.selected	选了 %lld 条
 batch.trash	扔
+board.note	大管家代笔，改了下回照样盖掉
 busy.album	从相册取图…
 busy.import	从文件夹往回搬…
 busy.ocr	认字中，你去摸会儿鱼…
@@ -85,7 +86,7 @@ common.close	关
 common.done	好了
 companion.deepOn	深聊开了：锁屏揣兜里，直接问
 companion.failed	陪玩没开起来：%@
-companion.noMic	one 借不到话筒：Settings › one › Microphone 打开。
+companion.noMic	ONE 借不到话筒：Settings › ONE › Microphone 打开。
 companion.noPanel	直播面板叫不出来
 companion.restart	重开
 dove.empty	先复制钥匙，再点粘贴
@@ -199,7 +200,7 @@ ocr.failed	没认出来：%@
 ocr.nothing	这张图上一个字都没逮到。拍正点、亮点，再来。
 pair.bad	这不是大管家的配对码
 pair.done	接上头了，大管家以后几秒就到。
-pair.noCamera	相机没给：设置里给 one 开一下。
+pair.noCamera	相机没给：设置里给 ONE 开一下。
 pair.scanTitle	对准掌机屏幕上的码
 paper.blue	天青
 paper.follow	跟整体
@@ -238,7 +239,7 @@ settings.butler	大管家
 settings.butlerAuto	拍照、录音的自动交给大管家
 settings.butlerNote	手写认歪的字，交给大管家对着原图理顺，几秒后送回一份干净的。走加密信箱，两头上锁；信箱断了就走镜像文件夹。手机里一把 AI 钥匙都不放。
 settings.companion	陪玩
-settings.companionNote	工具箱里点「陪玩」，苹果弹出直播面板，选 one，开始。听到「叮」就是它在听了，手机该干嘛干嘛，开口就问：它截下你问的那一屏，交给自家大管家，再用嘴回你。工具箱上的小点：绿＝在听，绿闪＝听见你了，橙＝大管家在想，红＝坏了（它会说坏在哪）。它说着你直接插嘴，它就闭嘴。喊「二档」「三档」「四档」想得更深，「回一档」回来。「记住……」它记进记事本。「派个活：……」它复述一遍，你说「对」就派出去。想深聊：陪玩开着锁屏，或点工具箱里的「深聊」，不截屏了，直接问，它想几分钟念给你，全文存进「深聊」文件夹；说「结束」收工。屏幕顶上的红点橙点是苹果在报备，别慌。
+settings.companionNote	工具箱里点「陪玩」，苹果弹出直播面板，选 ONE，开始。听到「叮」就是它在听了，手机该干嘛干嘛，开口就问：它截下你问的那一屏，交给自家大管家，再用嘴回你。工具箱上的小点：绿＝在听，绿闪＝听见你了，橙＝大管家在想，红＝坏了（它会说坏在哪）。它说着你直接插嘴，它就闭嘴。喊「二档」「三档」「四档」想得更深，「回一档」回来。「记住……」它记进记事本。「派个活：……」它复述一遍，你说「对」就派出去。想深聊：陪玩开着锁屏，或点工具箱里的「深聊」，不截屏了，直接问，它想几分钟念给你，全文存进「深聊」文件夹；说「结束」收工。屏幕顶上的红点橙点是苹果在报备，别慌。
 settings.deskStale	「%1$@」有 %2$lld 条还没到电脑
 settings.fontSize	字号
 settings.import	从文件夹导入
@@ -256,9 +257,9 @@ settings.theme	配色
 settings.title	设置
 settings.version	版本
 settings.voice	录一段
-settings.voiceNote	说的话就在手机里变成字，不出门。想按侧键就录：Settings › Action Button › Shortcut › one › 录一段（英文系统叫 Record a voice note）。
-share.mark	one
-share.noPermission	没给存照片的权限：Settings › Privacy & Security › Photos 里给 one 开一下。
+settings.voiceNote	说的话就在手机里变成字，不出门。想按侧键就录：Settings › Action Button › Shortcut › ONE › 录一段（英文系统叫 Record a voice note）。
+share.mark	ONE
+share.noPermission	没给存照片的权限：Settings › Privacy & Security › Photos 里给 ONE 开一下。
 share.save	保存相册
 share.saveFailed	没存上：%@
 share.saved	存进相册了
@@ -296,7 +297,7 @@ shutong.keptAfterEdit	%lld 条你后来改过，没撤，免得盖掉你的字
 shutong.makeFolder	建文件夹：%@
 shutong.mergeInto	合并：%1$@ → %2$@
 shutong.micBusy	陪玩正占着话筒，先关陪玩
-shutong.micDenied	没给话筒权限：Settings › one › Microphone
+shutong.micDenied	没给话筒权限：Settings › ONE › Microphone
 shutong.micFailed	话筒没开起来：%@
 shutong.moveTo	挪：%1$@ → %2$@
 shutong.name	小书童
@@ -362,11 +363,11 @@ trash.toastMany	扔了 %lld 条，3 天后化掉
 trash.today	今天化掉
 trash.tomorrow	明天化掉
 voice.cancel	不要了
-voice.denied	one 借不到话筒，去设置里开一下。
+voice.denied	ONE 借不到话筒，去设置里开一下。
 voice.done	说完了
 voice.failed	录不了：%@
 voice.intent	录一段
-voice.intentDesc	打开 one，直接开录。
+voice.intentDesc	打开 ONE，直接开录。
 voice.listening	说吧，我听着。
 voice.model	第一次用，正在搬语音模型，搬完就好…
 voice.noLang	这台手机听不懂这门语言，这回只录音。

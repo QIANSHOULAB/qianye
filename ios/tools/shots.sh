@@ -114,8 +114,11 @@ for lang in zh-Hans en; do
   done
 done
 # 整体配色（132）：四种新配色 × 浅深，列表、写字页、文件夹面板、设置（中文一套；素白就是默认，主套图里已有）
+# 238 起平时不重拍（32 张约 5 分钟，整轮已经顶到 75 分钟上限）：仓库里留着上回那套；改了配色，跑之前设 SHOTS_THEMES=1
 xcrun simctl status_bar "$SIM" override --time "9:41" >/dev/null 2>&1 || true
-for tid in yellow green blue pink; do
+THEMES=""
+[ -n "${SHOTS_THEMES:-}" ] && THEMES="yellow green blue pink"
+for tid in $THEMES; do
   for ap in light dark; do
     xcrun simctl ui "$SIM" appearance "$ap"
     dir="$OUT/zh-theme-$tid-$ap"

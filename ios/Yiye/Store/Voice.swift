@@ -487,7 +487,7 @@ final class AudioPlayback {
     private func nowPlaying() {
         guard let player else { return }
         MPNowPlayingInfoCenter.default().nowPlayingInfo = [
-            MPMediaItemPropertyTitle: (track?.title).flatMap { $0.isEmpty ? nil : $0 } ?? "one",
+            MPMediaItemPropertyTitle: (track?.title).flatMap { $0.isEmpty ? nil : $0 } ?? "ONE",
             MPMediaItemPropertyPlaybackDuration: player.duration,
             MPNowPlayingInfoPropertyElapsedPlaybackTime: player.currentTime,
             MPNowPlayingInfoPropertyPlaybackRate: playing ? Double(rate) : 0.0,

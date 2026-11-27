@@ -1,9 +1,9 @@
-# one 0.3.7 English UI copy, exported from strings.js. One per line: key<Tab>text. #2 = same string, other case. ⏎ = line break.
+# ONE 0.3.8 English UI copy, exported from strings.js. One per line: key<Tab>text. #2 = same string, other case. ⏎ = line break.
 lang	en
-title	one · Pretty Notes
-appShort	one
-desc	Messy notes in, pretty picture out. Snap a handwritten page or paste a wall of text, and “one” lays it out as an image worth sharing.
-brand	one
+title	ONE · Pretty Notes
+appShort	ONE
+desc	Messy notes in, pretty picture out. Snap a handwritten page or paste a wall of text, and “ONE” lays it out as an image worth sharing.
+brand	ONE
 brandSub	Pretty Notes
 tagline	Messy notes in. Pretty picture out.
 langAria	Language
@@ -63,7 +63,7 @@ ask	Want a feature, spotted something off, or want to talk business? Email the a
 hubBtn	More tools
 fb	Feedback
 done	Done
-fbSubject	[QIANSHOU feedback] one · Pretty Notes 0.3.5
+fbSubject	[QIANSHOU feedback] ONE · Pretty Notes 0.3.5
 fbBody	What’s not working: |  | What you want: |  | Anything else: |  |  | —
 noTitle	OK, no title.
 asTitle	OK, that’s the title now.
@@ -98,7 +98,7 @@ doneMarks#2	Done. The monk isn’t sure about 3 highlighted characters. Tap to f
 done1	Done.
 fellBack	Google tripped up, so it was read on this device instead: HTTP 503 …
 failed	Couldn’t read it: …
-mark	one
-markLetter	— one —
-filePrefix	one
+mark	ONE
+markLetter	— ONE —
+filePrefix	ONE
 sample	Weekly sales ⏎ North 1,280 units ⏎ South 960 units ⏎ East 1,105 units ⏎ West 87 units ⏎ Total 3,432 units ⏎  ⏎ Systems go down Friday from 8 to noon for maintenance. Save your work first. Yes, again.

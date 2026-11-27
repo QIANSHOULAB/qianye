@@ -206,7 +206,7 @@ struct ShareScreen: View {
             if let data = img.pngData() {
                 let f = DateFormatter()
                 f.dateFormat = "yyyyMMdd_HHmmss"
-                let name = "one_\(f.string(from: Date()))_\(th.id).png"
+                let name = "ONE_\(f.string(from: Date()))_\(th.id).png"
                 let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)
                 try? data.write(to: url, options: .atomic)
                 files[th.id] = url

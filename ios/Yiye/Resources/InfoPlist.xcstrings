@@ -7,13 +7,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "one"
+            "value": "ONE"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "one"
+            "value": "ONE"
           }
         }
       }
@@ -24,13 +24,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "one"
+            "value": "ONE"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "one"
+            "value": "ONE"
           }
         }
       }
@@ -41,13 +41,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Snap a page and one turns the writing into text, right on your phone."
+            "value": "Snap a page and ONE turns the writing into text, right on your phone."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "拍一页纸，one 在手机上把字认出来。"
+            "value": "拍一页纸，ONE 在手机上把字认出来。"
           }
         }
       }

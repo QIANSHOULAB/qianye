@@ -305,10 +305,10 @@ public enum CompanionTrouble: Equatable, Sendable, CaseIterable {
     /// 念的（也是弹的那行字）：短，说清哪一步坏了
     public var words: String {
         switch self {
-        case .noMic: return "麦克风没开，去设置里给 one 开麦克风"
+        case .noMic: return "麦克风没开，去设置里给 ONE 开麦克风"
         case .earFailed: return "话筒打不开，停一下直播再开"
         case .noFrame: return "没截到屏幕，只问了话"
-        case .frameRefused: return "直播不认这个 one，停了重开"
+        case .frameRefused: return "直播不认这个 ONE，停了重开"
         case .liveDown: return "直播断了，只问了话"
         case .noPair: return "还没配大管家的信箱"
         case .away: return "大管家不在"

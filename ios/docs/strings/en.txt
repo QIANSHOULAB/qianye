@@ -1,16 +1,16 @@
-CFBundleDisplayName	one
-CFBundleName	one
-NSCameraUsageDescription	Snap a page and one turns the writing into text, right on your phone.
+CFBundleDisplayName	ONE
+CFBundleName	ONE
+NSCameraUsageDescription	Snap a page and ONE turns the writing into text, right on your phone.
 NSMicrophoneUsageDescription	Records what you say and keeps it with the note.
 NSPhotoLibraryAddUsageDescription	Saves the pictures you make from notes to your Photos.
 NSSpeechRecognitionUsageDescription	Turns your voice into text right on your phone.
 album.failed	Couldn’t get that photo: %@
-app.name	one
+app.name	ONE
 appearance.dark	Dark
 appearance.paper	Paper
 appearance.system	System
 article.fetching	The butler is pulling the text
-article.intent	Save to one
+article.intent	Save to ONE
 article.intentDesc	Saves a page or some text as a note. The butler pulls the article text.
 article.needPair	Saved. The butler isn’t connected yet, so no text pull.
 article.needPairShort	The butler isn’t connected. The text as it is works too.
@@ -39,6 +39,7 @@ batch.cancel	Cancel
 batch.move	Move to…
 batch.selected	%lld selected
 batch.trash	Trash
+board.note	Written by your butler. Edits get overwritten.
 busy.album	Getting the photo…
 busy.import	Bringing your notes home…
 busy.ocr	Squinting at your handwriting…
@@ -85,7 +86,7 @@ common.close	Close
 common.done	Done
 companion.deepOn	Deep talk is on. Lock it, pocket it, just ask.
 companion.failed	Buddy mode didn’t start: %@
-companion.noMic	“one” can't borrow the mic. Turn it on in Settings › one › Microphone.
+companion.noMic	“ONE” can't borrow the mic. Turn it on in Settings › ONE › Microphone.
 companion.noPanel	Couldn’t open the broadcast panel
 companion.restart	Restart
 dove.empty	Copy a key, then tap Paste
@@ -199,7 +200,7 @@ ocr.failed	Couldn’t read it: %@
 ocr.nothing	Not a single word in that one. Straighter, brighter, again.
 pair.bad	That’s not a butler pairing code.
 pair.done	Linked. The butler's now seconds away.
-pair.noCamera	No camera access. Turn it on for “one” in Settings.
+pair.noCamera	No camera access. Turn it on for “ONE” in Settings.
 pair.scanTitle	Point at the code on the PC’s screen
 paper.blue	Sky
 paper.follow	Follow the app
@@ -238,7 +239,7 @@ settings.butler	Butler
 settings.butlerAuto	Auto-send scans and voice notes
 settings.butlerNote	Scribbles the phone misreads go to your butler, who checks them against the photo and sends back a clean copy in seconds. Encrypted mailbox, locked at both ends; if it's down, the mirror folder takes over. Zero AI keys on this phone.
 settings.companion	Buddy
-settings.companionNote	Toolbox, tap Buddy, Apple pops a broadcast panel, pick “one”, start. A ding means it's listening: use your phone as usual and just ask out loud. It grabs the screen you asked about, hands it to your own butler, and answers out loud. Dots on the toolbox: green = listening, blinking = heard you, orange = butler's thinking, red = broke (it'll say what). Cut in any time, it shuts up. Say “二档 / 三档 / 四档” and it thinks harder, “回一档” to go back. “记住……” goes in its notebook. “派个活：……” it reads the job back, say “对” and it's dispatched. Deep talk: lock the phone with Buddy on, or tap Deep talk in the toolbox. No screen, just ask; it thinks a few minutes and reads you the answer; the full text lands in the 深聊 folder. Say “结束” to stop. The red and orange dots up top are Apple's broadcast lights. Relax.
+settings.companionNote	Toolbox, tap Buddy, Apple pops a broadcast panel, pick “ONE”, start. A ding means it's listening: use your phone as usual and just ask out loud. It grabs the screen you asked about, hands it to your own butler, and answers out loud. Dots on the toolbox: green = listening, blinking = heard you, orange = butler's thinking, red = broke (it'll say what). Cut in any time, it shuts up. Say “二档 / 三档 / 四档” and it thinks harder, “回一档” to go back. “记住……” goes in its notebook. “派个活：……” it reads the job back, say “对” and it's dispatched. Deep talk: lock the phone with Buddy on, or tap Deep talk in the toolbox. No screen, just ask; it thinks a few minutes and reads you the answer; the full text lands in the 深聊 folder. Say “结束” to stop. The red and orange dots up top are Apple's broadcast lights. Relax.
 settings.deskStale	%2$lld notes in “%1$@” haven’t reached the PC
 settings.fontSize	Text size
 settings.import	Import from folder
@@ -256,8 +257,8 @@ settings.theme	Color
 settings.title	Settings
 settings.version	Version
 settings.voice	Voice notes
-settings.voiceNote	Speech turns into text right here on the phone. Nothing leaves. Side-button recording: Settings › Action Button › Shortcut › one › Record a voice note.
-share.mark	one
+settings.voiceNote	Speech turns into text right here on the phone. Nothing leaves. Side-button recording: Settings › Action Button › Shortcut › ONE › Record a voice note.
+share.mark	ONE
 share.noPermission	Can't save to Photos. Allow it in Settings › Privacy & Security › Photos.
 share.save	Save
 share.saveFailed	Didn’t save: %@
@@ -296,7 +297,7 @@ shutong.keptAfterEdit	%lld notes you edited later were left as they are.
 shutong.makeFolder	New folder: %@
 shutong.mergeInto	Merge: %1$@ → %2$@
 shutong.micBusy	Buddy mode has the mic. Turn it off first.
-shutong.micDenied	No mic access. Settings › one › Microphone.
+shutong.micDenied	No mic access. Settings › ONE › Microphone.
 shutong.micFailed	Mic didn’t start: %@
 shutong.moveTo	Move: %1$@ → %2$@
 shutong.name	Scribe
@@ -362,11 +363,11 @@ trash.toastMany	%lld notes in the trash. Gone in 3 days.
 trash.today	Gone today
 trash.tomorrow	Gone tomorrow
 voice.cancel	Discard
-voice.denied	“one” can't borrow the mic. Allow it in Settings.
+voice.denied	“ONE” can't borrow the mic. Allow it in Settings.
 voice.done	Done
 voice.failed	Couldn’t record: %@
 voice.intent	Record a voice note
-voice.intentDesc	Opens “one” and starts recording.
+voice.intentDesc	Opens “ONE” and starts recording.
 voice.listening	Go ahead, I’m listening.
 voice.model	First run: hauling in the speech model…
 voice.noLang	This phone doesn't speak that language. Audio only this time.
