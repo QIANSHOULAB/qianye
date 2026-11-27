@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(CoreGraphics)
+import CoreGraphics        // iOS 上 CGRect 的 minX、width 这些在这里头
+#endif
 
 // 222：听力原文里点一下选一个词、点两下选整句。切词、认点两下、手指落点归哪个词、什么时候能自己滚，不碰 UIKit，能单测。
 

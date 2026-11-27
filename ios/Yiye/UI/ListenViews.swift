@@ -435,7 +435,7 @@ struct TextSheet: View {
         .coordinateSpace(.named("textsheet"))
         .overlay { cardLayer }
         .background(PaperBackground().ignoresSafeArea())
-        .translationTask(translator.config) { [translator] session in await translator.run(session) }
+        .translationTask(translator.config) { [translator = self.translator] session in await translator.run(session) }
         .onAppear(perform: demoPick)
         .onDisappear { translator.cancel() }
     }
