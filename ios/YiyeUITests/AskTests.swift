@@ -42,10 +42,18 @@ final class AskTests: XCTestCase {
         shot("203-\(tag)卡")
         app.buttons[button].firstMatch.tap()
         let state = app.staticTexts["shutong.askState"].firstMatch
-        let said = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true AND label == %@", words), object: state)
-        // 222：CI 模拟器慢的那轮字改过来了但 10 秒没读到（11-27 cd27893，这条跑了 93 秒），放到 30 秒
-        check(XCTWaiter().wait(for: [said], timeout: 30) == .completed, "203-\(tag)4-卡没变",
-              "点完应该写「\(words)」，现在是 \(state.exists ? state.label : "（没有）")")
+        func said(_ timeout: TimeInterval) -> Bool {
+            let e = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true AND label == %@", words), object: state)
+            return XCTWaiter().wait(for: [e], timeout: timeout) == .completed
+        }
+        // 222：CI 模拟器慢的时候 10 秒读不到（11-27 cd27893）；整套第一条（模拟器刚开机）那一下还会点丢（62c4b90，卡原样没动）：
+        // 按钮还在才补点一下，再等 30 秒
+        var done = said(15)
+        if !done {
+            if yes.exists { app.buttons[button].firstMatch.tap() }
+            done = said(30)
+        }
+        check(done, "203-\(tag)4-卡没变", "点完应该写「\(words)」，现在是 \(state.exists ? state.label : "（没有）")")
         check(!yes.exists, "203-\(tag)5-按钮还在", "点过了按钮要收")
         shot("203-\(tag)点完")
     }
