@@ -51,6 +51,20 @@ if [ "$urc" != 0 ]; then echo "::error::UI 测试没过（ios/shots/uitest/结�
 xcrun simctl install "$SIM" "$APP"
 mkdir -p "$OUT"
 fail=0
+# 出图样张（228）：tools/brief-samples/ 里的稿子，每张纸各出一张（手机上同一个画图的代码），存 $OUT/228/
+if [ -d "$ROOT/tools/brief-samples" ]; then
+  rm -rf "$OUT/228"; mkdir -p "$OUT/228"
+  S228="$(cd "$OUT/228" && pwd)"
+  SIMCTL_CHILD_TZ=Asia/Singapore xcrun simctl launch "$SIM" "$BID" -YiyeDemo YES -YiyeScreen render-samples -YiyeSamplesIn "$ROOT/tools/brief-samples" -YiyeSamplesOut "$S228" -YiyeLang zh-Hans -YiyeAppearance light -AppleLanguages "(zh-Hans)" -AppleLocale zh_CN >/dev/null || true
+  for i in $(seq 1 45); do [ -f "$S228/done.txt" ] && break; sleep 2; done
+  echo "出图样张：$(cat "$S228/done.txt" 2>/dev/null || echo 没出完) 张"
+  for p in "$S228"/*.png; do
+    [ -e "$p" ] || continue
+    sips -s format jpeg -s formatOptions 86 "$p" --out "${p%.png}.jpg" >/dev/null && rm "$p"
+  done
+  rm -f "$S228/done.txt"
+  xcrun simctl terminate "$SIM" "$BID" >/dev/null 2>&1 || true
+fi
 for lang in zh-Hans en; do
   short=$([ "$lang" = zh-Hans ] && echo zh || echo en)
   locale=$([ "$lang" = zh-Hans ] && echo zh_CN || echo en_US)

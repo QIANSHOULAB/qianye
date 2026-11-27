@@ -49,6 +49,13 @@ public enum Markdown5 {
     static let centerRe = Re("^<center>(.*)</center>[ \\t]*$")
     static let imageRe = Re("^!\\[[^\\]]*\\]\\(([^)\\s]+)\\)[ \\t]*$")
     static let boldRe = Re("\\*\\*(?=\\S)(.+?)(?<=\\S)\\*\\*")
+    static let numberedPrefixRe = Re("^([0-9]{1,3})(?:\\.[ \\t]+|[、．)）][ \\t]*)(?=\\S)")
+
+    /// 一行开头的编号（「1. 」「2、」「3) 」；「1.5 米」「2026.11.27」不算）：prefix 是连空格的那一截，number 是数
+    public static func numberedPrefix(_ line: String) -> (prefix: String, number: String)? {
+        guard let m = numberedPrefixRe.match(line), let all = m[0], let n = m[1] else { return nil }
+        return (all, n)
+    }
 
     public static func parse(_ text: String) -> [MDLine] {
         lineSpans(text).map { parseLine($0.text, at: $0.range.location) }

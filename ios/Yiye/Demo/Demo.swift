@@ -20,6 +20,7 @@ struct DemoConfig {
         switch screen {
         case "share-white": return "white"
         case "share-note": return "note"
+        case "share-brief": return "brief"
         default: return nil
         }
     }
@@ -55,6 +56,24 @@ enum Demo {
               w: ["bitcoin": "比特币（一种加密货币）", "dollars": "美元", "on": "在", "monday": "星期一"],
               p: [.init(t: "fell below", zh: "跌破")]),
     ])
+
+    /// 228：-YiyeSamplesIn 里的每个 .md，用每张纸各出一张图，存进 -YiyeSamplesOut；出完写一个 done.txt
+    static func renderSamples(_ app: AppModel) {
+        let d = UserDefaults.standard
+        guard let from = d.string(forKey: "YiyeSamplesIn"), let to = d.string(forKey: "YiyeSamplesOut") else { return }
+        let names = ((try? FileManager.default.contentsOfDirectory(atPath: from)) ?? []).filter { $0.hasSuffix(".md") }.sorted()
+        var made = 0
+        for name in names {
+            guard let md = try? String(contentsOfFile: "\(from)/\(name)", encoding: .utf8) else { continue }
+            for theme in ShareTheme.all {
+                let img = ShareRenderer.render(md, theme: theme, mark: app.lang.t("share.mark"), latin: !app.lang.isZh,
+                                               store: app.attachments, scale: 2)
+                let url = URL(fileURLWithPath: "\(to)/\(name.dropLast(3))-\(theme.id).png")
+                if (try? img.pngData()?.write(to: url)) != nil { made += 1 }
+            }
+        }
+        try? "\(made)".write(toFile: "\(to)/done.txt", atomically: true, encoding: .utf8)
+    }
 
     static func seed(_ app: AppModel, _ cfg: DemoConfig) {
         let zh = cfg.lang == "zh-Hans"
@@ -283,6 +302,7 @@ enum Demo {
         case "listen-rate":
             app.settings.listenRepeat = 0                  // UI 测试跑得慢也别自己跳到下一篇
             app.listening = ListenOpen(startNote: listenFirst)
+        case "render-samples": Demo.renderSamples(app)       // 228：样稿用每张纸各出一张图，写到给的文件夹（shots.sh 用）
         case "call": app.companion.startCall()
         case "remote": RemoteModel.shared.open = true        // 172：遥控（假大管家回画出来的屏）
         case "todo": TodoDesk.shared.demo(zh: zh)          // 162：两条待办寄到，第二条 6 秒后「办完了」

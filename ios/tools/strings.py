@@ -79,6 +79,7 @@ S = {
  "share.mark": ("一叶笺", "Yiye"),
  "theme.note": ("便签", "Note"),
  "theme.white": ("白纸", "Plain"),
+ "theme.brief": ("简报", "Brief"),
  "common.close": ("关", "Close"),
  "common.done": ("好了", "Done"),
  "common.cancel": ("取消", "Cancel"),
@@ -425,7 +426,7 @@ root = pathlib.Path(__file__).resolve().parents[1]
 used = set()
 for f in (root / "Yiye").rglob("*.swift"):
     used |= set(re.findall(r'\.(?:t|f)\("([a-zA-Z][a-zA-Z0-9_.]+)"', f.read_text(encoding="utf-8")))
-used |= {"voice.intent", "voice.intentDesc"} | {f"paper.{p}" for p in ["white", "yellow", "green", "blue", "pink", "follow"]} | {"theme.note", "theme.white"}
+used |= {"voice.intent", "voice.intentDesc"} | {f"paper.{p}" for p in ["white", "yellow", "green", "blue", "pink", "follow"]} | {"theme.note", "theme.white", "theme.brief"}
 missing = sorted(used - set(S))
 bad = [k for k, (zh, en) in S.items() if sorted(re.findall(r"%(?:lld|@)", zh)) != sorted(re.findall(r"%(?:lld|@)", en))]
 if missing or bad:

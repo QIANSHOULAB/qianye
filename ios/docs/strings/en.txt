@@ -341,6 +341,7 @@ star.banned	No more %@
 star.by	Voiced by %@
 star.n	%lld stars
 star.undo	Undo
+theme.brief	Brief
 theme.note	Note
 theme.white	Plain
 time.yesterday	Yesterday

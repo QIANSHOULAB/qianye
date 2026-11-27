@@ -122,6 +122,16 @@ public enum Structure {
         return (label, n, (m[3] ?? "").trimmed, totalRe.test(label))
     }
 
+    /// 一行字（带粗细）开头是「1. 」「2、」这样的编号：拆成编号和后面的字。不是：nil
+    static func numbered(_ runs: [Run]) -> (marker: String, rest: [Run])? {
+        guard let first = runs.first, !first.bold, let p = Markdown5.numberedPrefix(plainOf(runs)),
+              first.text.count >= p.prefix.count else { return nil }
+        var rest = runs
+        rest[0].text = String(first.text.dropFirst(p.prefix.count))
+        if rest[0].text.isEmpty { rest.removeFirst() }
+        return rest.isEmpty ? nil : (p.number + ".", rest)
+    }
+
     public static func asList(_ line: String) -> (marker: String, body: String)? {
         for (re, mk) in listRes {
             if let m = re.match(line), let body = m[2] { return (mk(m), body) }
@@ -327,7 +337,12 @@ public enum Structure {
                     return .row(RowItem(marker: "•", label: r, num: nil, unit: "", total: false))
                 case .quote: return .block(.para(r, quote: true, center: md.centered, salute: false))
                 case .image(let p): return .block(.image(p))
-                default: return .block(.para(r, quote: false, center: md.centered, salute: false))
+                default:
+                    // 228：编号步骤带粗体（大管家 227 起会写「3. 换上 **T12** …」）也按清单排：编号挂左边，折行跟第一行的字对齐
+                    if md.block == .plain && !md.centered, let n = numbered(r) {
+                        return .row(RowItem(marker: n.marker, label: n.rest, num: nil, unit: "", total: false))
+                    }
+                    return .block(.para(r, quote: false, center: md.centered, salute: false))
                 }
             }
             if l.s.isEmpty { return .gap }

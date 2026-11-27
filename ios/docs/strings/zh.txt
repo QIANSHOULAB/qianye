@@ -341,6 +341,7 @@ star.banned	以后不用 %@
 star.by	%@ 配的
 star.n	%lld 星
 star.undo	撤回
+theme.brief	简报
 theme.note	便签
 theme.white	白纸
 time.yesterday	昨天

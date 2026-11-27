@@ -140,6 +140,13 @@ struct MarkdownStyler {
 
     func font(_ size: CGFloat, _ w: UIFont.Weight = .regular) -> UIFont { UIFont.systemFont(ofSize: size, weight: w) }
 
+    /// 第一行顶格，折下来的行缩进 hanging（编号清单）
+    func para(hanging: CGFloat) -> NSParagraphStyle {
+        let p = (para() as! NSMutableParagraphStyle)
+        p.headIndent = hanging
+        return p
+    }
+
     func para(_ align: NSTextAlignment = .natural, height: CGFloat? = nil, indent: CGFloat = 0) -> NSParagraphStyle {
         let p = NSMutableParagraphStyle()
         let h = height ?? m.line
@@ -197,6 +204,11 @@ struct MarkdownStyler {
                 color = Ink.text2
             default:
                 break
+            }
+            // 228：编号步骤折行跟第一行的字对齐，不跟编号对齐
+            if l.block == .plain && !l.centered, let p = Markdown5.numberedPrefix(ns.substring(with: l.content)) {
+                let w = (p.prefix as NSString).size(withAttributes: [.font: cf]).width
+                s.addAttribute(.paragraphStyle, value: para(hanging: ceil(w)), range: lineR)
             }
             if l.content.length > 0 {
                 s.addAttributes([.font: cf, .foregroundColor: color], range: l.content)

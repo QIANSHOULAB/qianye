@@ -5730,6 +5730,23 @@
         }
       }
     },
+    "theme.brief": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brief"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "简报"
+          }
+        }
+      }
+    },
     "theme.note": {
       "extractionState": "manual",
       "localizations": {

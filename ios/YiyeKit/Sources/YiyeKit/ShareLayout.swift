@@ -1,6 +1,6 @@
 import Foundation
 
-// 出图排版：块 → 绘制指令（网页版 index.html 的 layout() 搬过来，只留「便签」「白纸」两个版式），
+// 出图排版：块 → 绘制指令（网页版 index.html 的 layout() 搬过来，「便签」「白纸」两个版式，228 加「简报」），
 // 再加 Markdown 五招（分级标题、引用、居中、粗体）和图片。
 // 量字宽靠 TextMeasurer：手机上用 CoreText 量，测试里用假的。
 
@@ -53,6 +53,12 @@ public struct ShareTheme: Sendable, Equatable {
     public var markerColor: RGBA, markerDot: Bool
     public var quoteColor: RGBA, quoteBar: RGBA
     public var footer: FooterKind
+    /// 小标题前面的细竖条（228 简报；nil = 没有）
+    public var headingBar: RGBA? = nil
+    /// 引用垫的浅色块（228 简报；nil = 照旧画一条引用线）
+    public var quoteFill: RGBA? = nil
+    /// 小标题上面多空出来的一截
+    public var sectionGap: Double = 0
 
     /// 便签（默认）：暖白纸、细噪点、橙红点缀
     public static let note = ShareTheme(
@@ -74,7 +80,18 @@ public struct ShareTheme: Sendable, Equatable {
         markerColor: RGBA(hex: "#E0A100"), markerDot: true,
         quoteColor: RGBA(hex: "#6E6E73"), quoteBar: RGBA(hex: "#E0A100", alpha: 0.55), footer: .plain)
 
-    public static let all: [ShareTheme] = [.note, .white]
+    /// 简报（228）：办公文档的样子。纯白、留白大、标题粗而靠左，小标题前一条深海军蓝细竖条，引用是浅灰色块；数字和粗体用最深的墨色
+    public static let brief = ShareTheme(
+        id: "brief", bg: RGBA(hex: "#FFFFFF"), noiseAlpha: 0, noiseSeed: 0, pad: (48, 36, 30, 36),
+        ink: RGBA(hex: "#0B1526"), body: RGBA(hex: "#3A3F4A"), muted: RGBA(hex: "#868B95"), accent: RGBA(hex: "#16345C"), rule: RGBA(hex: "#E4E6EB"),
+        titleSize: 27, titleWeight: 700, titleLh: 1.24, titleGap: 14, metaSize: 12.5,
+        size: 16, lh: 1.66, rowLh: 1.9,
+        subSize: 16.5, subWeight: 700, subColor: RGBA(hex: "#16345C"), subRule: false,
+        markerColor: RGBA(hex: "#16345C"), markerDot: true,
+        quoteColor: RGBA(hex: "#3A3F4A"), quoteBar: RGBA(hex: "#16345C"), footer: .plain,
+        headingBar: RGBA(hex: "#16345C"), quoteFill: RGBA(hex: "#F2F3F6"), sectionGap: 8)
+
+    public static let all: [ShareTheme] = [.note, .white, .brief]
     public static func byID(_ id: String) -> ShareTheme { all.first { $0.id == id } ?? .note }
 }
 
@@ -164,25 +181,48 @@ public struct ShareLayout {
                 default: hs = size; hw = 700; color = t.ink
                 }
                 y += level == 1 ? 8 : 6
+                if level <= 2 { y += t.sectionGap }
                 let f = font(hs, hw)
                 let flat = runs.map { Run($0.text, bold: false) }
-                let ls = wrapRuns(flat, f, f, cw)
+                let barIn: Double = (t.headingBar != nil && level == 2 && !center) ? 12 : 0
+                let ls = wrapRuns(flat, f, f, cw - barIn)
                 let lh = hs * 1.4
                 for (i, l) in ls.enumerated() {
-                    segs(l, x0, y + lh * Double(i) + hs * 0.92 + (lh - hs) / 2, color, boldColor: color, center: center, base: f)
+                    segs(l, x0 + barIn, y + lh * Double(i) + hs * 0.92 + (lh - hs) / 2, color, boldColor: color, center: center, base: f)
+                }
+                if barIn > 0, let bar = t.headingBar {
+                    ops.append(.rect(x: x0, y: y + (lh - hs) / 2 + 1, w: 3, h: Double(ls.count - 1) * lh + hs, fill: bar, stroke: nil, radius: 1.5))
                 }
                 y += Double(ls.count) * lh
                 if level == 2 && t.subRule { y += 4; line(x0, y, x1, y, t.rule, 0.8) }
                 y += level == 1 ? 8 : 6
             case .sub(let s):
                 let f = font(t.subSize, t.subWeight)
-                y += 6
-                let ls = wrap(s, f, cw)
-                for (i, l) in ls.enumerated() { text(l, x0, y + t.subSize * Double(i + 1) * 1.35 - t.subSize * 0.25, f, t.subColor) }
+                y += 6 + t.sectionGap
+                let barIn: Double = t.headingBar != nil ? 12 : 0
+                let ls = wrap(s, f, cw - barIn)
+                for (i, l) in ls.enumerated() { text(l, x0 + barIn, y + t.subSize * Double(i + 1) * 1.35 - t.subSize * 0.25, f, t.subColor) }
+                if barIn > 0, let bar = t.headingBar {
+                    ops.append(.rect(x: x0, y: y + t.subSize * 0.18, w: 3, h: Double(ls.count - 1) * t.subSize * 1.35 + t.subSize, fill: bar, stroke: nil, radius: 1.5))
+                }
                 y += Double(ls.count) * t.subSize * 1.35
                 if t.subRule { y += 6; line(x0, y, x1, y, t.rule, 0.8) }
                 y += 10
             case .para(let runs, let quote, let center, _):
+                if quote, let fill = t.quoteFill {
+                    // 浅色块先垫上，字写在上面
+                    let side = 14.0, top = 9.0
+                    let ls = wrapRuns(runs, bodyFont, boldFont, cw - side * 2, orphanFix: true)
+                    let h = Double(ls.count) * bodyLh + top * 2
+                    y += 4
+                    ops.append(.rect(x: x0, y: y, w: cw, h: h, fill: fill, stroke: nil, radius: 8))
+                    for (i, l) in ls.enumerated() {
+                        let yb = y + top + bodyLh * Double(i) + size * 0.92 + (bodyLh - size) / 2
+                        segs(l, x0 + side, yb, t.quoteColor, boldColor: t.ink, center: center)
+                    }
+                    y += h + 8
+                    continue
+                }
                 let inset: Double = quote ? 16 : 0
                 let ls = wrapRuns(runs, bodyFont, boldFont, cw - inset, orphanFix: true)
                 let y0 = y
