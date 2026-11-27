@@ -67,7 +67,9 @@ final class BarkTests: XCTestCase {
         check(steps.waitForExistence(timeout: 5), "204-S2-没写步骤", "开着的时候要写在 Bark 里粘到哪")
         shot("204-开着")
         flip(toggle)
-        check(steps.waitForNonExistence(timeout: 8), "204-S3-关不掉", "关了开关，步骤还在")
+        // 228：第一下也会没点上（11-27 354f358，开关纹丝没动）：开关还是开着的才补点一下
+        if !steps.waitForNonExistence(timeout: 8), toggle.value as? String == "1" { flip(toggle) }
+        check(steps.waitForNonExistence(timeout: 15), "204-S3-关不掉", "关了开关，步骤还在")
         let off = app.staticTexts.matching(NSPredicate(format: "label == %@", "鸽子到了：提醒里不带内容了")).firstMatch
         check(off.waitForExistence(timeout: 8), "204-S4-没回话", "关了以后没看到大管家那句")
         shot("204-关了")
