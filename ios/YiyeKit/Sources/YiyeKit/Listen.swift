@@ -128,7 +128,8 @@ public struct ButlerDelivery: Codable, Equatable, Sendable {
     public var id: String
     public var kind: String
     public var title: String?
-    public var text: String
+    /// 补译的信（231）不带 text：当空字符串
+    @DefaultEmpty public var text: String
     /// 相对镜像根，比如「附件/<id>.mp3」
     public var audio: String?
     public var marks: [ListenMark]?
@@ -162,10 +163,20 @@ public struct ButlerDelivery: Codable, Equatable, Sendable {
     public var detail: String?
     public var expires: String?
     public var bark: Bool?
+    /// kind=listen（225）：谁配的、几星（v3.21 / v3.22，见 Voice225.swift），大管家译好的意思（v3.23）
+    public var voice: ListenVoice?
+    public var trans: ListenTrans?
     public init(v: Int = Butler.version, id: String, kind: String = "listen", title: String? = nil, text: String,
-                audio: String?, marks: [ListenMark]?, folder: String? = nil, at: String? = nil, note: String? = nil, request: String? = nil) {
+                audio: String?, marks: [ListenMark]?, folder: String? = nil, at: String? = nil, note: String? = nil, request: String? = nil,
+                voice: ListenVoice? = nil, trans: ListenTrans? = nil) {
         self.v = v; self.id = id; self.kind = kind; self.title = title; self.text = text
         self.audio = audio; self.marks = marks; self.folder = folder; self.at = at; self.note = note; self.request = request
+        self.voice = voice; self.trans = trans
+    }
+
+    /// 补译的信（v3.23）：指名一条手机上已有的稿，只带 trans，没有录音、没有字
+    public var isTransLetter: Bool {
+        (kind.isEmpty || kind == "listen") && note != nil && audio == nil && !(trans?.isEmpty ?? true) && text.isEmpty
     }
 }
 

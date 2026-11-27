@@ -202,6 +202,12 @@ S = {
  "word.noPair": ("这台手机的系统翻不了英文到中文。", "This phone’s system can’t turn English into Chinese."),
  "word.failed": ("没翻出来：%@", "Couldn’t translate it: %@"),
  "word.retry": ("再翻一次", "Try again"),
+ # 225：大管家译好的意思用不上时的角标；谁配的、打几星
+ "word.system": ("系统翻译", "System translation"),
+ "star.by": ("%@ 配的", "Voiced by %@"),
+ "star.banned": ("以后不用 %@", "No more %@"),
+ "star.undo": ("撤回", "Undo"),
+ "star.n": ("%lld 星", "%lld stars"),
  "article.intent": ("存进一叶笺", "Save to Yiye"),
  "article.intentDesc": ("把网页或一段文字存成一条便签。网页的正文，大管家去扒。", "Saves a page or some text as a note. The butler pulls the article text."),
  "article.paramURL": ("网址", "URL"),

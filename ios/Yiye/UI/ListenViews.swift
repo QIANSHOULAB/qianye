@@ -109,7 +109,26 @@ struct PlaylistScreen: View {
         if open.showText { textFor = tracks[i] }
     }
 
-    private func row(_ i: Int, _ tracks: [Track], heard: Bool, keys: [String]) -> some View {
+    @ViewBuilder private func row(_ i: Int, _ tracks: [Track], heard: Bool, keys: [String]) -> some View {
+        let tr = tracks[i]
+        let on = player.playlist && player.track?.note == tr.note
+        let dim: Double = heard && !on ? 0.55 : 1          // 听完的淡一点，不加字
+        // 225：听完了就能打：听完的那几行下面摆五颗小星星（正在放的那条看播放条）
+        if heard && !on, let v = app.shelf.voice(for: tr) {
+            VStack(alignment: .leading, spacing: 0) {
+                rowLine(i, tracks, keys: keys).opacity(dim)
+                VoiceStars(voice: v, note: tr.note, tag: "row", small: true)
+                    .padding(.leading, 40)
+            }
+            .modifier(PlaylistCard())
+        } else {
+            rowLine(i, tracks, keys: keys)
+                .modifier(PlaylistCard())
+                .opacity(dim)
+        }
+    }
+
+    private func rowLine(_ i: Int, _ tracks: [Track], keys: [String]) -> some View {
         let tr = tracks[i]
         let on = player.playlist && player.track?.note == tr.note
         let total = player.duration(tr.path, store: app.attachments)
@@ -148,8 +167,6 @@ struct PlaylistScreen: View {
 
             textButton(tr)
         }
-        .modifier(PlaylistCard())
-        .opacity(heard && !on ? 0.55 : 1)          // 听完的淡一点，不加字
     }
 
     /// 还没声音的一行：在等大管家配音（几点交的、大管家在不在），或者点一下让手机先念
@@ -314,6 +331,9 @@ struct PlayerBar: View {
         VStack(spacing: 10) {
             if let tr = player.playlist ? player.track : nil {
                 Text(tr.title).font(.system(size: 14, weight: .semibold)).foregroundStyle(Color(Ink.text)).lineLimit(1)
+                if let v = app.shelf.voice(for: tr) {            // 225：谁配的、打几星
+                    VoiceStars(voice: v, note: tr.note, tag: "bar")
+                }
                 HStack(spacing: 8) {
                     Text(VoiceText.clock(player.position)).font(.system(size: 12).monospacedDigit()).foregroundStyle(Color(Ink.text3))
                     ProgressLine(position: player.position, total: player.duration) { f in
@@ -430,12 +450,17 @@ struct TextSheet: View {
                     .task(id: followKey) { await follow(proxy) }
                     .onChange(of: player.sentence) { _, _ in scrollNow(proxy) }
             }
+            if let v = app.shelf.voice(for: track) {
+                VoiceStars(voice: v, note: track.note, tag: "sheet")          // 225：原文页底下也能打
+                    .padding(.top, 4)
+            }
             if !track.marks.isEmpty { bar }
         }
         .coordinateSpace(.named("textsheet"))
         .overlay { cardLayer }
         .background(PaperBackground().ignoresSafeArea())
         .translationTask(translator.config) { [translator = self.translator] session in await translator.run(session) }
+        .onChange(of: app.shelf.version) { _, _ in refreshPick() }
         .onAppear(perform: demoPick)
         .onDisappear { translator.cancel() }
     }
@@ -517,13 +542,26 @@ struct TextSheet: View {
     }
 
     // ---------------------------------------------------------------- 点词、点句、卡片
+    /// 225：大管家给这一句译好的（老稿、对不上：nil）
+    private func translated(_ line: String) -> ListenTrans.Line? {
+        app.shelf.extras(track.note).trans?.line(for: line)
+    }
+
     private func picked(_ i: Int, _ line: String, _ tap: SentenceTap) {
         let row = frames.map[i] ?? .zero
         let english = !WordPick.words(in: line).isEmpty
-        let whole = TextPick(line: i, range: nil, text: line, area: row, translatable: english)
+        let tl = translated(line)
+        let zh = tl.flatMap { $0.zh.isEmpty ? nil : $0.zh }
+        let whole = TextPick(line: i, range: nil, text: line, area: row, translatable: english || zh != nil, butler: zh)
         switch tap {
         case .word(let r, let w, let rect):
-            open(TextPick(line: i, range: r, text: w, area: rect.offsetBy(dx: row.minX, dy: row.minY), translatable: true))
+            let near = rect.offsetBy(dx: row.minX, dy: row.minY)
+            if let tl, let hit = TransLookup.word(r, in: line, line: tl) {
+                // 词组：整个标出来，卡片躲开整句（词组可能折行）
+                open(TextPick(line: i, range: hit.range, text: hit.text, area: hit.range == r ? near : row, translatable: true, butler: hit.zh))
+            } else {
+                open(TextPick(line: i, range: r, text: w, area: near, translatable: true))
+            }
         case .sentence:
             open(whole)
         case .blank:
@@ -535,7 +573,24 @@ struct TextSheet: View {
     private func open(_ p: TextPick) {
         marked = nil
         pick = p
-        if p.translatable { translator.ask(p.text, demo: app.demo != nil) } else { translator.cancel() }
+        if let m = p.butler { translator.show(m) }
+        else if p.translatable { translator.ask(p.text, demo: app.demo != nil) }
+        else { translator.cancel() }
+    }
+
+    /// 卡片开着时补译的信到了：系统翻译换成大管家的
+    private func refreshPick() {
+        guard var p = pick, p.butler == nil, lines.indices.contains(p.line), let tl = translated(lines[p.line]) else { return }
+        if let r = p.range {
+            guard let hit = TransLookup.word(r, in: lines[p.line], line: tl) else { return }
+            p.range = hit.range
+            p.text = hit.text
+            p.butler = hit.zh
+        } else {
+            guard !tl.zh.isEmpty else { return }
+            p.butler = tl.zh
+        }
+        open(p)
     }
 
     private func close() {
@@ -578,7 +633,7 @@ struct TextSheet: View {
             } else {
                 Spacer(minLength: 0)
             }
-            WordCard(pick: p, state: translator.state, marked: marked, timed: !track.marks.isEmpty,
+            WordCard(pick: p, state: translator.state, system: translator.system, marked: marked, timed: !track.marks.isEmpty,
                      looping: mine && player.locked == p.line, t: t,
                      onMark: { m in mark(p, m) },
                      onPlay: { playFrom(p.line) },

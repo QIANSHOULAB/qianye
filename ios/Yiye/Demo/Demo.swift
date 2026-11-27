@@ -48,6 +48,14 @@ enum Demo {
         return "\(MirrorFolder.attachName)/\(name)"
     }
 
+    /// 225：假的大管家译文（只给第一篇的头两句；第三句起没有，走系统翻译兜底）
+    static let fakeTrans = ListenTrans(lines: [
+        .init(s: "Bitcoin falls below $62,000", zh: "比特币跌破 6.2 万美元", w: ["bitcoin": "比特币（一种加密货币）", "falls": "跌", "below": "低于"]),
+        .init(s: "Bitcoin fell below 62,000 dollars on Monday.", zh: "大管家译：周一，比特币跌到了 6.2 万美元以下。",
+              w: ["bitcoin": "比特币（一种加密货币）", "dollars": "美元", "on": "在", "monday": "星期一"],
+              p: [.init(t: "fell below", zh: "跌破")]),
+    ])
+
     static func seed(_ app: AppModel, _ cfg: DemoConfig) {
         let zh = cfg.lang == "zh-Hans"
         UserDefaults.standard.removeObject(forKey: "YiyeSwipeDemo")       // 160：上一个画面（swipe-in / out）留下的，别带到别的画面
@@ -147,6 +155,12 @@ enum Demo {
             if k == 2 { n.heardAt = Date().addingTimeInterval(-2 * 86_400) }       // 听完的那篇淡一点（112）
             if k != 0, UserDefaults.standard.bool(forKey: "YiyeOneUnheard") { n.heardAt = Date().addingTimeInterval(-3600) }   // 157 UI 测试
             if k == 0 { listenFirst = n.id }
+            // 225：打星、大管家译文的画面和 UI 测试：给稿子配上「谁配的」（听完的那篇列表里带小星星）
+            if cfg.screen == "listen-rate" || cfg.screen == "listen-trans", let rel = n.audioPaths.first {
+                let who = [("gemini", "Achird", "Achird"), ("edge", "en-GB-RyanNeural", zh ? "微软 Ryan" : "Microsoft Ryan"), ("kokoro", "am_michael", "Kokoro am_michael")][k]
+                app.shelf.delivered(n.id, audio: rel, voice: ListenVoice(engine: who.0, name: who.1, label: who.2),
+                                    trans: k == 0 && cfg.screen == "listen-trans" ? Demo.fakeTrans : nil)
+            }
         }
         // 144：前天两篇短的（各两句、9 秒）：循环挑天的截图和 UI 测试（放完那天最后一篇回那天第一篇）
         let twoDays = [
@@ -155,7 +169,7 @@ enum Demo {
         ]
         let eightToday = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: now) ?? now
         // 只在听力那几个画面加（书童「扔旧的」、列表手势的测试按条数数，别的画面照旧）
-        let listenScreens: Set<String> = ["listen", "listen-loop", "listen-text", "listen-word", "listen-line"]
+        let listenScreens: Set<String> = ["listen", "listen-loop", "listen-text", "listen-word", "listen-line", "listen-rate", "listen-trans"]
         for (k, text) in twoDays.enumerated() where listenScreens.contains(cfg.screen) {
             let n = add(text, ago: 60, folder: english, kind: "listen")
             n.createdAt = Calendar.current.date(byAdding: .day, value: -2, to: eightToday)?.addingTimeInterval(-Double(k + 1)) ?? now
@@ -263,7 +277,12 @@ enum Demo {
             app.changeLoop { $0 = ListenLoop(on: true, lit: [today, twoDaysKey], litDay: today) }
             app.listening = ListenOpen(startNote: listenFirst)
         // 222：listen-word / listen-line 打开原文后自己开一张词卡 / 句卡（TextSheet 里读 demo.screen）
-        case "listen-text", "listen-word", "listen-line": app.listening = ListenOpen(startNote: listenFirst, showText: true)
+        case "listen-text", "listen-word", "listen-line", "listen-trans":
+            if cfg.screen == "listen-trans" { app.settings.listenFollow = false }      // UI 测试照位置点第二、三句，别自己滚走
+            app.listening = ListenOpen(startNote: listenFirst, showText: true)
+        case "listen-rate":
+            app.settings.listenRepeat = 0                  // UI 测试跑得慢也别自己跳到下一篇
+            app.listening = ListenOpen(startNote: listenFirst)
         case "call": app.companion.startCall()
         case "remote": RemoteModel.shared.open = true        // 172：遥控（假大管家回画出来的屏）
         case "todo": TodoDesk.shared.demo(zh: zh)          // 162：两条待办寄到，第二条 6 秒后「办完了」

@@ -337,6 +337,10 @@ shutong.undone	撤销了，跟没动过一样
 sort.new	新改的在前
 sort.old	老的在前
 sort.title	排序
+star.banned	以后不用 %@
+star.by	%@ 配的
+star.n	%lld 星
+star.undo	撤回
 theme.note	便签
 theme.white	白纸
 time.yesterday	昨天
@@ -383,4 +387,5 @@ word.noPack	语言包还没下好，翻不了。点「再翻一次」，照系�
 word.noPair	这台手机的系统翻不了英文到中文。
 word.pack	第一次要下个语言包，下好以后就快了
 word.retry	再翻一次
+word.system	系统翻译
 word.translating	翻着呢…

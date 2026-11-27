@@ -337,6 +337,10 @@ shutong.undone	Undone. Like it never happened.
 sort.new	Newest edits
 sort.old	Oldest edits
 sort.title	Sort
+star.banned	No more %@
+star.by	Voiced by %@
+star.n	%lld stars
+star.undo	Undo
 theme.note	Note
 theme.white	Plain
 time.yesterday	Yesterday
@@ -383,4 +387,5 @@ word.noPack	No language pack yet, so no translation. Tap Try again and say yes t
 word.noPair	This phone’s system can’t turn English into Chinese.
 word.pack	First time needs a language pack. After that it’s quick.
 word.retry	Try again
+word.system	System translation
 word.translating	Translating…

@@ -4,7 +4,8 @@ import UIKit
 import YiyeKit
 
 // 222：听力原文里点一下一个词、点两下一整句，旁边弹一张小卡片给中文意思。
-// 翻译用 iOS 自带的 Translation 框架：只在手机上翻，字不发到外面。
+// 225：大管家送稿时译好的（trans）先用它的；没有的、查不到的才用 iOS 自带的 Translation 框架兜底
+//（只在手机上翻，字不发到外面），卡片角上写「系统翻译」。
 
 /// 点中的词或整句（开着卡片）
 struct TextPick: Equatable {
@@ -16,6 +17,8 @@ struct TextPick: Equatable {
     var area: CGRect
     /// 一个英文词都没有的句子：没得翻，卡片只给按钮
     var translatable: Bool
+    /// 225：大管家译好的意思；nil = 手机系统翻
+    var butler: String? = nil
 }
 
 /// 各句在原文页里的框：卡片靠它找地方。放在引用里，滚动时记它不引起重画
@@ -30,6 +33,8 @@ final class PhoneTranslator {
     enum State: Equatable { case idle, working, needsPack, done(String), failed(Why) }
 
     private(set) var state: State = .idle
+    /// 卡片上现在这个意思是不是系统翻译给的（要写「系统翻译」）
+    private(set) var system = false
     /// 交给 .translationTask 的：一变（或 invalidate）它就跑一回
     private(set) var config: TranslationSession.Configuration?
     @ObservationIgnored private var job: (id: Int, text: String)?
@@ -44,6 +49,7 @@ final class PhoneTranslator {
         seq += 1
         let id = seq
         job = (id, text)
+        system = true
         if demo {
             state = UserDefaults.standard.bool(forKey: "YiyeNoTranslate") ? .failed(.noPack) : .done(PhoneTranslator.demoMeaning(text))
             return
@@ -86,7 +92,15 @@ final class PhoneTranslator {
 
     func cancel() {
         job = nil
+        system = false
         state = .idle
+    }
+
+    /// 大管家译好的：直接摆上去，不叫系统翻译
+    func show(_ meaning: String) {
+        job = nil
+        system = false
+        state = .done(meaning)
     }
 
     private static func demoMeaning(_ text: String) -> String {
@@ -102,6 +116,8 @@ final class PhoneTranslator {
 struct WordCard: View {
     let pick: TextPick
     let state: PhoneTranslator.State
+    /// 意思是系统翻译给的
+    let system: Bool
     let marked: WordMark?
     /// 这篇标了句子时间：能「从这句放」「单句循环」
     let timed: Bool
@@ -115,11 +131,17 @@ struct WordCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if pick.range != nil {
-                Text(pick.text)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(Color(Ink.text))
-                    .lineLimit(2)
-                    .accessibilityIdentifier("listen.card.word")
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(pick.text)
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(Color(Ink.text))
+                        .lineLimit(2)
+                        .accessibilityIdentifier("listen.card.word")
+                    Spacer(minLength: 0)
+                    if system { systemMark }
+                }
+            } else if system && pick.translatable {
+                HStack { Spacer(minLength: 0); systemMark }
             }
             if pick.translatable { meaning }
             if pick.range != nil || timed { buttons }
@@ -131,6 +153,15 @@ struct WordCard: View {
         .shadow(color: .black.opacity(0.22), radius: 10, y: 4)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("listen.card")
+    }
+
+    /// 225：这张卡的意思不是大管家译的
+    private var systemMark: some View {
+        Text(t.t("word.system"))
+            .font(.system(size: 11))
+            .foregroundStyle(Color(Ink.text3))
+            .fixedSize()
+            .accessibilityIdentifier("listen.card.system")
     }
 
     @ViewBuilder private var meaning: some View {

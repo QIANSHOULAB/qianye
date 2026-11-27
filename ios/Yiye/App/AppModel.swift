@@ -46,6 +46,8 @@ final class AppModel {
     let attachments: AttachmentStore
     let mirror: MirrorService
     let butler: ButlerService
+    /// 225：听力笔记另外记的（谁配的、译文）和嗓子的分
+    let shelf: ListenShelf
     /// 陪玩模式（100）
     let companion: Companion
 
@@ -80,6 +82,7 @@ final class AppModel {
         Theme.shared.start(persist: demo == nil, forced: demo?.themePref)
         attachments = AttachmentStore(demo: demo != nil)
         mirror = MirrorService(demo: demo != nil)
+        shelf = ListenShelf(base: attachments.base, persist: demo == nil)
         butler = ButlerService()
         companion = Companion()
     }
@@ -277,6 +280,7 @@ final class AppModel {
         context.delete(n)
         try? context.save()
         mirror.purge(id)
+        shelf.drop(id)
     }
 
     /// 废纸篓里超过 3 天的真删；扔了但没写时间的（老数据）补成现在。开 app、回到前台时跑
@@ -291,7 +295,10 @@ final class AppModel {
             }
         }
         try? context.save()
-        for id in gone { mirror.purge(id) }
+        for id in gone {
+            mirror.purge(id)
+            shelf.drop(id)
+        }
     }
 
     /// 112：听完满 7 天的听力，自己进废纸篓（留 3 天能放回）。没听完的、普通便签一条都不动。打开 app、回到前台跑，不加后台任务
@@ -484,6 +491,13 @@ final class AppModel {
         show(mark == .known ? t.f("word.known", w) : t.f("word.learning", w), seconds: 3)
     }
 
+    // ---------------------------------------------------------------- 打星（225）
+    /// 给一个嗓子打星（0 = 清掉）：手机上马上变，排队寄给大管家
+    func rateVoice(_ v: ListenVoice, stars: Int, note: UUID) {
+        shelf.rate(v, stars)
+        butler.rateVoice(v, stars: stars, note: note)
+    }
+
     // ---------------------------------------------------------------- 文章（114）
     /// 捷径「存进一叶笺」来的：网址存成一条文章便签（第一行标题、最后一行网址）并寄给大管家扒正文；文字直接存成便签。返回回给捷径的一句话
     func saveShared(url: String?, text: String?) async -> String {
@@ -548,6 +562,12 @@ final class AppModel {
     /// 回「配音」请求的（带 note）：录音挂到那条笔记上，换掉手机念的
     func addDelivery(_ d: ButlerDelivery, audio: Data?) {
         guard !settings.deliveredIDs.contains(d.id) else { return }
+        // 231：补译的信，只把译文挂到那条上（录音和字不动）。稿子那封还没收完也先存着，稿子来了接上
+        if d.isTransLetter, let nid = d.note.flatMap({ UUID(uuidString: $0) }) {
+            shelf.delivered(nid, audio: nil, voice: nil, trans: d.trans)
+            settings.deliveredIDs = Array((settings.deliveredIDs + [d.id]).suffix(500))
+            return
+        }
         if let nid = d.note.flatMap({ UUID(uuidString: $0) }), let n = note(nid) {
             settings.deliveredIDs = Array((settings.deliveredIDs + [d.id]).suffix(500))
             // 回的是最新那次请求（或者没写回的哪次）才算等到了；更早那次的先挂上，接着等新的
@@ -566,6 +586,7 @@ final class AppModel {
                 n.markTable = table
                 n.audioPaths = [rel] + n.audioPaths.filter { !Listen.isListenAudio($0) }
                 setMarks(n, path: rel, marks: d.marks ?? [])
+                shelf.delivered(nid, audio: rel, voice: d.voice, trans: d.trans)
             }
             if latest { n.dub = "" }
             changed(n)
@@ -584,12 +605,14 @@ final class AppModel {
         n.folder = folderNamed(d.folder ?? "英语")
         context.insert(n)
         linkSimplified(request: d.request, note: id)
+        shelf.delivered(id, audio: nil, voice: nil, trans: d.trans)
         if let audio, let a = d.audio {
             let ext = (a as NSString).pathExtension.lowercased()
             let name = (a as NSString).lastPathComponent.isEmpty ? Listen.deliveryName(note: id, ext: ext.isEmpty ? "mp3" : ext) : (a as NSString).lastPathComponent
             if let rel = try? attachments.save(audio, name: name) {
                 n.audioPaths = [rel]
                 setMarks(n, path: rel, marks: d.marks ?? [])
+                shelf.delivered(id, audio: rel, voice: d.voice, trans: nil)
             }
         }
         try? context.save()

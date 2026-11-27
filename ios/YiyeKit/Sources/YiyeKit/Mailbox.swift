@@ -340,6 +340,8 @@ public enum MailAction: Equatable, Sendable {
     case dubFailed(ButlerResult, note: UUID)
     /// 「会了 / 不会」的回信（088）：ok 就从队里拿掉，不 ok 过一会儿再寄
     case word(ButlerResult)
+    /// 给嗓子打星的回信（225）：跟「会了 / 不会」一样，ok 才出队
+    case vote(ButlerResult)
     /// 陪玩的回答（100）：配好的音跟着信来，直接放；没配成音的，手机用自己的声音念 text
     case look(ButlerResult, audio: Data?)
     /// 抄到电脑的回信（111）：电脑回 ok + host=电脑 才算寄到；掌机回 desk-only 不算
@@ -379,7 +381,8 @@ public enum MailAction: Equatable, Sendable {
     /// localAudio：信里没带录音时去 iCloud 找
     public static func decide(_ env: MailEnvelope, waiting: [String: UUID], dubbing: [String: UUID], words: Set<String> = [],
                               looks: Set<String> = [], keeps: Set<String> = [], articles: Set<String> = [], doves: Set<String> = [],
-                              shutongs: Set<String> = [], talks: Set<String> = [], localAudio: (String) -> Data? = { _ in nil }) -> MailAction {
+                              shutongs: Set<String> = [], talks: Set<String> = [], votes: Set<String> = [],
+                              localAudio: (String) -> Data? = { _ in nil }) -> MailAction {
         switch env.kind {
         case .result:
             guard let r = env.result else { return .drop("result 没有 data") }
@@ -392,6 +395,7 @@ public enum MailAction: Equatable, Sendable {
             if keeps.contains(r.re ?? r.id) { return .keep(r) }
             if articles.contains(r.id) { return .article(r) }
             if words.contains(r.id) { return .word(r) }
+            if votes.contains(r.id) { return .vote(r) }
             if let n = waiting[r.id] { return .apply(r, note: n) }
             if !r.ok, let n = dubbing[r.id] { return .dubFailed(r, note: n) }
             return .drop("没人在等 \(r.id)")

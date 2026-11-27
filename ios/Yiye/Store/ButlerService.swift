@@ -32,6 +32,10 @@ final class ButlerService {
     /// 「会了 / 不会」排着队的（088）：大管家回 ok 才出队
     @ObservationIgnored private var words = WordQueue.decode(UserDefaults.standard.data(forKey: ButlerService.wordsKey))
     @ObservationIgnored private var wordSending: Set<String> = []
+    /// 打星排着队的（225）：规矩同「会了 / 不会」
+    static let votesKey = "yiye.voteQueue"
+    @ObservationIgnored private var votes = VoteQueue.decode(UserDefaults.standard.data(forKey: ButlerService.votesKey))
+    @ObservationIgnored private var voteSending: Set<String> = []
     /// 陪玩（100）：在等回答的请求 id
     @ObservationIgnored private var looks: Set<String> = []
     /// 飞鸽传书（128）：在等回信的请求 id（只在内存里）
@@ -173,6 +177,7 @@ final class ButlerService {
             refreshPresence()
             for it in items { take(it) }
             flushWords()
+            flushVotes()
         case .msg(let it):
             take(it)
         case .pc(let on, let seen):
@@ -232,7 +237,7 @@ final class ButlerService {
             }
         }
         var action = MailAction.decide(env, waiting: waiting, dubbing: dubbing, words: words.requestIDs, looks: looks, keeps: Set(keepWait.keys), articles: Set(articles.keys), doves: doves,
-                                       shutongs: shutongs.union(ShutongModel.shared.waitingIDs), talks: talks)
+                                       shutongs: shutongs.union(ShutongModel.shared.waitingIDs), talks: talks, votes: votes.requestIDs)
         if action == .later, let ch = app.mirror.channel, let a = env.delivery?.audio {
             // 信里没带录音：去 iCloud 镜像里找（后台读，占位的要等它下载）
             let data: Data? = await withCheckedContinuation { c in
@@ -250,6 +255,10 @@ final class ButlerService {
         case .word(let r):
             words.answered(r.id, ok: r.ok)
             saveWords()
+            return true
+        case .vote(let r):                                  // 225：打星的回信：ok 才出队；老大管家不认就过一会儿再寄，不弹错
+            votes.answered(r.id, ok: r.ok)
+            saveVotes()
             return true
         case .look(let r, let audio):
             if r.stage != "ack" && r.stage != "part" { looks.remove(r.id) }   // 深聊（107）：ack 之后同一个 id 还有一封回答；117：part 之后还有
@@ -519,6 +528,45 @@ final class ButlerService {
     private func saveWords() {
         guard app?.demo == nil else { return }
         UserDefaults.standard.set(words.encoded(), forKey: ButlerService.wordsKey)
+    }
+
+    // ---------------------------------------------------------------- 打星（225）
+    func rateVoice(_ v: ListenVoice, stars: Int, note: UUID) {
+        votes.add(engine: v.engine, voice: v.name, stars: stars, note: note.uuidString, at: ISOTime.string(Date()))
+        saveVotes()
+        flushVotes()
+    }
+
+    /// 该寄的打星寄出去（只走信箱）。上一下还在路上就等它走完，免得后点的先到
+    func flushVotes() {
+        guard let mail, app?.demo == nil else { return }
+        let due = votes.due().filter { !voteSending.contains($0.key) }
+        let picked = Set(autoPick(due.map { "voice|\($0.key)" }, inflight: voteSending.count))
+        for p in due where picked.contains("voice|\(p.key)") {
+            let id = UUID().uuidString
+            let key = p.key
+            votes.sending(key, id: id)
+            voteSending.insert(key)
+            let req = ButlerRequest.voiceStars(id: id, engine: p.engine, voice: p.voice, stars: p.stars, note: p.note, at: p.at, app: ButlerService.appVersion)
+            Task {
+                defer { self.voteSending.remove(key) }
+                do {
+                    _ = try await mail.send(.request(req))
+                    self.votes.sent(id)
+                    self.autoDone("voice|\(key)", ok: true)
+                } catch {
+                    if MailClient.sick(error) { self.votes.deferred(id) } else { self.votes.notSent(id) }
+                    self.autoDone("voice|\(key)", ok: false)
+                }
+                self.saveVotes()
+            }
+        }
+        saveVotes()
+    }
+
+    private func saveVotes() {
+        guard app?.demo == nil else { return }
+        UserDefaults.standard.set(votes.encoded(), forKey: ButlerService.votesKey)
     }
 
     // ---------------------------------------------------------------- 思想排泄物抄到电脑（111）
@@ -903,6 +951,7 @@ final class ButlerService {
         checkPairing()
         keepFlush()
         if !words.items.isEmpty { flushWords() }
+        if !votes.items.isEmpty { flushVotes() }
         guard !looking, let channel = app.mirror.channel else {
             if !app.mirror.isOn {
                 heartbeat = .never

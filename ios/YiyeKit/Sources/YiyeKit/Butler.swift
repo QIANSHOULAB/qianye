@@ -51,6 +51,10 @@ public struct ButlerRequest: Codable, Equatable, Sendable {
     public var secret: String?
     /// ask=ok（203）：他在要点头的卡上点了一下（寄给哪台还是 for）
     public var ok: ConfirmTap?
+    /// ask=voice（225，v3.21 / v3.22）：哪个嗓子、打几星（0 = 清掉）
+    public var engine: String?
+    public var voice: String?
+    public var stars: Int?
 
     /// ask：fix = 理顺（结果回 已理顺/）；speak = 配音（0.4.0 起，结果走 送来/，带 note）；word = 会了 / 不会（088，见 WordMark.swift）
     public init(id: String, note: String, kind: ButlerKind, text: String, images: [String]?, unsure: [String]?, ask: String = "fix", at: String, app: String) {
