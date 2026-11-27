@@ -15,8 +15,8 @@ const STR = require(path.join(ROOT, 'strings.js'));
 const VER = (fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8').match(/const VERSION = '([\d.]+)'/) || [])[1];
 const TO = 'oilsongchengmin@gmail.com';
 const EXP = {
-  zh: { subject: `[千手院反馈] 一叶笺 ${VER}`, lines: ['哪里不好用：', '', '想要什么：', '', '别的：', '', '', '——'], text: '提意见', locale: 'en-US' },
-  en: { subject: `[QIANSHOU feedback] Yiye · Pretty Notes ${VER}`, lines: ['What’s not working:', '', 'What you want:', '', 'Anything else:', '', '', '—'], text: 'Feedback', locale: 'zh-CN' },
+  zh: { subject: `[千手院反馈] one ${VER}`, lines: ['哪里不好用：', '', '想要什么：', '', '别的：', '', '', '——'], text: '提意见', locale: 'en-US' },
+  en: { subject: `[QIANSHOU feedback] one · Pretty Notes ${VER}`, lines: ['What’s not working:', '', 'What you want:', '', 'Anything else:', '', '', '—'], text: 'Feedback', locale: 'zh-CN' },
 };
 const UAS = [
   ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36', { platformVersion: '15.0.0' }, 'Windows 11 · Chrome 130'],

@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Yiye · Pretty Notes</title>
-<meta name="apple-mobile-web-app-title" content="Yiye">
-<meta name="description" content="Messy notes in, pretty picture out. Snap a handwritten page or paste a wall of text, and Yiye lays it out as an image worth sharing.">
+<title>one · Pretty Notes</title>
+<meta name="apple-mobile-web-app-title" content="one">
+<meta name="description" content="Messy notes in, pretty picture out. Snap a handwritten page or paste a wall of text, and “one” lays it out as an image worth sharing.">
 <meta name="theme-color" content="#f5f5f7">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23F4EFE6'/%3E%3Cpath d='M18 20h28M18 30h20M18 40h24' stroke='%232C2A27' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='46' cy='40' r='4' fill='%23C2410C'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<script src="strings.js?v=0.3.6"></script>
+<script src="strings.js?v=0.3.7"></script>
 <script>
 // 语言：默认英文，第二语言中文（Song 11-03 22:19）；右上角 EN / 中文 选过就记住（tengchao.lang），不跟浏览器走。
 // 在这儿就定下来：<html lang>、标题、简介一开始就对，英文的字体栈（html[lang=en]）第一帧就用上。
@@ -202,7 +202,7 @@
 </svg>
 
 <div class="nav"><div class="in">
-  <div class="brand"><svg><use href="#i-logo"/></svg><span data-s="brand">Yiye</span><span class="sub" data-s="brandSub">Pretty Notes</span></div>
+  <div class="brand"><svg><use href="#i-logo"/></svg><span data-s="brand">one</span><span class="sub" data-s="brandSub">Pretty Notes</span></div>
   <div class="sp"></div>
   <span class="seg lang" role="group" data-s-aria="langAria" aria-label="Language"><button type="button" data-lang="en" lang="en" data-s="langEN" aria-pressed="true">EN</button><button type="button" data-lang="zh" lang="zh-CN" data-s="langZH" aria-pressed="false">中文</button></span>
   <button type="button" class="icon-btn" id="gear" data-s-aria="settingsAria" aria-label="Settings"><svg><use href="#i-gear"/></svg></button>
@@ -233,7 +233,7 @@
   </div>
 </main>
 
-<footer><span data-s="appShort">Yiye</span> <span class="num" id="ver-foot">v0.3.6</span> · <span data-s="tagline">Messy notes in. Pretty picture out.</span> · <a href="/" target="_blank" rel="noopener" data-s="hub">QIANSHOU LAB</a> · <a class="fb" href="mailto:oilsongchengmin@gmail.com" data-s="fb">Feedback</a></footer>
+<footer><span data-s="appShort">one</span> <span class="num" id="ver-foot">v0.3.7</span> · <span data-s="tagline">Messy notes in. Pretty picture out.</span> · <a href="/" target="_blank" rel="noopener" data-s="hub">QIANSHOU LAB</a> · <a class="fb" href="mailto:oilsongchengmin@gmail.com" data-s="fb">Feedback</a></footer>
 
 <div class="dock" id="dock">
   <div class="toast" id="toast" hidden></div>
@@ -791,7 +791,7 @@ self.onmessage = async (e) => {
 <script type="module">
 // 一叶笺（012 时叫誊抄僧）：写字框里的字 → 认出标题、名字＋数字、清单、「时间：」这类行 → 按版式排好，画成图分享。
 // 排版和出图是同一套 canvas 代码：预览看到什么，分享出去就是什么。
-const VERSION = '0.3.6';   // 换版本改这里、<head> 里的 strings.js?v=、页脚 #ver-foot 的初值
+const VERSION = '0.3.7';   // 换版本改这里、<head> 里的 strings.js?v=、页脚 #ver-foot 的初值
 // 界面文字全在 strings.js（英文、中文各一套）。LANG 在 <head> 里就定了：默认英文，选过中文就记住
 let LANG = window.QY_LANG || 'en', TX = window.QY_STR[LANG];
 const LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);

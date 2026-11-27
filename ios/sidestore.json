@@ -9,7 +9,7 @@
   "sourceURL": "https://qianshoulab.github.io/qianye/ios/sidestore.json",
   "apps": [
     {
-      "name": "一叶笺",
+      "name": "one",
       "bundleIdentifier": "lab.qianshou.yiye",
       "developerName": "QIANSHOU LAB",
       "subtitle": "随手一记，自带排版",
@@ -460,7 +460,7 @@
       "appPermissions": {
         "entitlements": [],
         "privacy": {
-          "NSCameraUsageDescription": "Snap a page and Yiye turns the writing into text, right on your phone.",
+          "NSCameraUsageDescription": "Snap a page and one turns the writing into text, right on your phone.",
           "NSPhotoLibraryAddUsageDescription": "Saves the pictures you make from notes to your Photos.",
           "NSMicrophoneUsageDescription": "Records what you say and keeps it with the note.",
           "NSSpeechRecognitionUsageDescription": "Turns your voice into text right on your phone."

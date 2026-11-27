@@ -61,7 +61,7 @@ page = f"""<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>一叶笺 iPhone · 最新样子</title>
+<title>one iPhone · 最新样子</title>
 <style>
 :root {{ --bg:#f6f2ea; --card:#fffcf6; --ink:#4a3f36; --ink2:#8a7e70; --line:#e3d9c8; --accent:#c2410c; }}
 @media (prefers-color-scheme: dark) {{ :root {{ --bg:#1c1814; --card:#2a2622; --ink:#e9e1d4; --ink2:#a99f92; --line:#3a332c; --accent:#f0915e; }} }}
@@ -83,7 +83,7 @@ figcaption {{ text-align:center; color:var(--ink2); font-size:14px; margin-top:6
 </head>
 <body>
 <header>
-<h1>一叶笺 iPhone · 最新样子</h1>
+<h1>one iPhone · 最新样子</h1>
 <p class="meta">{html.escape(version)} · 提交 {html.escape(sha)}{(" · " + stamp + "（新加坡时间）") if stamp else ""}</p>
 <p class="changed">这次改了：{html.escape(subject) or "—"}</p>
 <p class="meta">{html.escape(ocr)}{" · " if ocr else ""}{count} 张截图，CI 每次自动换</p>

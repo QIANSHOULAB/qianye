@@ -1,3 +1,4 @@
+0.7.41：一叶笺改名叫 one。手机桌面、设置里、分享图落款、网页版都换了新名字；图标还是那片叶子，一叶就是 one。便签、iCloud 里的「一叶笺」文件夹、大管家照旧认，啥都不用搬。Yiye is now “one”. Same leaf, same notes, same iCloud folder.
 0.7.40：出图多一张纸「简报」：纯白、大留白、标题顶左边站着，小标题前一道藏青竖线，引用垫块浅灰，一看就像见过世面的办公文档。编号步骤「1. 2. 3.」折行跟字对齐，不再钻到编号底下，写字页和三张纸都改了。默认还是便签，新纸在分享那页挑。A new “Brief” paper for sharing, and numbered steps now wrap with a hanging indent.
 0.7.39：听力页多一行「谁配的」和五颗星，听完点几颗就是几星，马上告诉大管家：1、2 星这嗓子以后不上岗（手滑了点「撤回」），星多的多轮几回。点词点句的中文换成大管家配音时就译好的，认人名认词组，不再让苹果瞎翻；老稿子没译文，苹果顶上，卡片角上写「系统翻译」。Rate the voice with five stars; word and sentence meanings now come from the butler, with the system translator as a labelled fallback.
 0.7.38：听力原文页，看不懂的词不用硬扛了。点一下选一个词，卡片上就是中文意思，顺手「难词」「已掌握」「从这句放」；点两下整句翻给你，还能锁着这句反复听。翻译是手机自带的，字不出手机；第一次要下个语言包，下好以后就快了。底下多个「跟着放」：开着，放到哪滚到哪，你手一碰先停 5 秒；关了随你翻，字不跑。原来点一句就跳，挪进卡片的「从这句放」。Tap a word for its Chinese meaning, double-tap for the whole sentence, translated on the phone. A new Follow switch keeps the text still while you read.

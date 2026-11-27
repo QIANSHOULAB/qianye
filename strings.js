@@ -10,10 +10,10 @@ const pl = (n, one, many) => (n === 1 ? one : many);
 const STR = {
 en: {
   lang: 'en',
-  title: 'Yiye · Pretty Notes',
-  appShort: 'Yiye',
-  desc: 'Messy notes in, pretty picture out. Snap a handwritten page or paste a wall of text, and Yiye lays it out as an image worth sharing.',
-  brand: 'Yiye', brandSub: 'Pretty Notes',
+  title: 'one · Pretty Notes',
+  appShort: 'one',
+  desc: 'Messy notes in, pretty picture out. Snap a handwritten page or paste a wall of text, and “one” lays it out as an image worth sharing.',
+  brand: 'one', brandSub: 'Pretty Notes',
   tagline: 'Messy notes in. Pretty picture out.',
   langAria: 'Language', langEN: 'EN', langZH: '中文',
   settingsAria: 'Settings',
@@ -49,7 +49,7 @@ en: {
   ask: 'Want a feature, spotted something off, or want to talk business? Email the abbot: oilsongchengmin@gmail.com',
   hubBtn: 'More tools', fb: 'Feedback', done: 'Done',
   // 提意见：页脚一个、设置里一个；点了打开邮件，标题、正文都填好（正文最后一行页面自己补上版本和设备）
-  fbSubject: (v) => `[QIANSHOU feedback] Yiye · Pretty Notes ${v}`,
+  fbSubject: (v) => `[QIANSHOU feedback] one · Pretty Notes ${v}`,
   fbBody: ['What’s not working:', '', 'What you want:', '', 'Anything else:', '', '', '—'],
   noTitle: 'OK, no title.', asTitle: 'OK, that’s the title now.',
   clipDenied: (mac) => `This browser won’t hand over the clipboard. Tap the paper, then press ${mac ? '⌘V' : 'Ctrl+V'}.`,
@@ -80,8 +80,8 @@ en: {
   done1: 'Done.',
   fellBack: (why) => `Google tripped up, so it was read on this device instead: ${why}<br>`,
   failed: (m) => `Couldn’t read it: ${m}`,
-  mark: 'Yiye · Pretty Notes', markLetter: '— Yiye · Pretty Notes —',
-  filePrefix: 'Yiye',
+  mark: 'one', markLetter: '— one —',
+  filePrefix: 'one',
   sample: `Weekly sales
 North 1,280 units
 South 960 units
@@ -94,10 +94,10 @@ Systems go down Friday from 8 to noon for maintenance. Save your work first. Yes
 
 zh: {
   lang: 'zh-CN',
-  title: '一叶笺 · 随手成画',
-  appShort: '一叶笺',
+  title: 'one · 随手成画',
+  appShort: 'one',
   desc: '手写拍照或打字粘贴，自动装裱成一张体面好图，拿去分享倍儿有面子。',
-  brand: '一叶笺', brandSub: '',
+  brand: 'one', brandSub: '',
   tagline: '随手成画',
   langAria: '语言', langEN: 'EN', langZH: '中文',
   settingsAria: '设置',
@@ -132,7 +132,7 @@ zh: {
   madeBy: '制作人：千手院方丈释手',
   ask: '要什么新功能、有修改建议，或洽谈商业合作请直接找方丈飞鸽传书：oilsongchengmin@gmail.com',
   hubBtn: '千手院总舵', fb: '提意见', done: '完成',
-  fbSubject: (v) => `[千手院反馈] 一叶笺 ${v}`,
+  fbSubject: (v) => `[千手院反馈] one ${v}`,
   fbBody: ['哪里不好用：', '', '想要什么：', '', '别的：', '', '', '——'],
   noTitle: '好，不要标题。', asTitle: '好，这行当标题。',
   clipDenied: (mac) => `浏览器不让读剪贴板。点一下纸，再按 ${mac ? '⌘V' : 'Ctrl+V'}。`,
@@ -163,8 +163,8 @@ zh: {
   done1: '认完了。',
   fellBack: (why) => `谷歌那边出了岔子，先本地认了：${why}<br>`,
   failed: (m) => `没认成：${m}`,
-  mark: '一叶笺', markLetter: '— 一叶笺 —',
-  filePrefix: '一叶笺',
+  mark: 'one', markLetter: '— one —',
+  filePrefix: 'one',
   sample: `11月1日 各线产量
 A线早班 1,280件
 B线早班 960件

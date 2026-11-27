@@ -1,9 +1,9 @@
-# 一叶笺 0.3.6 中文界面文字，从 strings.js 导出。一行一条：键<Tab>字。#2 = 同一句换个情况。⏎ = 换行。
+# one 0.3.7 中文界面文字，从 strings.js 导出。一行一条：键<Tab>字。#2 = 同一句换个情况。⏎ = 换行。
 lang	zh-CN
-title	一叶笺 · 随手成画
-appShort	一叶笺
+title	one · 随手成画
+appShort	one
 desc	手写拍照或打字粘贴，自动装裱成一张体面好图，拿去分享倍儿有面子。
-brand	一叶笺
+brand	one
 brandSub	
 tagline	随手成画
 langAria	语言
@@ -63,7 +63,7 @@ ask	要什么新功能、有修改建议，或洽谈商业合作请直接找方�
 hubBtn	千手院总舵
 fb	提意见
 done	完成
-fbSubject	[千手院反馈] 一叶笺 0.3.5
+fbSubject	[千手院反馈] one 0.3.5
 fbBody	哪里不好用： |  | 想要什么： |  | 别的： |  |  | ——
 noTitle	好，不要标题。
 asTitle	好，这行当标题。
@@ -98,7 +98,7 @@ doneMarks#2	认完了。标黄的 3 个字贫僧拿不准，点一下就能改�
 done1	认完了。
 fellBack	谷歌那边出了岔子，先本地认了：HTTP 503 …
 failed	没认成：…
-mark	一叶笺
-markLetter	— 一叶笺 —
-filePrefix	一叶笺
+mark	one
+markLetter	— one —
+filePrefix	one
 sample	11月1日 各线产量 ⏎ A线早班 1,280件 ⏎ B线早班 960件 ⏎ C线中班 1,105件 ⏎ D线晚班 87件 ⏎ 合计 3,432件 ⏎  ⏎ 明天上午8点到12点停电检修，请各线提前把数据存好。

@@ -7,13 +7,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "一叶笺"
+            "value": "one"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "一叶笺"
+            "value": "one"
           }
         }
       }
@@ -24,13 +24,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "一叶笺"
+            "value": "one"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "一叶笺"
+            "value": "one"
           }
         }
       }
@@ -41,13 +41,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Snap a page and Yiye turns the writing into text, right on your phone."
+            "value": "Snap a page and one turns the writing into text, right on your phone."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "拍一页纸，一叶笺在手机上把字认出来。"
+            "value": "拍一页纸，one 在手机上把字认出来。"
           }
         }
       }

@@ -9,8 +9,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.7.40"
-    CURRENT_PROJECT_VERSION: "41"
+    MARKETING_VERSION: "0.7.41"
+    CURRENT_PROJECT_VERSION: "42"
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
     ENABLE_USER_SCRIPT_SANDBOXING: YES
@@ -32,8 +32,8 @@ targets:
     info:
       path: Yiye/Info.plist
       properties:
-        CFBundleDisplayName: Yiye
-        CFBundleName: Yiye
+        CFBundleDisplayName: one
+        CFBundleName: one
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleDevelopmentRegion: en
@@ -52,7 +52,7 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIRequiredDeviceCapabilities: [arm64]
         UIBackgroundModes: [audio]
-        NSCameraUsageDescription: Snap a page and Yiye turns the writing into text, right on your phone.
+        NSCameraUsageDescription: Snap a page and one turns the writing into text, right on your phone.
         NSPhotoLibraryAddUsageDescription: Saves the pictures you make from notes to your Photos.
         NSMicrophoneUsageDescription: Records what you say and keeps it with the note.
         NSSpeechRecognitionUsageDescription: Turns your voice into text right on your phone.
@@ -85,7 +85,7 @@ targets:
     info:
       path: YiyeLive/Info.plist
       properties:
-        CFBundleDisplayName: Yiye
+        CFBundleDisplayName: one
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:

@@ -42,8 +42,8 @@ for (const lang of ['en', 'zh']) {
     } else rows.push(`${k}\t${clean(v)}`);
   }
   const head = lang === 'en'
-    ? `# Yiye ${VER} English UI copy, exported from strings.js. One per line: key<Tab>text. #2 = same string, other case. ⏎ = line break.`
-    : `# 一叶笺 ${VER} 中文界面文字，从 strings.js 导出。一行一条：键<Tab>字。#2 = 同一句换个情况。⏎ = 换行。`;
+    ? `# one ${VER} English UI copy, exported from strings.js. One per line: key<Tab>text. #2 = same string, other case. ⏎ = line break.`
+    : `# one ${VER} 中文界面文字，从 strings.js 导出。一行一条：键<Tab>字。#2 = 同一句换个情况。⏎ = 换行。`;
   fs.writeFileSync(path.join(OUT, `${lang}.txt`), [head, ...rows].join('\n') + '\n');
   console.log(`${lang}: ${rows.length} 条 → ${path.relative(ROOT, path.join(OUT, lang + '.txt'))}`);
 }
