@@ -88,6 +88,18 @@ struct EditorScreen: View {
                 }
 
                 NoteTextEditor(controller: controller)
+
+                // 234：看板便签是大管家写的，下一封整篇盖掉：底下一行小字说清楚
+                if BoardDesk.shared.owns(noteID) {
+                    Text(t.t("board.note"))
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color(Ink.text3))
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
+                        .accessibilityIdentifier("board.note")
+                }
             }
             .background(PaperBackground(tint: note?.pinnedTint))
             .lightIf(note?.pinnedTint?.keepsLight == true)

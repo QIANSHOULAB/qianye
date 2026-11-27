@@ -11,26 +11,8 @@ public enum Todo {
     public static let kindNew = "todo"
     public static let kindDone = "todo-done"
 
-    /// 待办 id → 便签 UUID（FNV-1a 两轮拼 128 位，版本位写成 5 那样，不依赖 CryptoKit）
-    public static func noteID(_ todo: String) -> UUID {
-        func fnv(_ s: String, _ seed: UInt64) -> UInt64 {
-            var h: UInt64 = 0xcbf29ce484222325 ^ seed
-            for b in s.utf8 {
-                h ^= UInt64(b)
-                h = h &* 0x100000001b3
-            }
-            return h
-        }
-        let a = fnv("todo:" + todo, 0), b = fnv("todo:" + todo, 0x9e3779b97f4a7c15)
-        var x = [UInt8](repeating: 0, count: 16)
-        for i in 0..<8 {
-            x[i] = UInt8((a >> UInt64(56 - 8 * i)) & 0xff)
-            x[8 + i] = UInt8((b >> UInt64(56 - 8 * i)) & 0xff)
-        }
-        x[6] = (x[6] & 0x0f) | 0x50
-        x[8] = (x[8] & 0x3f) | 0x80
-        return UUID(uuid: (x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12], x[13], x[14], x[15]))
-    }
+    /// 待办 id → 便签 UUID
+    public static func noteID(_ todo: String) -> UUID { StableID.uuid("todo:" + todo) }
 
     /// 便签正文：第一行是标题（# 标题），下面照原样
     public static func markdown(title: String?, text: String) -> String {
@@ -44,6 +26,29 @@ public enum Todo {
     public static func id(of d: ButlerDelivery) -> String {
         let t = (d.todo ?? "").trimmingCharacters(in: .whitespaces)
         return t.isEmpty ? d.id : t
+    }
+}
+
+/// 一串字 → 固定的 UUID（FNV-1a 两轮拼 128 位，版本位写成 5 那样，不依赖 CryptoKit）。待办（162）、看板（234）拿它认便签
+enum StableID {
+    static func uuid(_ s: String) -> UUID {
+        func fnv(_ seed: UInt64) -> UInt64 {
+            var h: UInt64 = 0xcbf29ce484222325 ^ seed
+            for b in s.utf8 {
+                h ^= UInt64(b)
+                h = h &* 0x100000001b3
+            }
+            return h
+        }
+        let a = fnv(0), b = fnv(0x9e3779b97f4a7c15)
+        var x = [UInt8](repeating: 0, count: 16)
+        for i in 0..<8 {
+            x[i] = UInt8((a >> UInt64(56 - 8 * i)) & 0xff)
+            x[8 + i] = UInt8((b >> UInt64(56 - 8 * i)) & 0xff)
+        }
+        x[6] = (x[6] & 0x0f) | 0x50
+        x[8] = (x[8] & 0x3f) | 0x80
+        return UUID(uuid: (x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12], x[13], x[14], x[15]))
     }
 }
 

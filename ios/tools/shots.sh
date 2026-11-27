@@ -158,4 +158,22 @@ for lang in zh-Hans en; do
     done
   done
 done
+# 看板（234）：「游戏」夹子里的「游戏记录」和点开它，只照中文浅色一套（构建时间卡在 75 分钟，别铺满四套）
+xcrun simctl ui "$SIM" appearance light
+dir="$OUT/234"
+rm -rf "$dir"; mkdir -p "$dir"
+i=1
+for s in board board-note; do
+  xcrun simctl terminate "$SIM" "$BID" >/dev/null 2>&1 || true
+  SIMCTL_CHILD_TZ=Asia/Singapore xcrun simctl launch "$SIM" "$BID" -YiyeDemo YES -YiyeScreen "$s" -YiyeLang zh-Hans -YiyeAppearance light \
+    -AppleLanguages "(zh-Hans)" -AppleLocale "zh_CN" >/dev/null || true
+  sleep 5
+  png="$dir/$(printf %02d $i)-$s.png"
+  if xcrun simctl io "$SIM" screenshot --type=png "$png" >/dev/null 2>&1; then
+    sips --resampleWidth 804 -s format jpeg -s formatOptions 84 "$png" --out "${png%.png}.jpg" >/dev/null && rm "$png"
+  else
+    echo "截图失败：$s 234"; fail=1
+  fi
+  i=$((i+1))
+done
 exit $fail

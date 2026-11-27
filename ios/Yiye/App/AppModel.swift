@@ -97,6 +97,7 @@ final class AppModel {
         EarDiagSender.shared.app = self                     // 170 说话出错、界面卡：诊断寄给大管家
         RemoteModel.shared.app = self                       // 172 遥控
         TodoDesk.shared.app = self                          // 162 项目待办
+        BoardDesk.shared.app = self                         // 234 看板
         BarkModel.shared.start(self)                        // 204 提醒走 Bark
         if let demo {
             Demo.seed(self, demo)
@@ -562,6 +563,12 @@ final class AppModel {
     /// 回「配音」请求的（带 note）：录音挂到那条笔记上，换掉手机念的
     func addDelivery(_ d: ButlerDelivery, audio: Data?) {
         guard !settings.deliveredIDs.contains(d.id) else { return }
+        // 234：看板要是从 iCloud 那条备胎路进来的，也走看板那套，别当听力稿收
+        if d.kind == Board.kind {
+            BoardDesk.shared.receive(d)
+            settings.deliveredIDs = Array((settings.deliveredIDs + [d.id]).suffix(500))
+            return
+        }
         // 231：补译的信，只把译文挂到那条上（录音和字不动）。稿子那封还没收完也先存着，稿子来了接上
         if d.isTransLetter, let nid = d.note.flatMap({ UUID(uuidString: $0) }) {
             shelf.delivered(nid, audio: nil, voice: nil, trans: d.trans)

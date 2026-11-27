@@ -1,3 +1,4 @@
+0.7.42：大管家有了自己的看板便签：一条便签原地一直更新，头一个是「游戏记录」，躺在「游戏」文件夹里，这周打了几个小时一清二楚（大管家那头跟上就寄来）。它是大管家的地盘，你手记的字下回照样盖掉；扔了也行，下回再给你新开一条。Board notes: your butler keeps one note up to date in place, starting with your game log.
 0.7.41：一叶笺改名叫 one。手机桌面、设置里、分享图落款、网页版都换了新名字；图标还是那片叶子，一叶就是 one。便签、iCloud 里的「一叶笺」文件夹、大管家照旧认，啥都不用搬。Yiye is now “one”. Same leaf, same notes, same iCloud folder.
 0.7.40：出图多一张纸「简报」：纯白、大留白、标题顶左边站着，小标题前一道藏青竖线，引用垫块浅灰，一看就像见过世面的办公文档。编号步骤「1. 2. 3.」折行跟字对齐，不再钻到编号底下，写字页和三张纸都改了。默认还是便签，新纸在分享那页挑。A new “Brief” paper for sharing, and numbered steps now wrap with a hanging indent.
 0.7.39：听力页多一行「谁配的」和五颗星，听完点几颗就是几星，马上告诉大管家：1、2 星这嗓子以后不上岗（手滑了点「撤回」），星多的多轮几回。点词点句的中文换成大管家配音时就译好的，认人名认词组，不再让苹果瞎翻；老稿子没译文，苹果顶上，卡片角上写「系统翻译」。Rate the voice with five stars; word and sentence meanings now come from the butler, with the system translator as a labelled fallback.

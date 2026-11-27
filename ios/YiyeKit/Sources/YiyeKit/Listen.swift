@@ -146,6 +146,8 @@ public struct ButlerDelivery: Codable, Equatable, Sendable {
     public var urgent: Bool?
     /// kind=todo / todo-done（162 项目待办）：待办 id（orders 分支 项目待办/<id>.md 的 <id>）；信的 id 每封都不一样
     public var todo: String?
+    /// kind=board（234 看板，见 Board234.swift）：看板的固定 id（比如 game-log）
+    public var board: String?
     /// kind=guide（197 遥控带路，见 Guide197.swift）：带路的号、ask / done / stuck、哪台哪块屏、圈、要不要双击、信里带的截图
     public var guide: String?
     public var status: String?

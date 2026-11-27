@@ -596,6 +596,23 @@
         }
       }
     },
+    "board.note": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Written by your butler. Edits get overwritten."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大管家代笔，改了下回照样盖掉"
+          }
+        }
+      }
+    },
     "busy.album": {
       "extractionState": "manual",
       "localizations": {

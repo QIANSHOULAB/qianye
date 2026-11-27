@@ -306,6 +306,7 @@ enum Demo {
         case "call": app.companion.startCall()
         case "remote": RemoteModel.shared.open = true        // 172：遥控（假大管家回画出来的屏）
         case "todo": TodoDesk.shared.demo(zh: zh)          // 162：两条待办寄到，第二条 6 秒后「办完了」
+        case "board", "board-note", "board-flow": BoardDesk.shared.demo(cfg.screen, zh: zh)   // 234：看板「游戏记录」
         case "swipe-in": UserDefaults.standard.set(0.5, forKey: "YiyeSwipeDemo")    // 160：右滑停在线内（五成）
         case "swipe-out": UserDefaults.standard.set(0.8, forKey: "YiyeSwipeDemo")   // 160：右滑过了线（八成），垃圾桶跟着纸条走                  // 139：假接通（-YiyeCallSay 给他说的几句，| 隔开）
         case "voice-note": app.path = [.editor(voice.id)]

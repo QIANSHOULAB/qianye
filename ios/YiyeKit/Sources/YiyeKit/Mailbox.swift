@@ -362,6 +362,8 @@ public enum MailAction: Equatable, Sendable {
     case confirmReply(ButlerResult)
     /// 要 Song 做的事（162）：kind=todo 建 / 更新「项目待办」里那条便签，kind=todo-done 那条进废纸篓；都回执
     case todo(ButlerDelivery)
+    /// 看板（234）：大管家写的一条便签，原地更新；回执
+    case board(ButlerDelivery)
     /// 大管家递来的备用信箱配置（130）：存钥匙串，回「收到」
     case fbConfig(FbConfigLetter)
     /// 书童的回信（136）：动作、一句话；按住说话认出来的字（stage = shutong / shutong-hear）
@@ -407,6 +409,7 @@ public enum MailAction: Equatable, Sendable {
             if d.kind == GuideCard.kind { return .guide(d, image: d.image.flatMap { env.files[$0] }) }   // 197
             if d.kind == ConfirmCard.kind { return .confirm(d) }                                          // 203
             if d.kind == Todo.kindNew || d.kind == Todo.kindDone { return .todo(d) }   // 162：项目待办，也不是听力稿
+            if d.kind == Board.kind { return .board(d) }                              // 234：看板
             guard let a = d.audio else { return .deliver(d, audio: nil) }
             if let data = env.files[a] ?? localAudio(a) { return .deliver(d, audio: data) }
             return .later

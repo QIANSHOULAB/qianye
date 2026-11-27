@@ -72,6 +72,7 @@ final class ButlerService {
     func start() {
         DoveModel.shared.service = self
         TodoDesk.shared.service = self                      // 162：他扔了 / 放回去的待办，靠信箱寄
+        BoardDesk.shared.service = self                     // 234：看板的回执靠信箱寄
         backup.service = self
         backup.resume()
         guard timer == nil else { return }
@@ -291,6 +292,9 @@ final class ButlerService {
         case .todo(let d):                                  // 162：项目待办：建 / 更新 / 扔那条便签，回执
             TodoDesk.shared.receive(d)
             sendTodoOK(of: d.id)
+            return true
+        case .board(let d):                                 // 234：看板：新建 / 原地盖那条便签（回执 BoardDesk 里寄）
+            BoardDesk.shared.receive(d)
             return true
         case .fbConfig(let c):                              // 130：备用信箱的配置：存钥匙串，回「收到」
             backup.adopt(c.config, box: pairing?.box)
@@ -682,6 +686,13 @@ final class ButlerService {
     private func sendTodoOK(of letter: String) {
         guard let mail else { return }
         let req = ButlerRequest.todoOK(id: UUID().uuidString, of: letter, at: ISOTime.string(Date()), app: ButlerService.appVersion)
+        Task { _ = try? await mail.send(.request(req), timeout: 20) }
+    }
+
+    /// 234：看板的信收到了（大管家 30 分钟没收到回执就换个信 id 再寄最新的一版）
+    func sendBoardOK(of letter: String) {
+        guard let mail else { return }
+        let req = ButlerRequest.boardOK(id: UUID().uuidString, of: letter, at: ISOTime.string(Date()), app: ButlerService.appVersion)
         Task { _ = try? await mail.send(.request(req), timeout: 20) }
     }
 
