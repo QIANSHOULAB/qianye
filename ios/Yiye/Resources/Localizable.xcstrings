@@ -2347,6 +2347,23 @@
         }
       }
     },
+    "listen.follow": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跟着放"
+          }
+        }
+      }
+    },
     "listen.fresh": {
       "extractionState": "manual",
       "localizations": {
@@ -2489,13 +2506,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No sentence timing on this one, so tapping a line won't jump."
+            "value": "No sentence timing on this one, so no playing from a line."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "这篇没标句子时间，点哪句都跳不过去。"
+            "value": "这篇没标句子时间，没法从哪句接着放。"
           }
         }
       }
@@ -2513,6 +2530,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "第 %lld 遍"
+          }
+        }
+      }
+    },
+    "listen.playHere": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play from here"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从这句放"
           }
         }
       }
@@ -6257,6 +6291,23 @@
         }
       }
     },
+    "word.failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t translate it: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没翻出来：%@"
+          }
+        }
+      }
+    },
     "word.known": {
       "extractionState": "manual",
       "localizations": {
@@ -6321,6 +6372,91 @@
           "stringUnit": {
             "state": "translated",
             "value": "难词"
+          }
+        }
+      }
+    },
+    "word.noPack": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No language pack yet, so no translation. Tap Try again and say yes to the download."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "语言包还没下好，翻不了。点「再翻一次」，照系统的提示下。"
+          }
+        }
+      }
+    },
+    "word.noPair": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone’s system can’t turn English into Chinese."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这台手机的系统翻不了英文到中文。"
+          }
+        }
+      }
+    },
+    "word.pack": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First time needs a language pack. After that it’s quick."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第一次要下个语言包，下好以后就快了"
+          }
+        }
+      }
+    },
+    "word.retry": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "再翻一次"
+          }
+        }
+      }
+    },
+    "word.translating": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Translating…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "翻着呢…"
           }
         }
       }

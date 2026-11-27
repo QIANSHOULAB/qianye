@@ -155,7 +155,7 @@ enum Demo {
         ]
         let eightToday = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: now) ?? now
         // 只在听力那几个画面加（书童「扔旧的」、列表手势的测试按条数数，别的画面照旧）
-        let listenScreens: Set<String> = ["listen", "listen-loop", "listen-text"]
+        let listenScreens: Set<String> = ["listen", "listen-loop", "listen-text", "listen-word", "listen-line"]
         for (k, text) in twoDays.enumerated() where listenScreens.contains(cfg.screen) {
             let n = add(text, ago: 60, folder: english, kind: "listen")
             n.createdAt = Calendar.current.date(byAdding: .day, value: -2, to: eightToday)?.addingTimeInterval(-Double(k + 1)) ?? now
@@ -262,7 +262,8 @@ enum Demo {
             let today = ListenLoop.key(now)
             app.changeLoop { $0 = ListenLoop(on: true, lit: [today, twoDaysKey], litDay: today) }
             app.listening = ListenOpen(startNote: listenFirst)
-        case "listen-text": app.listening = ListenOpen(startNote: listenFirst, showText: true)
+        // 222：listen-word / listen-line 打开原文后自己开一张词卡 / 句卡（TextSheet 里读 demo.screen）
+        case "listen-text", "listen-word", "listen-line": app.listening = ListenOpen(startNote: listenFirst, showText: true)
         case "call": app.companion.startCall()
         case "remote": RemoteModel.shared.open = true        // 172：遥控（假大管家回画出来的屏）
         case "todo": TodoDesk.shared.demo(zh: zh)          // 162：两条待办寄到，第二条 6 秒后「办完了」

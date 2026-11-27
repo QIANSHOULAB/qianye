@@ -142,6 +142,7 @@ listen.dubQueued	排上了，大管家一上线就开嗓。
 listen.dubSent	交给大管家了，配完音自己回到这条。
 listen.dubbed	大管家配好音了：%@
 listen.empty	听力还是空的。列表里左滑一条、点小耳机，就塞进来了。
+listen.follow	跟着放
 listen.fresh	有新稿子没听
 listen.loopAll	整串循环
 listen.loopDay	循环%@
@@ -150,8 +151,9 @@ listen.loopOne	单句循环
 listen.next	下一篇
 listen.nextSentence	下一句
 listen.noAudio	还没声音 · 点一下先用手机念
-listen.noTiming	这篇没标句子时间，点哪句都跳不过去。
+listen.noTiming	这篇没标句子时间，没法从哪句接着放。
 listen.pass	第 %lld 遍
+listen.playHere	从这句放
 listen.prev	上一篇
 listen.prevSentence	上一句
 listen.redub	重配
@@ -372,7 +374,13 @@ voice.play	播放
 voice.preparing	话筒准备中…
 voice.saving	收个尾…
 voice.title	录一段
+word.failed	没翻出来：%@
 word.known	「%@」毕业，简讯不再讲
 word.learning	「%@」留级，简讯接着补课
 word.markKnown	已掌握
 word.markLearning	难词
+word.noPack	语言包还没下好，翻不了。点「再翻一次」，照系统的提示下。
+word.noPair	这台手机的系统翻不了英文到中文。
+word.pack	第一次要下个语言包，下好以后就快了
+word.retry	再翻一次
+word.translating	翻着呢…

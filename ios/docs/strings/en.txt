@@ -142,6 +142,7 @@ listen.dubQueued	Queued. The butler voices it the moment it's back.
 listen.dubSent	Sent to the butler. The audio lands back on this note.
 listen.dubbed	The butler voiced “%@”
 listen.empty	Nothing to listen to yet. Swipe left on a note, tap the headphones, done.
+listen.follow	Follow
 listen.fresh	New ones to hear
 listen.loopAll	Loop the whole list
 listen.loopDay	Loop %@
@@ -150,8 +151,9 @@ listen.loopOne	Loop sentence
 listen.next	Next
 listen.nextSentence	Next sentence
 listen.noAudio	No audio yet · tap to have your phone read it
-listen.noTiming	No sentence timing on this one, so tapping a line won't jump.
+listen.noTiming	No sentence timing on this one, so no playing from a line.
 listen.pass	pass %lld
+listen.playHere	Play from here
 listen.prev	Previous
 listen.prevSentence	Previous sentence
 listen.redub	Re-dub
@@ -372,7 +374,13 @@ voice.play	Play
 voice.preparing	Warming up the mic…
 voice.saving	Wrapping up…
 voice.title	Voice note
+word.failed	Couldn’t translate it: %@
 word.known	“%@” graduated. No more lectures.
 word.learning	“%@” repeats a grade. More lessons in the brief.
 word.markKnown	Known
 word.markLearning	Hard word
+word.noPack	No language pack yet, so no translation. Tap Try again and say yes to the download.
+word.noPair	This phone’s system can’t turn English into Chinese.
+word.pack	First time needs a language pack. After that it’s quick.
+word.retry	Try again
+word.translating	Translating…

@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import Translation
 import UIKit
 import YiyeKit
 
@@ -375,7 +376,8 @@ struct PlayerBar: View {
     }
 }
 
-/// 原文：一句一行，正在放的那句标出来；点哪句从哪句放；能锁住一句反复听
+/// 原文：一句一行，正在放的那句标亮。点一下选一个词、点两下选整句，弹小卡片给中文意思（222）；
+/// 「从这句放」「单句循环」在卡片上和底下那排；「跟着放」开着时正在放的那句自己滚到中间
 struct TextSheet: View {
     let track: Track
     let tracks: [Track]
@@ -383,10 +385,32 @@ struct TextSheet: View {
     private var player: AudioPlayback { AudioPlayback.shared }
     private var t: Lang { app.lang }
 
+    /// 222：点中的词或整句（卡片开着）
+    @State private var pick: TextPick?
+    /// 卡片上刚点过的「难词」「已掌握」
+    @State private var marked: WordMark?
+    /// 手刚碰过文字：跟着放先停一会儿
+    @State private var hold = FollowHold()
+    /// 长按拖选着字的那一句
+    @State private var selecting: Int?
+    @State private var frames = RowFrames()
+    @State private var translator = PhoneTranslator()
+
     private var mine: Bool { player.track?.note == track.note && player.current == track.path }
     private var lines: [String] {
         if !track.marks.isEmpty { return track.marks.map(\.s) }
         return Listen.sentences(app.note(track.note)?.markdown ?? "")
+    }
+
+    /// 能不能自己滚的几样条件，哪样一变就重新等一回
+    private struct FollowKey: Equatable {
+        var until: Date?
+        var card: Bool
+        var selecting: Bool
+        var on: Bool
+    }
+    private var followKey: FollowKey {
+        FollowKey(until: hold.until, card: pick != nil, selecting: selecting != nil, on: app.settings.listenFollow)
     }
 
     var body: some View {
@@ -395,135 +419,259 @@ struct TextSheet: View {
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Color(Ink.text))
                 .lineLimit(2)
+                .accessibilityIdentifier("listen.sheetTitle")
+                .frame(maxWidth: .infinity)
                 .padding(.top, 20)
                 .padding(.horizontal, 20)
+                .contentShape(Rectangle())
+                .onTapGesture { close() }
             ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 6) {
-                        ForEach(lines.indices, id: \.self) { i in
-                            let now = mine && player.sentence == i
-                            // 112：一句一个能选词的文字视图。选中一个词，系统菜单最前面多「已掌握」「难词」；点一下跳到这句
-                            SentenceText(text: lines[i], color: now ? Ink.text : Ink.text2,
-                                         titles: (t.t("word.markKnown"), t.t("word.markLearning")),
-                                         onWord: { w, m in app.markWord(w, m, note: track.note) },
-                                         onTap: { tap(i) })
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.vertical, 6)
-                                .padding(.horizontal, 10)
-                                .background(RoundedRectangle(cornerRadius: 6).fill(now ? Color(Ink.accent).opacity(0.13) : .clear))
-                                .id(i)
-                        }
-                        if track.marks.isEmpty && !track.path.isEmpty {
-                            Text(t.t("listen.noTiming")).font(.system(size: 13)).foregroundStyle(Color(Ink.text3)).padding(10)
-                        }
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 12)
-                }
-                .onChange(of: player.sentence) { _, i in
-                    guard mine, let i else { return }
-                    withAnimation(.easeOut(duration: 0.25)) { proxy.scrollTo(i, anchor: .center) }
-                }
+                textArea(self.lines)
+                    .task(id: followKey) { await follow(proxy) }
+                    .onChange(of: player.sentence) { _, _ in scrollNow(proxy) }
             }
-            if !track.marks.isEmpty {
-                HStack(spacing: 24) {
-                    Button { player.previousSentence() } label: { Image(systemName: "backward.fill").font(.system(size: 18)).hit44() }
-                        .accessibilityLabel(t.t("listen.prevSentence"))
-                    Button { if mine { player.toggleSentenceLoop() } } label: {
-                        Label(t.t("listen.loopOne"), systemImage: "repeat.1")
-                            .font(.system(size: 15, weight: .medium))
-                    }
-                    .buttonStyle(SmartButtonStyle(prominent: mine && player.locked != nil))
-                    Button { player.nextSentence() } label: { Image(systemName: "forward.fill").font(.system(size: 18)).hit44() }
-                        .accessibilityLabel(t.t("listen.nextSentence"))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color(Ink.text2))
-                .padding(.vertical, 10)
-            }
+            if !track.marks.isEmpty { bar }
         }
+        .coordinateSpace(.named("textsheet"))
+        .overlay { cardLayer }
         .background(PaperBackground().ignoresSafeArea())
+        .translationTask(translator.config) { [translator] session in await translator.run(session) }
+        .onAppear(perform: demoPick)
+        .onDisappear { translator.cancel() }
     }
 
-    private func tap(_ i: Int) {
-        guard !track.marks.isEmpty else { return }
+    /// 一句一行；点在字外面的空地上收起卡片，一滚也收
+    private func textArea(_ lines: [String]) -> some View {
+        GeometryReader { geo in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(lines.indices, id: \.self) { i in
+                        row(i, lines[i])
+                    }
+                    if track.marks.isEmpty && !track.path.isEmpty {
+                        Text(t.t("listen.noTiming")).font(.system(size: 13)).foregroundStyle(Color(Ink.text3)).padding(10)
+                    }
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity, minHeight: geo.size.height, alignment: .top)
+                .background(Color.clear.contentShape(Rectangle()).onTapGesture { close() })
+            }
+            .onScrollPhaseChange { old, new in scrolled(old, new) }
+        }
+    }
+
+    private func row(_ i: Int, _ line: String) -> some View {
+        let now = mine && player.sentence == i
+        let chosen = pick?.line == i
+        let whole = chosen && pick?.range == nil
+        let fill: Color = whole ? Color(Ink.accent).opacity(0.26) : now ? Color(Ink.accent).opacity(0.13) : .clear
+        return SentenceText(text: line, color: now || whole ? Ink.text : Ink.text2,
+                            picked: chosen ? pick?.range : nil,
+                            titles: (t.t("word.markKnown"), t.t("word.markLearning")),
+                            name: "listen.line.\(i)",
+                            onWord: { w, m in app.markWord(w, m, note: track.note) },
+                            onTap: { tap in picked(i, line, tap) },
+                            onTouch: { hold.touched() },
+                            onSelecting: { on in selectionChanged(i, on) })
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 6).fill(fill))
+            .overlay {
+                if whole { RoundedRectangle(cornerRadius: 6).strokeBorder(Color(Ink.accent), lineWidth: 1.5).allowsHitTesting(false) }
+            }
+            .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .named("textsheet")) }, action: { frames.map[i] = $0 })
+            .id(i)
+    }
+
+    /// 底下那排：上一句、单句循环、下一句、跟着放
+    private var bar: some View {
+        HStack(spacing: 12) {
+            Button { close(); hold.clear(); player.previousSentence() } label: { Image(systemName: "backward.fill").font(.system(size: 18)).hit44() }
+                .buttonStyle(.plain)
+                .accessibilityLabel(t.t("listen.prevSentence"))
+            Button { if mine { player.toggleSentenceLoop() } } label: {
+                Label(t.t("listen.loopOne"), systemImage: "repeat.1")
+                    .font(.system(size: 15, weight: .medium))
+                    .lineLimit(1)
+            }
+            .buttonStyle(SmartButtonStyle(prominent: mine && player.locked != nil))
+            Button { close(); hold.clear(); player.nextSentence() } label: { Image(systemName: "forward.fill").font(.system(size: 18)).hit44() }
+                .buttonStyle(.plain)
+                .accessibilityLabel(t.t("listen.nextSentence"))
+            Button {
+                app.settings.listenFollow.toggle()
+                hold.clear()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: app.settings.listenFollow ? "checkmark.circle.fill" : "circle").font(.system(size: 14))
+                    Text(t.t("listen.follow")).lineLimit(1)
+                }
+            }
+            .buttonStyle(SmartButtonStyle(prominent: app.settings.listenFollow))
+            .accessibilityIdentifier("listen.follow")
+            .accessibilityValue(app.settings.listenFollow ? "on" : "off")
+        }
+        .foregroundStyle(Color(Ink.text2))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 10)
+    }
+
+    // ---------------------------------------------------------------- 点词、点句、卡片
+    private func picked(_ i: Int, _ line: String, _ tap: SentenceTap) {
+        let row = frames.map[i] ?? .zero
+        let english = !WordPick.words(in: line).isEmpty
+        let whole = TextPick(line: i, range: nil, text: line, area: row, translatable: english)
+        switch tap {
+        case .word(let r, let w, let rect):
+            open(TextPick(line: i, range: r, text: w, area: rect.offsetBy(dx: row.minX, dy: row.minY), translatable: true))
+        case .sentence:
+            open(whole)
+        case .blank:
+            // 一个英文词都没有的句子：点一下就给整句的卡片（「从这句放」在那上面）
+            if !english && pick == nil { open(whole) } else { close() }
+        }
+    }
+
+    private func open(_ p: TextPick) {
+        marked = nil
+        pick = p
+        if p.translatable { translator.ask(p.text, demo: app.demo != nil) } else { translator.cancel() }
+    }
+
+    private func close() {
+        guard pick != nil else { return }
+        pick = nil
+        marked = nil
+        translator.cancel()
+    }
+
+    private func selectionChanged(_ i: Int, _ on: Bool) {
+        if on {
+            close()
+            selecting = i
+        } else if selecting == i {
+            selecting = nil
+        }
+        hold.touched()
+    }
+
+    /// 卡片贴着点中的词（句）：下面地方大放下面，不然放上面，不盖住它（点第二下还落在原处）
+    @ViewBuilder private var cardLayer: some View {
+        if let p = pick {
+            GeometryReader { geo in
+                card(p, in: geo.size)
+            }
+        }
+    }
+
+    private func card(_ p: TextPick, in size: CGSize) -> some View {
+        let h = size.height, w = size.width
+        let below = h - p.area.maxY >= p.area.minY
+        let room = max(140, (below ? h - p.area.maxY : p.area.minY) - 12)
+        let width = p.range == nil ? max(0, w - 24) : max(0, min(320, w - 24))
+        let x = min(max(12, p.area.midX - width / 2), max(12, w - width - 12))
+        let above = max(0, min(p.area.maxY + 6, h - room))          // 卡片放下面时，它上头空多少
+        let under = max(0, min(h - p.area.minY + 6, h - room))      // 放上面时，它底下空多少
+        return VStack(alignment: .leading, spacing: 0) {
+            if below {
+                Color.clear.frame(width: 1, height: above).allowsHitTesting(false)
+            } else {
+                Spacer(minLength: 0)
+            }
+            WordCard(pick: p, state: translator.state, marked: marked, timed: !track.marks.isEmpty,
+                     looping: mine && player.locked == p.line, t: t,
+                     onMark: { m in mark(p, m) },
+                     onPlay: { playFrom(p.line) },
+                     onLoop: { loop(p.line) },
+                     onRetry: { translator.ask(p.text, demo: app.demo != nil) })
+                .frame(width: width)
+                .frame(maxHeight: room, alignment: below ? .top : .bottom)
+                .layoutPriority(1)
+            if below {
+                Spacer(minLength: 0)
+            } else {
+                Color.clear.frame(width: 1, height: under).allowsHitTesting(false)
+            }
+        }
+        .padding(.leading, x)
+        .frame(width: w, height: h, alignment: .topLeading)
+    }
+
+    private func mark(_ p: TextPick, _ m: WordMark) {
+        app.markWord(p.text, m, note: track.note)
+        marked = m
+    }
+
+    /// 这篇还没在放：先放上这篇
+    private func start() {
         if !mine, let k = tracks.firstIndex(where: { $0.note == track.note }) {
             player.play(tracks, from: k, store: app.attachments)
         }
+    }
+
+    private func playFrom(_ i: Int) {
+        guard !track.marks.isEmpty else { return }
+        close()
+        hold.clear()
+        start()
         player.jump(to: i)
+    }
+
+    private func loop(_ i: Int) {
+        guard !track.marks.isEmpty else { return }
+        start()
+        player.loopSentence(i)
+    }
+
+    // ---------------------------------------------------------------- 跟着放
+    private func scrolled(_ old: ScrollPhase, _ new: ScrollPhase) {
+        switch new {
+        case .interacting:
+            close()             // 一滚，卡片就跟字对不上了
+            hold.touched()
+        case .tracking, .decelerating:
+            hold.touched()
+        case .idle:
+            if old == .interacting || old == .decelerating { hold.touched() }       // 5 秒从松手算
+        default:
+            break
+        }
+    }
+
+    private func scrollNow(_ proxy: ScrollViewProxy) {
+        guard mine, let i = player.sentence,
+              hold.mayScroll(on: app.settings.listenFollow, card: pick != nil, selecting: selecting != nil) else { return }
+        withAnimation(.easeOut(duration: 0.25)) { proxy.scrollTo(i, anchor: .center) }
+    }
+
+    /// 停够了（或者卡片收了、开关开了）就回到正在放的那句
+    private func follow(_ proxy: ScrollViewProxy) async {
+        let wait = hold.left()
+        if wait > 0 { try? await Task.sleep(nanoseconds: UInt64((wait + 0.05) * 1_000_000_000)) }
+        guard !Task.isCancelled else { return }
+        scrollNow(proxy)
+    }
+
+    /// 截图用：开着一张卡片的样子
+    private func demoPick() {
+        guard let s = app.demo?.screen, s == "listen-word" || s == "listen-line" else { return }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            let lines = self.lines
+            guard lines.count > 1, let row = frames.map[1], let r = WordPick.words(in: lines[1]).first else { return }
+            if s == "listen-line" {
+                open(TextPick(line: 1, range: nil, text: lines[1], area: row, translatable: true))
+            } else {
+                let word = (lines[1] as NSString).substring(with: r)
+                let area = CGRect(x: row.minX + 10, y: row.minY, width: 64, height: row.height)
+                open(TextPick(line: 1, range: r, text: word, area: area, translatable: true))
+            }
+        }
     }
 }
 
 extension Track: Identifiable {
     var id: String { "\(note.uuidString)|\(path)" }
-}
-
-/// 一句话的文字：只读、能选词。选中一个词或词组，系统菜单最前面多「已掌握」「难词」（走 AppModel.markWord，大管家那头已经通了）；点一下回调 onTap（跳到这句）
-struct SentenceText: UIViewRepresentable {
-    let text: String
-    let color: UIColor
-    let titles: (known: String, learning: String)
-    let onWord: (String, WordMark) -> Void
-    let onTap: () -> Void
-
-    func makeCoordinator() -> Coordinator { Coordinator() }
-
-    func makeUIView(context: Context) -> UITextView {
-        let tv = UITextView()
-        tv.isEditable = false
-        tv.isSelectable = true
-        tv.isScrollEnabled = false
-        tv.backgroundColor = .clear
-        tv.textContainerInset = .zero
-        tv.textContainer.lineFragmentPadding = 0
-        tv.delegate = context.coordinator
-        let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.tapped))
-        tap.delegate = context.coordinator
-        tv.addGestureRecognizer(tap)
-        context.coordinator.tv = tv
-        return tv
-    }
-
-    func updateUIView(_ tv: UITextView, context: Context) {
-        let c = context.coordinator
-        c.parent = self
-        // 放音时整张表每秒刷新好几回：字和颜色没变就别重设，免得选中的词被清掉
-        guard c.lastText != text || c.lastColor != color else { return }
-        c.lastText = text
-        c.lastColor = color
-        let para = NSMutableParagraphStyle()
-        para.lineSpacing = 5
-        tv.attributedText = NSAttributedString(string: text, attributes: [
-            .font: UIFont.systemFont(ofSize: 18), .foregroundColor: color, .paragraphStyle: para,
-        ])
-    }
-
-    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
-        let w = proposal.width ?? 320
-        let s = uiView.sizeThatFits(CGSize(width: w, height: .greatestFiniteMagnitude))
-        return CGSize(width: w, height: ceil(s.height))
-    }
-
-    final class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {
-        var parent: SentenceText?
-        weak var tv: UITextView?
-        var lastText = ""
-        var lastColor: UIColor?
-
-        @objc func tapped() { parent?.onTap() }
-
-        // 点的时候已经有选中的词：这一下只是收掉选中和菜单，不跳句
-        func gestureRecognizerShouldBegin(_ g: UIGestureRecognizer) -> Bool { (tv?.selectedRange.length ?? 0) == 0 }
-        func gestureRecognizer(_ g: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
-
-        func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
-            guard let p = parent, range.length > 0, range.location + range.length <= textView.textStorage.length,
-                  let w = WordMark.clean(textView.textStorage.string.sub16(range)) else { return nil }
-            let known = UIAction(title: p.titles.known, image: UIImage(systemName: "checkmark")) { _ in p.onWord(w, .known) }
-            let learning = UIAction(title: p.titles.learning, image: UIImage(systemName: "arrow.counterclockwise")) { _ in p.onWord(w, .learning) }
-            return UIMenu(children: [UIMenu(options: .displayInline, children: [known, learning])] + suggestedActions)
-        }
-    }
 }
 
 extension AppModel {

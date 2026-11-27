@@ -39,6 +39,8 @@ final class Settings {
     /// 144：🔁 开着时哪几天在循环里（"yyyy-MM-dd"，"*" = 全亮）、这套亮法是哪天定的（换一天回到只亮今天）
     var listenLoopDays: [String] { didSet { save("yiye.listenLoopDays", listenLoopDays) } }
     var listenLoopDay: String { didSet { save("yiye.listenLoopDay", listenLoopDay) } }
+    /// 222：原文页「跟着放」（正在放的那句自己滚到中间）。默认开，记住
+    var listenFollow: Bool { didSet { save("yiye.listenFollow", listenFollow) } }
 
     /// 144：🔁 和亮着的天，合成一个
     var listenLoop: ListenLoop {
@@ -84,6 +86,7 @@ final class Settings {
                                      litDay: persist ? d.string(forKey: "yiye.listenLoopDay") : nil, today: today)
         listenLoopDays = loaded.lit.sorted()
         listenLoopDay = loaded.litDay
+        listenFollow = persist ? (d.object(forKey: "yiye.listenFollow") as? Bool ?? true) : true
         callLockOK = persist ? d.bool(forKey: "yiye.callLockOK") : false
         callCarry = persist ? (d.stringArray(forKey: "yiye.callCarry") ?? []) : []
         shutongAuto = persist ? (d.object(forKey: "yiye.shutongAuto") as? Bool ?? true) : true

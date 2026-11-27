@@ -386,6 +386,14 @@ final class AudioPlayback {
         locked = locked == nil ? (sentence ?? 0) : nil
     }
 
+    /// 222：卡片上点「单句循环」：跳到第 i 句锁住；本来就锁着它：解开
+    func loopSentence(_ i: Int) {
+        if locked == i { locked = nil; return }
+        guard marks.indices.contains(i) else { return }
+        jump(to: i)
+        locked = i
+    }
+
     func nextTrack() {
         // 144：🔁 开着时下一篇也只在亮着的那几天里找（到底回亮着的第一篇）
         guard let store, let next = loop.next(after: index, dayOf: queue.map(\.day)) else { return }
