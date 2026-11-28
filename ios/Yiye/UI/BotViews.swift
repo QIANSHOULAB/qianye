@@ -5,6 +5,8 @@ import YiyeKit
 /// 250 机器人：一张半屏，跟小书童那个聊天窗一个样子。名单（小书童排第一，下面是建的机器人，再下面是群）→ 聊天窗 → 资料页。
 struct BotsSheet: View {
     @Environment(AppModel.self) private var app
+    /// 252：提醒点进来看图，半屏直接拉满
+    @State private var detent: PresentationDetent = .medium
 
     var body: some View {
         @Bindable var m = BotsModel.shared
@@ -16,11 +18,12 @@ struct BotsSheet: View {
                 }
         }
         .tint(Color(Ink.accent))
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.medium, .large], selection: $detent)
         .presentationDragIndicator(.visible)
         .overlay(alignment: .bottom) { ToastView() }
-        .onAppear { m.load() }
-        .onDisappear { m.open = false; if ShutongModel.shared.recording { ShutongModel.shared.stopRecording() } }
+        .onAppear { m.load(); if m.focus != nil { detent = .large } }
+        .onChange(of: m.focus) { _, f in if f != nil { detent = .large } }
+        .onDisappear { m.open = false; m.focus = nil; if ShutongModel.shared.recording { ShutongModel.shared.stopRecording() } }
     }
 }
 
@@ -200,6 +203,10 @@ private struct BotChatView: View {
     let window: String
     @Environment(AppModel.self) private var app
     @State private var holding = false
+    /// 252：提醒点进来滚到的那一趟定时活：同一趟后面的信到了别把它顶走
+    @State private var pinned: String?
+    /// 252：点开全屏看的那一组图
+    @State private var viewing: BotShown?
     @FocusState private var typing: Bool
 
     private var t: Lang { app.lang }
@@ -221,7 +228,11 @@ private struct BotChatView: View {
                                 .padding(.top, 8)
                         }
                         ForEach(rows) { r in
-                            BotBubble(window: window, row: r).id(r.id)
+                            BotBubble(window: window, row: r) { names, i in
+                                typing = false
+                                viewing = BotShown(names: names, index: i)
+                            }
+                            .id(r.id)
                         }
                         if m.thinking(window) {
                             Text(isGroup ? t.t("bots.thinkingGroup") : t.f("bots.thinking", m.name(window)))
@@ -234,8 +245,9 @@ private struct BotChatView: View {
                     .padding(.vertical, 8)
                 }
                 .scrollDismissesKeyboard(.interactively)
-                .onAppear { proxy.scrollTo("bottom", anchor: .bottom) }
-                .onChange(of: rows.count) { _, _ in withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("bottom", anchor: .bottom) } }
+                .onAppear { if !jump(proxy) { proxy.scrollTo("bottom", anchor: .bottom) } }
+                .onChange(of: rows.count) { _, _ in follow(proxy) }
+                .onChange(of: m.focus) { _, _ in _ = jump(proxy) }                          // 窗开着时又点了一条提醒
                 .onChange(of: m.thinking(window)) { _, _ in withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("bottom", anchor: .bottom) } }
             }
             if isGroup { mentions }
@@ -243,6 +255,31 @@ private struct BotChatView: View {
         }
         .onAppear { m.load() }
         .onDisappear { if ShutongModel.shared.recording { ShutongModel.shared.stopRecording() } }
+        .fullScreenCover(item: $viewing) { BotPictureViewer(shown: $0) }
+    }
+
+    /// 252：提醒指的那一句到了就滚到它（在顶上），返回 true
+    private func jump(_ proxy: ScrollViewProxy) -> Bool {
+        guard let f = m.focus, f.window == window, let row = m.chats[window]?.first(where: { $0.line.msg == f.msg }) else { return false }
+        pinned = row.line.run
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 450_000_000)
+            withAnimation(.easeOut(duration: 0.25)) { proxy.scrollTo(row.id, anchor: .top) }
+            if m.focus == f { m.focus = nil }
+        }
+        return true
+    }
+
+    /// 多了一行：平时跟到底；在等提醒指的那句、或者正看着那一趟，就别动
+    private func follow(_ proxy: ScrollViewProxy) {
+        let last = m.chats[window]?.last?.line
+        if last?.who != "he" {
+            if jump(proxy) { return }
+            if let f = m.focus, f.window == window, f.fresh { return }
+            if let pinned, last?.run == pinned { return }
+        }
+        pinned = nil
+        withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("bottom", anchor: .bottom) }
     }
 
     /// 打了 @：弹出成员名，点一下插进去
@@ -342,6 +379,8 @@ private struct BotChatView: View {
 private struct BotBubble: View {
     let window: String
     let row: BotRow
+    /// 252：点了一张图：这条的全部图、点的第几张
+    let see: ([String], Int) -> Void
     @Environment(AppModel.self) private var app
 
     private var t: Lang { app.lang }
@@ -407,16 +446,136 @@ private struct BotBubble: View {
                 BotAvatar(id: line.who, name: m.name(line.who), size: 28)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(m.name(line.who)).font(.system(size: 12, weight: .semibold)).foregroundStyle(Color(Ink.text3))
-                    words(line.text)
+                    said
                 }
             }
             .padding(.trailing, 32)
             .frame(maxWidth: .infinity, alignment: .leading)
         } else {
-            words(line.text)
+            said
                 .padding(.trailing, 32)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    /// 252：图在字上面，按顺序；能评的底下两个很淡的小按钮
+    private var said: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            let names = line.images ?? []
+            ForEach(Array(names.enumerated()), id: \.offset) { p in
+                BotPicture(name: p.element, first: p.offset == 0, id: "\(line.msg ?? "").\(p.offset)") { see(names, p.offset) }
+            }
+            words(line.text)
+            if line.canReact == true, line.msg != nil {
+                HStack(spacing: 4) {
+                    thumb("up", "hand.thumbsup", t.t("bots.like"))
+                    thumb("down", "hand.thumbsdown", t.t("bots.dislike"))
+                }
+                .padding(.leading, -10)
+            }
+        }
+    }
+
+    private func thumb(_ how: String, _ icon: String, _ label: String) -> some View {
+        let on = line.reaction == how
+        return Button { m.react(window, row.id, how) } label: {
+            Image(systemName: on ? icon + ".fill" : icon)
+                .font(.system(size: 14))
+                .foregroundStyle(Color(on ? Ink.accent : Ink.text3))
+                .opacity(on ? 1 : 0.75)
+                .frame(width: 40, height: 32)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityIdentifier("bots.\(how).\(line.msg ?? "")")
+        .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
+// ================================================================ 252 图
+/// 点开看的一组图
+struct BotShown: Identifiable {
+    let id = UUID()
+    let names: [String]
+    let index: Int
+}
+
+/// 聊天窗里的一张：第一张（裁出来的那块）铺满，后面的（整屏小图）小一号；四角跟聊天气泡一样圆；点开全屏，长按存相册
+private struct BotPicture: View {
+    let name: String
+    let first: Bool
+    let id: String
+    let open: () -> Void
+    @Environment(AppModel.self) private var app
+
+    var body: some View {
+        if let img = BotPictures.image(name), img.size.height > 0 {
+            let ratio = img.size.width / img.size.height
+            let tall: CGFloat = first ? 340 : 220                    // 竖长的图别把一屏占满
+            let wide: CGFloat = first ? 600 : 240
+            Image(uiImage: img)
+                .resizable()
+                .aspectRatio(ratio, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .frame(maxWidth: min(wide, tall * ratio), alignment: .leading)
+                .contentShape(Rectangle())
+                .onTapGesture(perform: open)
+                .onLongPressGesture { BotPictures.keep(name, app: app) }
+                .accessibilityElement()
+                .accessibilityAddTraits([.isImage, .isButton])
+                .accessibilityLabel(app.lang.t("bots.picture"))
+                .accessibilityAction { open() }
+                .accessibilityAction(named: Text(app.lang.t("share.save"))) { BotPictures.keep(name, app: app) }
+                .accessibilityIdentifier("bots.pic.\(id)")
+        }
+    }
+}
+
+/// 全屏看：双指放大、左右滑看这条里的下一张、长按存相册、点一下收起
+private struct BotPictureViewer: View {
+    let shown: BotShown
+    @State private var page: Int
+    @Environment(AppModel.self) private var app
+    @Environment(\.dismiss) private var dismiss
+
+    init(shown: BotShown) {
+        self.shown = shown
+        _page = State(initialValue: shown.index)
+    }
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Color.black.ignoresSafeArea()
+            TabView(selection: $page) {
+                ForEach(Array(shown.names.enumerated()), id: \.offset) { p in
+                    if let img = BotPictures.image(p.element) {
+                        ZoomableImage(image: img, name: "bots.viewer.image.\(p.offset)",
+                                      onTap: { dismiss() }, onLongPress: { BotPictures.keep(p.element, app: app) })
+                            .ignoresSafeArea()
+                            .tag(p.offset)
+                    }
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: shown.names.count > 1 ? .automatic : .never))
+            .ignoresSafeArea()
+            Button { dismiss() } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 36, height: 36)
+                    .background { Circle().fill(.white.opacity(0.18)) }
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, 12)
+            .padding(.top, 4)
+            .accessibilityLabel(app.lang.t("common.close"))
+            .accessibilityIdentifier("bots.viewer.close")
+        }
+        .overlay(alignment: .bottom) { ToastView() }
+        .statusBarHidden()
     }
 }
 
@@ -496,6 +655,7 @@ private struct BotProfileView: View {
                             .accessibilityIdentifier("bots.save")
                     }
                 }
+                if !scribe { jobsSection }
                 Section(t.t("bots.memory")) {
                     if let profile {
                         if profile.memory.isEmpty { Text(t.t("bots.noMemory")).foregroundStyle(Color(Ink.text3)) }
@@ -524,6 +684,30 @@ private struct BotProfileView: View {
         }
         .onAppear { fill() }
         .onChange(of: m.profiles[id]) { _, _ in if !changedByHim { fill() } }
+    }
+
+    /// 252：定时活，一条一行：什么时候、干什么，右边开关；左滑删。新增在聊天里跟它说
+    @ViewBuilder private var jobsSection: some View {
+        Section(t.t("bots.jobs")) {
+            if let list = m.jobs[id] {
+                if list.isEmpty { Text(t.t("bots.noJobs")).font(.system(size: 14)).foregroundStyle(Color(Ink.text3)) }
+                ForEach(list) { j in
+                    Toggle(isOn: Binding(get: { j.on }, set: { m.setJob(id, j.id, on: $0) })) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(j.when).font(.system(size: 15, weight: .semibold)).foregroundStyle(Color(Ink.text))
+                            Text(j.title).font(.system(size: 13)).foregroundStyle(Color(Ink.text2)).lineLimit(2)
+                        }
+                    }
+                    .tint(Color(Ink.accent))
+                    .accessibilityIdentifier("bots.job.\(j.id)")
+                    .swipeActions(edge: .trailing) {
+                        Button(t.t("note.delete"), role: .destructive) { m.deleteJob(id, j.id) }
+                    }
+                }
+            } else {
+                Text(m.jobsError[id] ?? t.t("bots.loading")).foregroundStyle(Color(Ink.text3))
+            }
+        }
     }
 
     /// 他改过名字、说明、人设以后，晚到的资料不盖掉

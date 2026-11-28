@@ -4,11 +4,11 @@ import Foundation
 // 这里是不碰界面的那部分：提醒里点开的链接怎么认、Bark 响过的话手机自己要不要再弹、「提醒里显示内容」那把钥匙怎么生成。接口 v3.20。
 
 /// 提醒里带的链接：yiye://shutong?id=<那封来话的 id>（进小书童、滚到那条）、yiye://todo（进项目待办）、
-/// yiye://bot?id= / yiye://group?id=（250：进那个机器人、那个群）
+/// yiye://bot?id= / yiye://group?id=（250：进那个机器人、那个群）；252：bot 后面可带 &msg=（滚到那一句）
 public enum YiyeLink: Equatable, Sendable {
     case shutong(id: String?)
     case todo
-    case bot(id: String)
+    case bot(id: String, msg: String? = nil)
     case group(id: String)
 
     public static let scheme = "yiye"
@@ -23,7 +23,8 @@ public enum YiyeLink: Equatable, Sendable {
             return .todo
         case "bot", "group":
             guard let id = parts.queryItems?.first(where: { $0.name == "id" })?.value, !id.isEmpty else { return nil }
-            return parts.host?.lowercased() == "bot" ? .bot(id: id) : .group(id: id)
+            let msg = parts.queryItems?.first(where: { $0.name == "msg" })?.value ?? ""
+            return parts.host?.lowercased() == "bot" ? .bot(id: id, msg: msg.isEmpty ? nil : msg) : .group(id: id)
         default:
             return nil
         }

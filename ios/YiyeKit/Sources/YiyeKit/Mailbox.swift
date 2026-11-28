@@ -368,8 +368,10 @@ public enum MailAction: Equatable, Sendable {
     case fbConfig(FbConfigLetter)
     /// 书童的回信（136）：动作、一句话；按住说话认出来的字（stage = shutong / shutong-hear）
     case shutong(ButlerResult)
-    /// 机器人（250）：名单、单聊、群里的发言（stage = bot / group）
-    case bots(ButlerResult)
+    /// 机器人（250）：名单、单聊、群里的发言（stage = bot / group）；252：回话带图时图跟着走
+    case bots(ButlerResult, images: [String: Data] = [:])
+    /// 定时活寄进机器人窗的一句话（252，送来 kind=bot），图跟着信走
+    case botPost(ButlerDelivery, images: [String: Data])
     /// 书童开口说的回信（137）：cmd、动作、配好音的一句（stage = talk）；插嘴时对声纹的回信（stage = who，id 是开口说寄的）
     case talk(ButlerResult, audio: Data?)
     /// 遥控的回信（172，stage = remote）：那台的样子、跟着来的截图
@@ -402,7 +404,9 @@ public enum MailAction: Equatable, Sendable {
             }
             if r.stage == "confirm" { return .confirmReply(r) }
             // 250：机器人的回信按 stage 认（群里一句话分几封寄）；老大管家不认识这个 ask 时回的信没有 stage，按在等的请求认
-            if r.stage == "bot" || r.stage == "group" || bots.contains(r.id) { return .bots(r) }
+            if r.stage == "bot" || r.stage == "group" || bots.contains(r.id) {
+                return .bots(r, images: picked(r.bot?.images, from: env.files))
+            }
             if doves.contains(r.id) || r.stage == "key" { return .dove(r) }
             if talks.contains(r.id) || r.stage == "talk" { return .talk(r, audio: r.audio.flatMap { env.files[$0] }) }
             if shutongs.contains(r.id) || r.stage == "shutong" || r.stage == "shutong-hear" { return .shutong(r) }
@@ -423,12 +427,20 @@ public enum MailAction: Equatable, Sendable {
             if d.kind == ConfirmCard.kind { return .confirm(d) }                                          // 203
             if d.kind == Todo.kindNew || d.kind == Todo.kindDone { return .todo(d) }   // 162：项目待办，也不是听力稿
             if d.kind == Board.kind { return .board(d) }                              // 234：看板
+            if d.kind == BotPost.kind { return .botPost(d, images: picked(d.images, from: env.files)) }   // 252：机器人的定时活
             guard let a = d.audio else { return .deliver(d, audio: nil) }
             if let data = env.files[a] ?? localAudio(a) { return .deliver(d, audio: data) }
             return .later
         case .request:
             return .drop("手机不收请求")
         }
+    }
+
+    /// 252：回信 / 送来里点名的几个路径，信里带着的才算
+    private static func picked(_ paths: [String]?, from files: [String: Data]) -> [String: Data] {
+        var out: [String: Data] = [:]
+        for p in paths ?? [] { if let d = files[p] { out[p] = d } }
+        return out
     }
 }
 

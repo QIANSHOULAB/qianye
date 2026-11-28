@@ -4,6 +4,8 @@ import XCTest
 /// 1. 只有小书童时点开直接进它 → 右上小人图标进名单 → 建一个 → 聊一句 → 资料页左滑删一条记忆 → 删掉它 → 再点主页按钮又直接进小书童
 /// 2. 名单里拉群 → 打 @ 点成员名 → 发一句 → 两条回话按序摆
 /// 3. 提醒链接 yiye://group 直接进那个群
+/// 4. 252：yiye://bot?id=&msg= 进掌眼的窗、滚到今天第一条（信故意倒着到）→ 图点开全屏、左滑下一张、长按存相册；深色看一眼
+/// 5. 252：👍 再点取消、👎 → 资料页定时活开关、左滑删
 final class BotsTests: XCTestCase {
     private var app: XCUIApplication!
 
@@ -11,10 +13,11 @@ final class BotsTests: XCTestCase {
         continueAfterFailure = false
     }
 
-    private func launch(_ screen: String) {
+    private func launch(_ screen: String, lang: String = "en", appearance: String = "light") {
         let a = XCUIApplication()
-        a.launchArguments = ["-YiyeDemo", "YES", "-YiyeScreen", screen, "-YiyeLang", "en", "-YiyeAppearance", "light",
-                             "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        let locale = lang == "en" ? "en_US" : "zh_CN"
+        a.launchArguments = ["-YiyeDemo", "YES", "-YiyeScreen", screen, "-YiyeLang", lang, "-YiyeAppearance", appearance,
+                             "-AppleLanguages", "(\(lang))", "-AppleLocale", locale]
         a.launch()
         app = a
     }
@@ -126,6 +129,88 @@ final class BotsTests: XCTestCase {
         check(second.waitForExistence(timeout: 6), "B2-第二句没到", "")
         check(first.frame.minY < second.frame.minY, "B2-顺序反了", "第 2 封先到，也该摆在第 1 封下面")
         shot("B2-群聊")
+    }
+
+    // ---------------------------------------------------------------- 4. 252 掌眼：图、全屏、👍👎、定时活
+    func testPicturesReactAndJobs() {
+        launch("link-eye", lang: "zh-Hans")
+        let first = containing("第一条 刺点")
+        check(first.waitForExistence(timeout: 12), "252-没进掌眼的窗", "点提醒链接该直接进它的聊天窗")
+        let pic = any("bots.pic.zdemo1.0")
+        check(pic.waitForExistence(timeout: 6) && hittable(pic), "252-没滚到第一条", "提醒指的那一句该在屏幕上")
+        check(pic.frame.minY < first.frame.minY, "252-图没在字上面", "")
+        check(any("bots.pic.zdemo1.1").exists, "252-没有第二张", "这条有两张图")
+        sleep(1)
+        shot("252-掌眼窗")
+
+        pic.tap()
+        let full0 = any("bots.viewer.image.0")
+        check(full0.waitForExistence(timeout: 6), "252-没全屏", "点图该全屏看")
+        shot("252-全屏")
+        full0.swipeLeft()
+        let full1 = any("bots.viewer.image.1")
+        check(full1.waitForExistence(timeout: 4) && hittable(full1), "252-没翻到下一张", "左滑看这条里的下一张")
+        full1.press(forDuration: 1.2)
+        check(containing("存进相册了").waitForExistence(timeout: 6), "252-长按没存", "长按该存进相册")
+        tap("bots.viewer.close", "252-没有关")
+        check(full1.waitForNonExistence(timeout: 6), "252-关不掉", "")
+
+        // 深色里看一眼图
+        app.terminate()
+        launch("link-eye", lang: "zh-Hans", appearance: "dark")
+        check(any("bots.pic.zdemo1.0").waitForExistence(timeout: 12), "252-深色没进窗", "")
+        sleep(1)
+        shot("252-掌眼窗-深色")
+    }
+
+    // ---------------------------------------------------------------- 5. 252 👍👎、定时活
+    func testReactAndJobs() {
+        launch("link-eye", lang: "zh-Hans")
+        check(any("bots.pic.zdemo1.0").waitForExistence(timeout: 12), "252-没进掌眼的窗", "")
+        let up = any("bots.up.zdemo1")
+        check(reach(up), "252-没有赞", "能评的话底下该有 👍")
+        for _ in 0..<3 where !up.isHittable { app.swipeUp() }
+        up.tap()
+        check(selected(up, true), "252-点了没变实", "点 👍 该变实")
+        up.tap()
+        check(selected(up, false), "252-再点没取消", "再点一次取消")
+        let down = any("bots.down.zdemo1")
+        down.tap()
+        check(selected(down, true), "252-踩不动", "点 👎 该变实")
+        shot("252-赞踩")
+
+        tap("bots.title", "252-点名字")
+        let job = app.switches["bots.job.j0000001"].firstMatch
+        check(reach(job), "252-没有定时活", "资料页该列出定时活")
+        for _ in 0..<3 where !job.isHittable { app.swipeUp() }
+        check(job.value as? String == "1", "252-开关不是开的", "实际 \(String(describing: job.value))")
+        shot("252-定时活")
+        let wide = app.windows.firstMatch.frame.width
+        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: wide - 50, dy: job.frame.midY)).tap()
+        check(valueBecomes(job, "0"), "252-关不掉定时活", "")
+        let second = app.switches["bots.job.j0000002"].firstMatch
+        check(reach(second), "252-没有第二条", "")
+        for _ in 0..<3 where !second.isHittable { app.swipeUp() }
+        second.swipeLeft()
+        let delete = app.buttons["删除"].firstMatch
+        check(delete.waitForExistence(timeout: 4), "252-左滑没出删除", "")
+        delete.tap()
+        check(second.waitForNonExistence(timeout: 6), "252-删不掉定时活", "")
+    }
+
+    private func hittable(_ e: XCUIElement) -> Bool {
+        for _ in 0..<12 { if e.isHittable { return true }; usleep(500_000) }
+        return false
+    }
+
+    private func selected(_ e: XCUIElement, _ want: Bool) -> Bool {
+        for _ in 0..<10 { if e.isSelected == want { return true }; usleep(300_000) }
+        return false
+    }
+
+    private func valueBecomes(_ e: XCUIElement, _ want: String) -> Bool {
+        for _ in 0..<12 { if e.value as? String == want { return true }; usleep(500_000) }
+        return false
     }
 
     // ---------------------------------------------------------------- 3. 从提醒进群

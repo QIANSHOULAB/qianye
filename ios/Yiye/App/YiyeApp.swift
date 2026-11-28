@@ -65,13 +65,13 @@ struct RootView: View {
             if let s = app.demo?.screen, ["dove", "dove-done", "secret"].contains(s) { DoveModel.shared.demo(s) }
         }
         .task {                                                                                    // 250 UI 测试：名单、从提醒进群
-            if let s = app.demo?.screen, ["bots", "link-group"].contains(s) {
+            if let s = app.demo?.screen, ["bots", "link-group", "link-eye"].contains(s) {
                 app.started()
                 try? await Task.sleep(nanoseconds: 800_000_000)
-                BotsModel.shared.demoSeed()
+                if s == "link-eye" { BotsModel.shared.demoEye() } else { BotsModel.shared.demoSeed() }   // 252：掌眼寄来带图的几句
                 if s == "bots" {
                     BotsModel.shared.showList()
-                } else if let u = URL(string: "yiye://group?id=gdemo0001") {
+                } else if let u = URL(string: s == "link-eye" ? "yiye://bot?id=bdemoeye1&msg=zdemo1" : "yiye://group?id=gdemo0001") {
                     app.openLink(u)
                 }
             }

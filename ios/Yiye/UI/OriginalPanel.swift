@@ -45,19 +45,32 @@ struct OriginalPanel: View {
 /// 能双指放大、拖动、双击放大 / 还原的一张图
 struct ZoomableImage: UIViewRepresentable {
     let image: UIImage
+    /// 252：机器人的图：给 UI 测试认的名字、点一下、长按
+    var name: String?
+    var onTap: (() -> Void)?
+    var onLongPress: (() -> Void)?
 
     func makeUIView(context: Context) -> ZoomScroll {
         let v = ZoomScroll()
         v.setImage(image)
+        v.listen(name: name, tap: onTap, longPress: onLongPress)
         return v
     }
 
-    func updateUIView(_ v: ZoomScroll, context: Context) { v.setImage(image) }
+    func updateUIView(_ v: ZoomScroll, context: Context) {
+        v.setImage(image)
+        v.listen(name: name, tap: onTap, longPress: onLongPress)
+    }
 }
 
 final class ZoomScroll: UIScrollView, UIScrollViewDelegate {
     private let iv = UIImageView()
     private var current: UIImage?
+    private let double = UITapGestureRecognizer(target: nil, action: nil)
+    private var single: UITapGestureRecognizer?
+    private var press: UILongPressGestureRecognizer?
+    private var onTap: (() -> Void)?
+    private var onLongPress: (() -> Void)?
 
     init() {
         super.init(frame: .zero)
@@ -69,10 +82,35 @@ final class ZoomScroll: UIScrollView, UIScrollViewDelegate {
         bouncesZoom = true
         iv.contentMode = .scaleAspectFit
         addSubview(iv)
-        let t = UITapGestureRecognizer(target: self, action: #selector(doubleTapped(_:)))
-        t.numberOfTapsRequired = 2
-        addGestureRecognizer(t)
+        double.addTarget(self, action: #selector(doubleTapped(_:)))
+        double.numberOfTapsRequired = 2
+        addGestureRecognizer(double)
     }
+
+    func listen(name: String?, tap: (() -> Void)?, longPress: (() -> Void)?) {
+        if let name {
+            iv.isAccessibilityElement = true
+            iv.accessibilityIdentifier = name
+            iv.accessibilityTraits = .image
+        }
+        onTap = tap
+        onLongPress = longPress
+        if tap != nil && single == nil {
+            let g = UITapGestureRecognizer(target: self, action: #selector(tapped))
+            g.require(toFail: double)
+            addGestureRecognizer(g)
+            single = g
+        }
+        if longPress != nil && press == nil {
+            let g = UILongPressGestureRecognizer(target: self, action: #selector(pressed(_:)))
+            addGestureRecognizer(g)
+            press = g
+        }
+    }
+
+    @objc private func tapped() { onTap?() }
+
+    @objc private func pressed(_ g: UILongPressGestureRecognizer) { if g.state == .began { onLongPress?() } }
 
     required init?(coder: NSCoder) { fatalError("init(coder:)") }
 

@@ -168,6 +168,15 @@ public struct ButlerDelivery: Codable, Equatable, Sendable {
     /// kind=listen（225）：谁配的、几星（v3.21 / v3.22，见 Voice225.swift），大管家译好的意思（v3.23）
     public var voice: ListenVoice?
     public var trans: ListenTrans?
+    /// kind=bot（252，v3.28，见 Bots252.swift）：定时活寄进机器人窗的一句：哪个机器人、这句的号、图（信里的路径）、
+    /// 能不能 👍👎、哪一趟、趟里第几句、是不是最后一句
+    public var bot: String?
+    public var msg: String?
+    public var images: [String]?
+    public var react: Bool?
+    public var run: String?
+    public var seq: Int?
+    public var last: Bool?
     public init(v: Int = Butler.version, id: String, kind: String = "listen", title: String? = nil, text: String,
                 audio: String?, marks: [ListenMark]?, folder: String? = nil, at: String? = nil, note: String? = nil, request: String? = nil,
                 voice: ListenVoice? = nil, trans: ListenTrans? = nil) {

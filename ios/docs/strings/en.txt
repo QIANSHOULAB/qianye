@@ -52,6 +52,7 @@ bots.deleteGroup	Delete group
 bots.deleteYes	Delete
 bots.desc	One line
 bots.descHint	What it does. The lead picks by this line
+bots.dislike	Dislike
 bots.empty	No chat yet. Say hi.
 bots.forget	Forget
 bots.gone	Gone
@@ -60,6 +61,8 @@ bots.groupMemory	What the group remembers
 bots.groupName	Group name
 bots.groupTitle	New group
 bots.groups	Groups
+bots.jobs	Scheduled
+bots.like	Like
 bots.loading	Fetching the roster…
 bots.members	Members (2 to 6)
 bots.memory	What it remembers
@@ -68,9 +71,11 @@ bots.new	+ Bot
 bots.newGroup	+ Group
 bots.newTitle	New bot
 bots.noAnswer	No answer.
+bots.noJobs	None yet. In chat, tell it “每天晚上 9 点给我……”, then answer “对” to save it.
 bots.noMemory	Nothing yet
 bots.persona	Persona
 bots.personaHint	Temper and rules, as long as you like
+bots.picture	Picture
 bots.placeholder	Say something
 bots.save	Save
 bots.saved	Saved.

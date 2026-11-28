@@ -94,14 +94,21 @@ public struct BotAsk: Codable, Equatable, Sendable {
     public var chief: String?
     /// 群 say：只让这一个回（小书童要全文时第二轮用）
     public var to: String?
+    /// 252（v3.28）react：哪一句、"up" / "down" / "none"
+    public var msg: String?
+    public var react: String?
+    /// 252 job-on / job-off / job-delete：哪条定时活
+    public var job: String?
 
     public init(_ action: String, id: String? = nil, name: String? = nil, desc: String? = nil, persona: String? = nil, gear: String? = nil,
-                text: String? = nil, history: [BotTalk]? = nil, members: [String]? = nil, chief: String? = nil, to: String? = nil) {
+                text: String? = nil, history: [BotTalk]? = nil, members: [String]? = nil, chief: String? = nil, to: String? = nil,
+                msg: String? = nil, react: String? = nil, job: String? = nil) {
         self.action = action; self.id = id; self.name = name; self.desc = desc; self.persona = persona; self.gear = gear
         self.text = text; self.history = (history?.isEmpty ?? true) ? nil : history; self.members = members; self.chief = chief; self.to = to
+        self.msg = msg; self.react = react; self.job = job
     }
 
-    private enum CodingKeys: String, CodingKey { case action = "do", id, name, desc, persona, gear, text, history, members, chief, to }
+    private enum CodingKeys: String, CodingKey { case action = "do", id, name, desc, persona, gear, text, history, members, chief, to, msg, react, job }
 }
 
 /// 回信里 `bot` 那一块（stage = bot）
@@ -115,13 +122,20 @@ public struct BotReply: Codable, Equatable, Sendable {
     public var memory: [BotMemo]?
     public var bots: [BotCard]?
     public var groups: [BotGroup]?
+    /// 252（v3.28）：回话带的号和图；react 的回声；定时活名单
+    public var msg: String?
+    public var images: [String]?
+    public var react: String?
+    public var jobs: [BotJob]?
 
     public init(_ action: String, id: String? = nil, say: String? = nil, quota: Bool? = nil, bot: BotCard? = nil, memory: [BotMemo]? = nil,
-                bots: [BotCard]? = nil, groups: [BotGroup]? = nil) {
+                bots: [BotCard]? = nil, groups: [BotGroup]? = nil, msg: String? = nil, images: [String]? = nil, react: String? = nil,
+                jobs: [BotJob]? = nil) {
         self.action = action; self.id = id; self.say = say; self.quota = quota; self.bot = bot; self.memory = memory; self.bots = bots; self.groups = groups
+        self.msg = msg; self.images = images; self.react = react; self.jobs = jobs
     }
 
-    private enum CodingKeys: String, CodingKey { case action = "do", id, say, quota, bot, memory, bots, groups }
+    private enum CodingKeys: String, CodingKey { case action = "do", id, say, quota, bot, memory, bots, groups, msg, images, react, jobs }
 }
 
 /// 群里的一句发言；bot 是空串 = 系统的一行小字
@@ -185,9 +199,17 @@ public struct BotLine: Codable, Identifiable, Equatable, Sendable {
     public var seq: Int?
     /// 他那一句：waiting / answered / failed
     public var state: String
+    /// 252：这句话的号（👍👎 认它）、手机上存的图（文件名，按顺序）、能不能 👍👎、他点的（"up" / "down"）、哪一趟定时活
+    public var msg: String?
+    public var images: [String]?
+    public var canReact: Bool?
+    public var reaction: String?
+    public var run: String?
 
-    public init(id: UUID = UUID(), who: String, text: String, at: Date = Date(), rid: String? = nil, seq: Int? = nil, state: String = "") {
+    public init(id: UUID = UUID(), who: String, text: String, at: Date = Date(), rid: String? = nil, seq: Int? = nil, state: String = "",
+                msg: String? = nil, images: [String]? = nil, canReact: Bool? = nil, reaction: String? = nil, run: String? = nil) {
         self.id = id; self.who = who; self.text = text; self.at = at; self.rid = rid; self.seq = seq; self.state = state
+        self.msg = msg; self.images = images; self.canReact = canReact; self.reaction = reaction; self.run = run
     }
 }
 

@@ -52,6 +52,7 @@ bots.deleteGroup	解散这个群
 bots.deleteYes	删掉
 bots.desc	一句话说明
 bots.descHint	它干什么。总管靠这句分活
+bots.dislike	不喜欢
 bots.empty	还没聊过，打个招呼
 bots.forget	忘掉
 bots.gone	找不到了
@@ -60,6 +61,8 @@ bots.groupMemory	群里记得的
 bots.groupName	群名
 bots.groupTitle	拉个群
 bots.groups	群
+bots.jobs	定时活
+bots.like	喜欢
 bots.loading	问大管家要名单…
 bots.members	成员（2 到 6 个）
 bots.memory	它记得的
@@ -68,9 +71,11 @@ bots.new	+ 机器人
 bots.newGroup	+ 拉个群
 bots.newTitle	新机器人
 bots.noAnswer	没等到回话
+bots.noJobs	还没有。聊天里跟它说「每天晚上 9 点给我……」，它复述一遍，你回「对」。
 bots.noMemory	还没记什么
 bots.persona	人设
 bots.personaHint	脾气和规矩，想写多长写多长
+bots.picture	图
 bots.placeholder	说点什么
 bots.save	保存
 bots.saved	改好了

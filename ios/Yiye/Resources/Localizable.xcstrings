@@ -817,6 +817,23 @@
         }
       }
     },
+    "bots.dislike": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dislike"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不喜欢"
+          }
+        }
+      }
+    },
     "bots.empty": {
       "extractionState": "manual",
       "localizations": {
@@ -949,6 +966,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "群"
+          }
+        }
+      }
+    },
+    "bots.jobs": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scheduled"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "定时活"
+          }
+        }
+      }
+    },
+    "bots.like": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Like"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "喜欢"
           }
         }
       }
@@ -1089,6 +1140,23 @@
         }
       }
     },
+    "bots.noJobs": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None yet. In chat, tell it “每天晚上 9 点给我……”, then answer “对” to save it."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没有。聊天里跟它说「每天晚上 9 点给我……」，它复述一遍，你回「对」。"
+          }
+        }
+      }
+    },
     "bots.noMemory": {
       "extractionState": "manual",
       "localizations": {
@@ -1136,6 +1204,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "脾气和规矩，想写多长写多长"
+          }
+        }
+      }
+    },
+    "bots.picture": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Picture"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图"
           }
         }
       }

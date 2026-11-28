@@ -308,8 +308,11 @@ final class ButlerService {
             shutongs.remove(r.id)
             ShutongModel.shared.answer(r)
             return true
-        case .bots(let r):                                  // 250 机器人：名单、单聊、群里的发言
-            BotsModel.shared.answer(r)
+        case .bots(let r, let images):                      // 250 机器人：名单、单聊、群里的发言（252：带图）
+            BotsModel.shared.answer(r, files: images)
+            return true
+        case .botPost(let d, let images):                   // 252：定时活寄进机器人窗的一句
+            BotsModel.shared.post(d, files: images)
             return true
         case .talk(let r, let audio):                       // 137 书童开口说：一句话的回信 / 插嘴对声纹
             talks.remove(r.id)

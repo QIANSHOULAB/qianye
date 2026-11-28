@@ -174,7 +174,7 @@ extension AppModel {
         let bots = BotsModel.shared
         var scribeStays = false
         if case .shutong = link { scribeStays = true }
-        if case .bot(let id) = link, id == BotID.shutong { scribeStays = true }
+        if case .bot(let id, _) = link, id == BotID.shutong { scribeStays = true }
         if shutong.open && !scribeStays {
             shutong.open = false
             covered = true
@@ -195,10 +195,12 @@ extension AppModel {
                 shutong.open = true
             case .todo:
                 TodoDesk.shared.showFolder()
-            case .bot(let id) where id == BotID.shutong:
+            case .bot(let id, _) where id == BotID.shutong:
                 shutong.load()
                 shutong.open = true
-            case .bot(let id), .group(let id):
+            case .bot(let id, let msg):
+                bots.openFromLink(id, msg: msg)                     // 252：滚到那一句（定时活的第一条）
+            case .group(let id):
                 bots.openFromLink(id)
             }
         }
