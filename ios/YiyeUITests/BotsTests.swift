@@ -41,10 +41,20 @@ final class BotsTests: XCTestCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
     }
 
+    /// 半屏里排在下面的行，没滚到就不存在：往上推几下（第一下先把半屏拉高）
+    private func reach(_ e: XCUIElement) -> Bool {
+        if e.waitForExistence(timeout: 6) { return true }
+        for _ in 0..<5 {
+            app.swipeUp()
+            if e.waitForExistence(timeout: 2) { return true }
+        }
+        return false
+    }
+
     /// 等它出来再点；被键盘挡着就往上推一下
     private func tap(_ id: String, _ name: String) {
         let e = any(id)
-        check(e.waitForExistence(timeout: 8), name, "找不到「\(id)」")
+        check(reach(e), name, "找不到「\(id)」")
         for _ in 0..<3 where !e.isHittable { app.swipeUp() }
         e.tap()
     }
@@ -75,7 +85,7 @@ final class BotsTests: XCTestCase {
 
         tap("bots.title", "B1-点名字")
         let memo = containing("He likes tea")
-        check(memo.waitForExistence(timeout: 8), "B1-没有记忆", "资料页该列出「He likes tea」")
+        check(reach(memo), "B1-没有记忆", "资料页该列出「He likes tea」")
         shot("B1-资料页")
         for _ in 0..<3 where !memo.isHittable { app.swipeUp() }
         memo.swipeLeft()
