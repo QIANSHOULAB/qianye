@@ -21,8 +21,22 @@ struct ShutongSheet: View {
                 Image(systemName: "studentdesk")
                     .font(.system(size: 17, weight: .medium))
                     .foregroundStyle(Color(Ink.accent))
+                // 250：点名字进小书童的资料页（它记得的）；还是一行字（UI 测试拿它拖窗）
                 BarTitle(text: t.t("shutong.name"))
+                    .contentShape(Rectangle())
+                    .onTapGesture { typing = false; BotsModel.shared.scribeProfile() }
+                    .accessibilityIdentifier("shutong.title")
                 Spacer()
+                // 250：别的机器人、群、建新的
+                Button { typing = false; BotsModel.shared.listFromScribe() } label: {
+                    Image(systemName: "person.2")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(Color(Ink.accent))
+                        .hit44()
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(t.t("bots.title"))
+                .accessibilityIdentifier("shutong.bots")
                 talkButton
                 Button(t.t("common.done")) { m.open = false; dismiss() }.buttonStyle(PlainTextButtonStyle())
             }
@@ -209,6 +223,9 @@ struct ShutongBubble: View {
     @Environment(AppModel.self) private var app
     @State private var editing = false
     @State private var fixing = ""
+
+    /// 250：机器人群里也用它画回执
+    init(line: ShutongLine) { self.line = line }
 
     private var t: Lang { app.lang }
     private var m: ShutongModel { ShutongModel.shared }
@@ -477,6 +494,8 @@ struct ShutongAskCard: View {
 /// 要他点头的清单：一条一行，点一下划掉（不动它）；「照办」/「照扔」、「算了」
 struct ShutongConfirmCard: View {
     let line: ShutongLine
+    /// 250：这张卡在机器人群里：点、划、照办归群窗管
+    var group: (window: String, row: UUID)?
     @Environment(AppModel.self) private var app
 
     private var t: Lang { app.lang }
@@ -492,7 +511,9 @@ struct ShutongConfirmCard: View {
                 .foregroundStyle(Color(Ink.text))
             ForEach(Array(acts.enumerated()), id: \.offset) { pair in
                 let struck = line.struck.contains(pair.offset)
-                Button { m.strike(line.id, pair.offset) } label: {
+                Button {
+                    if let g = group { BotsModel.shared.strike(g.window, g.row, pair.offset) } else { m.strike(line.id, pair.offset) }
+                } label: {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Image(systemName: struck ? "circle" : (pair.element.op == "trash" ? "trash.circle.fill" : "checkmark.circle.fill"))
                             .foregroundStyle(Color(struck ? Ink.text3 : (pair.element.op == "trash" ? Ink.danger : Ink.accent)))
@@ -511,9 +532,13 @@ struct ShutongConfirmCard: View {
             }
             if pending {
                 HStack(spacing: 12) {
-                    Button(allTrash ? t.t("shutong.trashIt") : t.t("shutong.doIt")) { m.confirm(line.id) }
+                    Button(allTrash ? t.t("shutong.trashIt") : t.t("shutong.doIt")) {
+                        if let g = group { BotsModel.shared.confirm(g.window, g.row) } else { m.confirm(line.id) }
+                    }
                         .buttonStyle(SmartButtonStyle(prominent: true, minWidth: 88))
-                    Button(t.t("shutong.never")) { m.cancel(line.id) }
+                    Button(t.t("shutong.never")) {
+                        if let g = group { BotsModel.shared.cancel(g.window, g.row) } else { m.cancel(line.id) }
+                    }
                         .buttonStyle(PlainTextButtonStyle(color: Ink.text2))
                 }
                 .padding(.top, 2)

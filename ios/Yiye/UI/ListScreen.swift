@@ -63,8 +63,8 @@ struct ListScreen: View {
                 ToolboxButton(trigger: broadcast) {
                     withAnimation(.easeOut(duration: 0.2)) { showTools.toggle() }
                 }
-                // 136 书童：一点，从下面升起半屏聊天窗
-                Button { ShutongModel.shared.open = true } label: { Image(systemName: "studentdesk") }
+                // 136 书童：一点，从下面升起半屏聊天窗；250：建过别的机器人、群，点开先是名单（只有小书童一个就直接进它）
+                Button { BotsModel.shared.openFromBar() } label: { Image(systemName: "studentdesk") }
                     .buttonStyle(SmartButtonStyle(compact: Narrow.on))
                     .accessibilityLabel(t.t("shutong.name"))
                 // 157 听力（Song 11-25「把听力放出来，经常用」）：一点直接进；有没听过的新稿子，右上角一个小点

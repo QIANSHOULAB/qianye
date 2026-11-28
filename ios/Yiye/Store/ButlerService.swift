@@ -238,7 +238,8 @@ final class ButlerService {
             }
         }
         var action = MailAction.decide(env, waiting: waiting, dubbing: dubbing, words: words.requestIDs, looks: looks, keeps: Set(keepWait.keys), articles: Set(articles.keys), doves: doves,
-                                       shutongs: shutongs.union(ShutongModel.shared.waitingIDs), talks: talks, votes: votes.requestIDs)
+                                       shutongs: shutongs.union(ShutongModel.shared.waitingIDs), talks: talks, votes: votes.requestIDs,
+                                       bots: BotsModel.shared.waitingIDs)
         if action == .later, let ch = app.mirror.channel, let a = env.delivery?.audio {
             // 信里没带录音：去 iCloud 镜像里找（后台读，占位的要等它下载）
             let data: Data? = await withCheckedContinuation { c in
@@ -306,6 +307,9 @@ final class ButlerService {
         case .shutong(let r):                               // 136 书童：动作、一句话；按住说话认出的字
             shutongs.remove(r.id)
             ShutongModel.shared.answer(r)
+            return true
+        case .bots(let r):                                  // 250 机器人：名单、单聊、群里的发言
+            BotsModel.shared.answer(r)
             return true
         case .talk(let r, let audio):                       // 137 书童开口说：一句话的回信 / 插嘴对声纹
             talks.remove(r.id)
@@ -846,6 +850,20 @@ final class ButlerService {
         }
     }
 
+    // ---------------------------------------------------------------- 机器人（250）
+    /// 寄一封机器人的请求（只走信箱：大管家不在，信在信箱里等它）。sent(false) = 信箱说两台大管家都不在
+    func sendBots(_ req: ButlerRequest) async -> LookSent {
+        if mail == nil { connectMail() }
+        guard let mail else { return .noPair }
+        do {
+            let sent = try await mail.send(.request(req), timeout: 20)
+            rememberSeq(req.id, sent.seq)
+            return .sent(sent.pc)
+        } catch {
+            return .failed((error as? MailError)?.errorDescription ?? error.localizedDescription)
+        }
+    }
+
     // ---------------------------------------------------------------- 书童开口说（137）
     /// 寄一句（只走信箱：晚到的回答没用）。信箱说两台大管家都不在：当场撤回，回 .sent(false)
     func sendTalk(_ req: ButlerRequest, files: [String: Data] = [:]) async -> LookSent {
@@ -959,6 +977,7 @@ final class ButlerService {
     func look() {
         guard let app else { return }
         ShutongModel.shared.tick()                          // 136：新便签该收拾的寄出去
+        BotsModel.shared.tick()                             // 250：机器人等太久的收掉
         backup.hub.tick()
         refreshQuota()
         retryStalled()

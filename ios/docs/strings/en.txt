@@ -40,6 +40,44 @@ batch.move	Move to…
 batch.selected	%lld selected
 batch.trash	Trash
 board.note	Written by your butler. Edits get overwritten.
+bots.back	Back
+bots.builtin	The scribe’s persona lives with the butler. Read-only.
+bots.chief	Lead
+bots.clear	Clear bot chats
+bots.cleared	Cleared.
+bots.create	Create
+bots.delete	Delete bot
+bots.deleteAsk	Delete “%@”?
+bots.deleteGroup	Delete group
+bots.deleteYes	Delete
+bots.desc	One line
+bots.descHint	What it does. The lead picks by this line
+bots.empty	No chat yet. Say hi.
+bots.forget	Forget
+bots.gone	Gone
+bots.groupEmpty	Talk. @ someone to pick who answers.
+bots.groupMemory	What the group remembers
+bots.groupName	Group name
+bots.groupTitle	New group
+bots.groups	Groups
+bots.loading	Fetching the roster…
+bots.members	Members (2 to 6)
+bots.memory	What it remembers
+bots.name	Name
+bots.new	+ Bot
+bots.newGroup	+ Group
+bots.newTitle	New bot
+bots.noAnswer	No answer.
+bots.noMemory	Nothing yet
+bots.persona	Persona
+bots.personaHint	Temper and rules, as long as you like
+bots.placeholder	Say something
+bots.save	Save
+bots.saved	Saved.
+bots.scribeDesc	Tidies notes; hands chores to the handheld
+bots.thinking	%@ is thinking…
+bots.thinkingGroup	Thinking…
+bots.title	Bots
 busy.album	Getting the photo…
 busy.import	Bringing your notes home…
 busy.ocr	Squinting at your handwriting…

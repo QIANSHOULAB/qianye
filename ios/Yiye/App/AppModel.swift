@@ -93,6 +93,7 @@ final class AppModel {
         butler.app = self
         companion.app = self
         ShutongModel.shared.app = self                      // 136 书童
+        BotsModel.shared.app = self                         // 250 机器人
         ShutongTalker.shared.app = self                     // 137 书童开口说
         EarDiagSender.shared.app = self                     // 170 说话出错、界面卡：诊断寄给大管家
         RemoteModel.shared.app = self                       // 172 遥控

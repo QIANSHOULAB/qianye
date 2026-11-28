@@ -368,6 +368,8 @@ public enum MailAction: Equatable, Sendable {
     case fbConfig(FbConfigLetter)
     /// 书童的回信（136）：动作、一句话；按住说话认出来的字（stage = shutong / shutong-hear）
     case shutong(ButlerResult)
+    /// 机器人（250）：名单、单聊、群里的发言（stage = bot / group）
+    case bots(ButlerResult)
     /// 书童开口说的回信（137）：cmd、动作、配好音的一句（stage = talk）；插嘴时对声纹的回信（stage = who，id 是开口说寄的）
     case talk(ButlerResult, audio: Data?)
     /// 遥控的回信（172，stage = remote）：那台的样子、跟着来的截图
@@ -385,7 +387,7 @@ public enum MailAction: Equatable, Sendable {
     /// localAudio：信里没带录音时去 iCloud 找
     public static func decide(_ env: MailEnvelope, waiting: [String: UUID], dubbing: [String: UUID], words: Set<String> = [],
                               looks: Set<String> = [], keeps: Set<String> = [], articles: Set<String> = [], doves: Set<String> = [],
-                              shutongs: Set<String> = [], talks: Set<String> = [], votes: Set<String> = [],
+                              shutongs: Set<String> = [], talks: Set<String> = [], votes: Set<String> = [], bots: Set<String> = [],
                               localAudio: (String) -> Data? = { _ in nil }) -> MailAction {
         switch env.kind {
         case .result:
@@ -399,6 +401,8 @@ public enum MailAction: Equatable, Sendable {
                 return .remote(r, image: (r.remote?.image ?? r.file).flatMap { env.files[$0] })
             }
             if r.stage == "confirm" { return .confirmReply(r) }
+            // 250：机器人的回信按 stage 认（群里一句话分几封寄）；老大管家不认识这个 ask 时回的信没有 stage，按在等的请求认
+            if r.stage == "bot" || r.stage == "group" || bots.contains(r.id) { return .bots(r) }
             if doves.contains(r.id) || r.stage == "key" { return .dove(r) }
             if talks.contains(r.id) || r.stage == "talk" { return .talk(r, audio: r.audio.flatMap { env.files[$0] }) }
             if shutongs.contains(r.id) || r.stage == "shutong" || r.stage == "shutong-hear" { return .shutong(r) }

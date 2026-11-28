@@ -131,6 +131,12 @@ struct SettingsScreen: View {
                                 app.show(t.t("shutong.cleared"))
                             }
                             .buttonStyle(PlainTextButtonStyle(color: Ink.text2))
+                            // 250：机器人和群的聊天记录
+                            Button(t.t("bots.clear")) {
+                                BotsModel.shared.clearChats()
+                                app.show(t.t("bots.cleared"))
+                            }
+                            .buttonStyle(PlainTextButtonStyle(color: Ink.text2))
                         }
                     }
 

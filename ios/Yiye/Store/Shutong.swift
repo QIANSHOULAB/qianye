@@ -68,6 +68,10 @@ final class ShutongModel {
     var unread = false
 
     @ObservationIgnored private var batches: [ShutongBatch] = []
+    /// 250：撤销一批以后，别的窗（机器人群）里的回执也跟着重画
+    private var batchRevision = 0
+    /// 250：机器人聊天窗借这里按住说话：认出来的字交给它，不进小书童的输入框
+    @ObservationIgnored private var hearSink: ((String) -> Void)?
     @ObservationIgnored private var sweepRid: String?
     @ObservationIgnored private var chatWait: [String: (line: UUID, round: Int, at: Date)] = [:]
     @ObservationIgnored private var hearWait: Set<String> = []
@@ -199,7 +203,7 @@ final class ShutongModel {
 
     // ---------------------------------------------------------------- 做一批、撤一批
     @discardableResult
-    private func doBatch(_ acts: [ShutongAct], auto: Bool) -> ShutongBatch? {
+    private func doBatch(_ acts: [ShutongAct], auto: Bool, record: Bool = true) -> ShutongBatch? {
         guard let app else { return nil }
         var (notes, folders, _) = world()
         let b = ShutongApply.run(acts, notes: &notes, folders: &folders, now: Date(), id: UUID().uuidString)
@@ -217,12 +221,58 @@ final class ShutongModel {
         }
         try? app.context.save()
         batches.append(b)
-        var line = ShutongLine(who: "receipt", text: ShutongReceipt.line(b.counts, zh: zh) ?? "")
-        line.batch = b.id
-        line.auto = auto
-        lines.append(line)
+        if record {
+            var line = receiptLine(b)
+            line.auto = auto
+            lines.append(line)
+        }
         save()
         return b
+    }
+
+    private func receiptLine(_ b: ShutongBatch) -> ShutongLine {
+        var line = ShutongLine(who: "receipt", text: ShutongReceipt.line(b.counts, zh: zh) ?? "")
+        line.batch = b.id
+        return line
+    }
+
+    // ---------------------------------------------------------------- 250 机器人群里的小书童
+    /// 群里小书童那一封带给大脑的：目录、文件夹；要全文的第二轮带 full
+    func groupAsk(round: Int, full: [String: String]?) -> ShutongAsk {
+        load()
+        return ShutongAsk(mode: "chat", round: round, notes: catalog(), folders: folderInfo(), full: full,
+                          autoFolders: allFolders().filter(\.auto).count)
+    }
+
+    /// 群里小书童回的动作：跟聊天窗一样逐条查；扔、合并的列成清单等他点头；回执、清单、没动的那句交回群窗
+    func groupActs(_ acts: [ShutongAct]) -> [ShutongLine] {
+        load()
+        guard !acts.isEmpty else { return [] }
+        let (notes, folders, auto) = world()
+        let c = ShutongPlan.check(acts, notes: notes, folders: folders, autoFolders: auto, mode: "chat")
+        var out: [ShutongLine] = []
+        if c.needsConfirm {
+            out.append(ShutongLine(who: "confirm", text: "", acts: c.ok, state: "pending"))
+        } else if !c.ok.isEmpty, let b = doBatch(c.ok, auto: false, record: false) {
+            out.append(receiptLine(b))
+        }
+        if c.folderCapHit { out.append(ShutongLine(who: "note", text: t("shutong.folderCap"))) }
+        if !c.skipped.isEmpty {
+            let why = Array(Set(c.skipped.map { zh ? $0.why : ShutongModel.english($0.why) })).sorted().prefix(3).joined(separator: zh ? "；" : "; ")
+            out.append(ShutongLine(who: "note", text: app?.lang.f("shutong.skipped", c.skipped.count, why) ?? why))
+        }
+        return out
+    }
+
+    /// 群里那张清单点了「照办」：划掉的不动，其余再查一遍再做
+    func groupRun(_ l: ShutongLine) -> [ShutongLine] {
+        let picked = (l.acts ?? []).enumerated().filter { !l.struck.contains($0.offset) }.map(\.element)
+        let (notes, folders, auto) = world()
+        let c = ShutongPlan.check(picked, notes: notes, folders: folders, autoFolders: auto, mode: "chat")
+        guard !c.ok.isEmpty, let b = doBatch(c.ok, auto: false, record: false) else {
+            return [ShutongLine(who: "note", text: t("shutong.nothingLeft"))]
+        }
+        return [receiptLine(b)]
     }
 
     /// 回执上「撤销这一批」：每条放回动之前；他后来又改过的那条不动，说一声
@@ -245,12 +295,16 @@ final class ShutongModel {
         }
         try? app.context.save()
         batches[k].undone = true
+        batchRevision += 1
         if let i = lines.firstIndex(where: { $0.batch == batchID }) { lines[i].undone = true }
         if !kept.isEmpty { lines.append(ShutongLine(who: "note", text: app.lang.f("shutong.keptAfterEdit", kept.count))) }
         save()
     }
 
-    func isUndone(_ batchID: String) -> Bool { batches.first { $0.id == batchID }?.undone ?? true }
+    func isUndone(_ batchID: String) -> Bool {
+        _ = batchRevision
+        return batches.first { $0.id == batchID }?.undone ?? true
+    }
 
     // ---------------------------------------------------------------- 查过再做
     /// 大脑回的一串动作：逐条查；扔、合并的先列出来等他点头；别的直接做。没动的记一笔
@@ -577,9 +631,11 @@ final class ShutongModel {
     }
 
     // ---------------------------------------------------------------- 按住说话（SenseVoice 在大管家那头认）
-    func startRecording() {
+    func startRecording(into sink: ((String) -> Void)? = nil) {
         guard let app, !recording, !hearing, !ShutongTalker.shared.on else { return }
         if app.companion.holdsButler { app.show(t("shutong.micBusy")); return }
+        load()
+        hearSink = sink
         AVAudioApplication.requestRecordPermission { ok in
             Task { @MainActor in
                 guard ok else { self.app?.show(self.t("shutong.micDenied")); return }
@@ -641,6 +697,7 @@ final class ShutongModel {
         hearing = false
         let h = (r.heard ?? r.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard r.ok, !h.isEmpty else { app?.show(t("shutong.notHeard")); return }
+        if let sink = hearSink { hearSink = nil; sink(h); return }      // 250：机器人那边按的
         input = input.isEmpty ? h : input + " " + h                     // 认出的字先放进输入框：他看一眼、能改，再点发送
     }
 

@@ -161,7 +161,8 @@ final class BarkModel {
 }
 
 extension AppModel {
-    /// 204：从 Bark 提醒点进来（yiye://shutong?id=… / yiye://todo）。挡在前面的页先收，再开要去的那页
+    /// 204：从 Bark 提醒点进来（yiye://shutong?id=… / yiye://todo；250：yiye://bot?id= / yiye://group?id=）。
+    /// 挡在前面的页先收，再开要去的那页
     func openLink(_ url: URL) {
         guard let link = YiyeLink.parse(url) else { return }
         started()                                              // 冷启动：链接可能比第一屏先到
@@ -170,8 +171,18 @@ extension AppModel {
         DoveModel.shared.open = false
         RemoteModel.shared.open = false
         listening = nil                                        // 声音照放
-        if case .todo = link, shutong.open {
+        let bots = BotsModel.shared
+        var scribeStays = false
+        if case .shutong = link { scribeStays = true }
+        if case .bot(let id) = link, id == BotID.shutong { scribeStays = true }
+        if shutong.open && !scribeStays {
             shutong.open = false
+            covered = true
+        }
+        var toTodo = false
+        if case .todo = link { toTodo = true }
+        if bots.open && (scribeStays || toTodo) {
+            bots.open = false
             covered = true
         }
         let wait = covered
@@ -184,6 +195,11 @@ extension AppModel {
                 shutong.open = true
             case .todo:
                 TodoDesk.shared.showFolder()
+            case .bot(let id) where id == BotID.shutong:
+                shutong.load()
+                shutong.open = true
+            case .bot(let id), .group(let id):
+                bots.openFromLink(id)
             }
         }
     }

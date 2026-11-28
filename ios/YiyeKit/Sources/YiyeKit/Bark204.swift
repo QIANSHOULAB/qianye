@@ -3,10 +3,13 @@ import Foundation
 // 204 一叶笺关着也有提醒：一叶笺是免费账号侧载的，苹果不给推送，提醒由大管家发给手机上的 Bark（pc-butler handheld/bark.py）。
 // 这里是不碰界面的那部分：提醒里点开的链接怎么认、Bark 响过的话手机自己要不要再弹、「提醒里显示内容」那把钥匙怎么生成。接口 v3.20。
 
-/// 提醒里带的链接：yiye://shutong?id=<那封来话的 id>（进小书童、滚到那条）、yiye://todo（进项目待办）
+/// 提醒里带的链接：yiye://shutong?id=<那封来话的 id>（进小书童、滚到那条）、yiye://todo（进项目待办）、
+/// yiye://bot?id= / yiye://group?id=（250：进那个机器人、那个群）
 public enum YiyeLink: Equatable, Sendable {
     case shutong(id: String?)
     case todo
+    case bot(id: String)
+    case group(id: String)
 
     public static let scheme = "yiye"
 
@@ -18,6 +21,9 @@ public enum YiyeLink: Equatable, Sendable {
             return .shutong(id: id.isEmpty ? nil : id)
         case "todo":
             return .todo
+        case "bot", "group":
+            guard let id = parts.queryItems?.first(where: { $0.name == "id" })?.value, !id.isEmpty else { return nil }
+            return parts.host?.lowercased() == "bot" ? .bot(id: id) : .group(id: id)
         default:
             return nil
         }
