@@ -47,6 +47,8 @@ public struct ButlerRequest: Codable, Equatable, Sendable {
     /// ask=bot（250 机器人）/ ask=group（机器人群，shutong 一起带）：见 Bots250.swift
     public var bot: BotAsk?
     public var group: BotAsk?
+    /// ask=library（258 灵感库）：见 Library258.swift
+    public var library: LibraryAsk?
     /// ask=remote（172 遥控）：一个动作；寄给哪台（desk / handheld：电脑不接写给掌机的，信箱 20 秒后转给掌机）；
     /// 密码只走 secret（只有 op=pass 的那封有，整封信两头加密，大管家只交给敲键盘的那段，不进日志）
     public var remote: RemoteOp?
@@ -102,6 +104,8 @@ public struct ButlerResult: Codable, Equatable, Sendable {
     public var bot: BotReply?
     public var group: GroupReply?
     public var bark: Bool?
+    /// 灵感库（258，stage = library）
+    public var library: LibraryReply?
     public init(v: Int = 1, id: String, note: String, ok: Bool, text: String?, changes: String?, error: String?, model: String? = nil, at: String? = nil,
                 audio: String? = nil, timing: [String: Double]? = nil, host: String? = nil, heard: String? = nil,
                 stage: String? = nil, title: String? = nil, re: String? = nil, file: String? = nil, why: String? = nil, shutong: ShutongReply? = nil) {
@@ -112,7 +116,7 @@ public struct ButlerResult: Codable, Equatable, Sendable {
         self.shutong = shutong
     }
 
-    private enum CodingKeys: String, CodingKey { case v, id, note, ok, text, changes, error, model, at, audio, timing, host, heard, stage, title, re, file, why, shutong, remote, confirm, bot, group, bark }
+    private enum CodingKeys: String, CodingKey { case v, id, note, ok, text, changes, error, model, at, audio, timing, host, heard, stage, title, re, file, why, shutong, remote, confirm, bot, group, bark, library }
 
     /// 新加的几个字段读不懂就当没有（timing 里混了不是数的，整封信不能因为它作废）
     public init(from decoder: Decoder) throws {
@@ -141,6 +145,7 @@ public struct ButlerResult: Codable, Equatable, Sendable {
         bot = try? c.decodeIfPresent(BotReply.self, forKey: .bot)
         group = try? c.decodeIfPresent(GroupReply.self, forKey: .group)
         bark = try? c.decodeIfPresent(Bool.self, forKey: .bark)
+        library = try? c.decodeIfPresent(LibraryReply.self, forKey: .library)
     }
 }
 

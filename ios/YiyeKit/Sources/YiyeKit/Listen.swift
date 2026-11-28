@@ -177,6 +177,8 @@ public struct ButlerDelivery: Codable, Equatable, Sendable {
     public var run: String?
     public var seq: Int?
     public var last: Bool?
+    /// 258（v3.29）：这一句对着灵感库里哪一条（有它的点 👎 = 不留）
+    public var item: String?
     public init(v: Int = Butler.version, id: String, kind: String = "listen", title: String? = nil, text: String,
                 audio: String?, marks: [ListenMark]?, folder: String? = nil, at: String? = nil, note: String? = nil, request: String? = nil,
                 voice: ListenVoice? = nil, trans: ListenTrans? = nil) {

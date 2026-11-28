@@ -370,6 +370,8 @@ public enum MailAction: Equatable, Sendable {
     case shutong(ButlerResult)
     /// 机器人（250）：名单、单聊、群里的发言（stage = bot / group）；252：回话带图时图跟着走
     case bots(ButlerResult, images: [String: Data] = [:])
+    /// 灵感库（258，stage = library）：缩略图、原图跟着信走
+    case library(ButlerResult, files: [String: Data] = [:])
     /// 定时活寄进机器人窗的一句话（252，送来 kind=bot），图跟着信走
     case botPost(ButlerDelivery, images: [String: Data])
     /// 书童开口说的回信（137）：cmd、动作、配好音的一句（stage = talk）；插嘴时对声纹的回信（stage = who，id 是开口说寄的）
@@ -390,6 +392,7 @@ public enum MailAction: Equatable, Sendable {
     public static func decide(_ env: MailEnvelope, waiting: [String: UUID], dubbing: [String: UUID], words: Set<String> = [],
                               looks: Set<String> = [], keeps: Set<String> = [], articles: Set<String> = [], doves: Set<String> = [],
                               shutongs: Set<String> = [], talks: Set<String> = [], votes: Set<String> = [], bots: Set<String> = [],
+                              libraries: Set<String> = [],
                               localAudio: (String) -> Data? = { _ in nil }) -> MailAction {
         switch env.kind {
         case .result:
@@ -403,6 +406,10 @@ public enum MailAction: Equatable, Sendable {
                 return .remote(r, image: (r.remote?.image ?? r.file).flatMap { env.files[$0] })
             }
             if r.stage == "confirm" { return .confirmReply(r) }
+            // 258：灵感库按 stage 认；老大管家不认识这个 ask 时按在等的请求认
+            if r.stage == "library" || libraries.contains(r.id) {
+                return .library(r, files: picked(r.library?.paths, from: env.files))
+            }
             // 250：机器人的回信按 stage 认（群里一句话分几封寄）；老大管家不认识这个 ask 时回的信没有 stage，按在等的请求认
             if r.stage == "bot" || r.stage == "group" || bots.contains(r.id) {
                 return .bots(r, images: picked(r.bot?.images, from: env.files))

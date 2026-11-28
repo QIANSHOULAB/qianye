@@ -21,10 +21,10 @@ struct BotsSheet: View {
         .presentationDetents([.medium, .large], selection: $detent)
         .presentationDragIndicator(.visible)
         .overlay(alignment: .bottom) { ToastView() }
-        .onAppear { m.load(); if m.focus != nil { detent = .large } }
+        .onAppear { m.load(); LibraryModel.shared.sync(); if m.focus != nil { detent = .large } }   // 258：顺手取灵感库新的
         .onChange(of: m.focus) { _, f in if f != nil { detent = .large } }
-        // 256：新建页整张拉满，不用往上推
-        .onChange(of: m.path.last) { _, r in if r == .newBot || r == .newGroup { detent = .large } }
+        // 256：新建页整张拉满，不用往上推；258：灵感库也是
+        .onChange(of: m.path.last) { _, r in if r == .newBot || r == .newGroup || r == .library { detent = .large } }
         .onDisappear { m.open = false; m.focus = nil; if ShutongModel.shared.recording { ShutongModel.shared.stopRecording() } }
     }
 }
@@ -39,6 +39,7 @@ private struct BotRoutePage: View {
             if BotID.isGroup(id) { GroupProfileView(id: id) } else { BotProfileView(id: id) }
         case .newBot: NewBotView()
         case .newGroup: NewGroupView()
+        case .library: GalleryWall()
         }
     }
 }
@@ -53,21 +54,28 @@ private extension View {
 }
 
 /// 256：新建页右上那个「建好」：填齐才亮，寄出去以后换成转圈
-private struct BotMake {
+struct BotMake {
     let ready: Bool
     let busy: Bool
     let tap: () -> Void
 }
 
 /// 顶上那一条：返回、名字（能点进资料页）、好了（256：新建页换成「建好」）
-private struct BotHeader: View {
+struct BotHeader: View {
     let title: String
     var back = true
     var onTitle: (() -> Void)?
     var onBack: (() -> Void)?
     var make: BotMake?
+    /// 258：寄过设计图的机器人，右上多一个进灵感库的
+    var onLibrary: (() -> Void)?
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
+
+    init(title: String, back: Bool = true, onTitle: (() -> Void)? = nil, onBack: (() -> Void)? = nil, make: BotMake? = nil,
+         onLibrary: (() -> Void)? = nil) {                          // 258 起别的文件也用这条
+        self.title = title; self.back = back; self.onTitle = onTitle; self.onBack = onBack; self.make = make; self.onLibrary = onLibrary
+    }
 
     private var t: Lang { app.lang }
 
@@ -95,6 +103,14 @@ private struct BotHeader: View {
                 BarTitle(text: title)
             }
             Spacer(minLength: 0)
+            if let onLibrary {
+                Button(action: onLibrary) {
+                    Image(systemName: "square.grid.2x2").font(.system(size: 17, weight: .medium)).foregroundStyle(Color(Ink.accent)).hit44()
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(t.t("lib.title"))
+                .accessibilityIdentifier("bots.header.library")
+            }
             if let make {
                 if make.busy {
                     ProgressView()
@@ -163,6 +179,8 @@ private struct BotListView: View {
                         hint(e)
                         Button(t.t("shutong.retry")) { m.refresh() }.buttonStyle(PlainTextButtonStyle()).padding(.bottom, 8)
                     }
+                    GalleryCard { m.path.append(.library) }                   // 258
+                        .padding(.bottom, 8)
                     ForEach(m.roster) { b in
                         row(b.id, name: m.name(b.id), line: m.desc(b)) { m.openWindow(b.id) }
                     }
@@ -241,8 +259,10 @@ private struct BotChatView: View {
 
     var body: some View {
         let rows = m.chats[window] ?? []
+        let gallery = !isGroup && (LibraryModel.shared.book.owners.contains(window) || rows.contains { !($0.line.item ?? "").isEmpty })
+        let toGallery: (() -> Void)? = gallery ? { typing = false; m.path.append(.library) } : nil
         VStack(spacing: 0) {
-            BotHeader(title: m.name(window), onTitle: { typing = false; m.openProfile(window) })
+            BotHeader(title: m.name(window), onTitle: { typing = false; m.openProfile(window) }, onLibrary: toGallery)
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 10) {
@@ -483,7 +503,7 @@ private struct BotBubble: View {
         }
     }
 
-    /// 252：图在字上面，按顺序；能评的底下两个很淡的小按钮
+    /// 252：图在字上面，按顺序；258：能评的底下只有一个很淡的 👎
     private var said: some View {
         VStack(alignment: .leading, spacing: 6) {
             let names = line.images ?? []
@@ -493,28 +513,49 @@ private struct BotBubble: View {
             words(line.text)
             if line.canReact == true, line.msg != nil {
                 HStack(spacing: 4) {
-                    thumb("up", "hand.thumbsup", t.t("bots.like"))
-                    thumb("down", "hand.thumbsdown", t.t("bots.dislike"))
+                    thumbDown
+                    if m.justDropped.contains(row.id) { dropped }
                 }
                 .padding(.leading, -10)
+                .animation(.easeOut(duration: 0.4), value: m.justDropped.contains(row.id))
             }
         }
     }
 
-    private func thumb(_ how: String, _ icon: String, _ label: String) -> some View {
-        let on = line.reaction == how
-        return Button { m.react(window, row.id, how) } label: {
-            Image(systemName: on ? icon + ".fill" : icon)
+    private var thumbDown: some View {
+        let on = line.reaction == "down"
+        return Button { m.dislike(window, row.id) } label: {
+            Image(systemName: on ? "hand.thumbsdown.fill" : "hand.thumbsdown")
                 .font(.system(size: 14))
                 .foregroundStyle(Color(on ? Ink.accent : Ink.text3))
-                .opacity(on ? 1 : 0.75)
+                .opacity(on ? 1 : 0.6)
                 .frame(width: 40, height: 32)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(label)
-        .accessibilityIdentifier("bots.\(how).\(line.msg ?? "")")
+        .accessibilityLabel(t.t(m.libraryItem(line) != nil ? "lib.drop" : "bots.dislike"))
+        .accessibilityIdentifier("bots.down.\(line.msg ?? "")")
         .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
+    }
+
+    /// 258：设计图点了 👎：一行小字「不留了 · 撤回」，几秒后淡掉
+    private var dropped: some View {
+        HStack(spacing: 2) {
+            Text(t.t("lib.dropped") + " ·")
+                .font(.system(size: 13))
+                .foregroundStyle(Color(Ink.text3))
+                .accessibilityIdentifier("bots.dropped.\(line.msg ?? "")")
+            Button { m.dislike(window, row.id) } label: {
+                Text(t.t("lib.undo"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color(Ink.accent))
+                    .frame(minWidth: 36, minHeight: 32)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("bots.undo.\(line.msg ?? "")")
+        }
+        .transition(.opacity)
     }
 }
 

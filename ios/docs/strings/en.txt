@@ -67,7 +67,6 @@ bots.groupName	Group name
 bots.groupTitle	New group
 bots.groups	Groups
 bots.jobs	Scheduled
-bots.like	Like
 bots.loading	Fetching the roster…
 bots.members	Members (2 to 6)
 bots.memory	What it remembers
@@ -178,6 +177,22 @@ font.small	Small
 import.done	Imported %lld, updated %lld.
 import.pending	%lld still dawdling in iCloud. Try again in a bit.
 lang.system	System
+lib.all	All
+lib.cardEmpty	Every design sent your way
+lib.difference	What’s different
+lib.drop	Drop
+lib.dropped	Dropped
+lib.empty	Bare wall. Every design your bot sends gets hung here.
+lib.fetching	Fetching the full picture…
+lib.move	Steal this
+lib.noHit	No matches
+lib.offline	The butler’s away. Showing what’s saved.
+lib.opened	Opening %@
+lib.punctum	The sting
+lib.search	Sting, move or site
+lib.syncing	Fetching new ones…
+lib.title	Inspiration
+lib.undo	Undo
 link.copy	Copy Link
 link.open	Open
 link.share	Share…

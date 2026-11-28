@@ -9,6 +9,8 @@ enum BotRoute: Hashable {
     case profile(String)
     case newBot
     case newGroup
+    /// 258 灵感库
+    case library
 }
 
 /// 聊天窗里的一行；card = 群里小书童那一批的回执、要点头的清单（跟小书童窗里一个样子）
@@ -62,6 +64,9 @@ final class BotsModel {
     var jobs: [String: [BotJob]] = [:]
     var jobsError: [String: String] = [:]
     var focus: BotFocus?
+    /// 258：刚点了「不留」的那几行，底下挂几秒「不留了 · 撤回」
+    var justDropped: Set<UUID> = []
+    @ObservationIgnored private var droppedAt: [UUID: Int] = [:]
     /// 256：新建页填到一半的字放这儿：右滑返回、整张拉下去都不丢，建好了或点了「不建了」才清
     var newBot = BotDraft()
     var newGroup = BotGroupDraft()
@@ -93,6 +98,9 @@ final class BotsModel {
         var msg: String?
         var react: String?
         var old: String?
+        /// 258：这一下对着灵感库里哪一条、第几下
+        var item: String?
+        var ticket = 0
         /// 256 new：照哪份填的字寄的；信是不是在信箱里排着；等超时了（不转圈了，回信晚到照样认）
         var made: Made?
         var queued = false
@@ -298,16 +306,57 @@ final class BotsModel {
         send(BotAsk("delete", id: id), window: id, group: true)
     }
 
-    // ---------------------------------------------------------------- 252 👍👎、定时活
-    func react(_ window: String, _ row: UUID, _ how: String) {
+    // ---------------------------------------------------------------- 252 👎（258 起没有 👍 了）、定时活
+    /// 这一句对着灵感库里哪一条：信里带着的，或者库里就有这个号的（257 以前寄的，库里那条的号就是那句话的号）
+    func libraryItem(_ line: BotLine) -> String? {
+        if let i = line.item, !i.isEmpty { return i }
+        guard let m = line.msg, LibraryModel.shared.book.has(m) else { return nil }
+        return m
+    }
+
+    /// 点一下 👎 / 再点撤回。设计图的 👎 = 不留：灵感库里当场拿掉
+    func dislike(_ window: String, _ row: UUID) {
         guard let i = chats[window]?.firstIndex(where: { $0.id == row }), let line = chats[window]?[i].line, let msg = line.msg else { return }
-        let new: String? = line.reaction == how ? nil : how                      // 再点一次取消
+        LibraryModel.shared.load()
+        let old = line.reaction == "down" ? "down" : nil                          // 以前点的 👍 当没点
+        let new: String? = old == nil ? "down" : nil                              // 再点一次撤回
+        let item = libraryItem(line)
         chats[window]?[i].line.reaction = new
+        var ticket = 0
+        if let item {
+            ticket = LibraryModel.shared.intend(item, kept: new == nil)
+            mark(item, out: new != nil)
+            showDropped(row, new != nil)
+        }
         save()
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        let bot = line.who
-        sendQuiet(BotAsk("react", id: bot, msg: msg, react: new ?? "none"),
-             Wait(action: "react", window: window, msg: msg, react: new, old: line.reaction))
+        sendQuiet(BotAsk("react", id: line.who, msg: msg, react: new ?? "none"),
+             Wait(action: "react", window: window, msg: msg, react: new, old: old, item: item, ticket: ticket))
+    }
+
+    private func showDropped(_ row: UUID, _ on: Bool) {
+        let n = (droppedAt[row] ?? 0) + 1
+        droppedAt[row] = n
+        guard on else { justDropped.remove(row); return }
+        justDropped.insert(row)
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 6_000_000_000)
+            guard self.droppedAt[row] == n else { return }
+            self.justDropped.remove(row)                           // 淡出在界面那头
+        }
+    }
+
+    /// 同一条图在各个窗里的 👎 跟着库走（灵感库页里点的也算）
+    func mark(_ item: String, out: Bool) {
+        load()
+        var changed = false
+        for (w, rows) in chats {
+            for (i, r) in rows.enumerated() where r.line.canReact == true && libraryItem(r.line) == item {
+                let want: String? = out ? "down" : nil
+                if r.line.reaction != want { chats[w]?[i].line.reaction = want; changed = true }
+            }
+        }
+        if changed { save() }
     }
 
     func askJobs(_ id: String) {
@@ -344,11 +393,16 @@ final class BotsModel {
         }
     }
 
-    /// 👍👎 没办成：放回原来的（他中间又点过别的就不动）
+    /// 👎 没办成：放回原来的（他中间又点过别的就不动）
     private func undoReact(_ w: Wait) {
         guard let msg = w.msg, let i = chats[w.window]?.firstIndex(where: { $0.line.msg == msg }),
-              chats[w.window]?[i].line.reaction == w.react else { return }
+              let row = chats[w.window]?[i].id, chats[w.window]?[i].line.reaction == w.react else { return }
         chats[w.window]?[i].line.reaction = w.old
+        if let item = w.item {
+            LibraryModel.shared.giveUp(item, ticket: w.ticket)
+            mark(item, out: w.old == "down")
+            showDropped(row, false)
+        }
         save()
     }
 
@@ -362,6 +416,7 @@ final class BotsModel {
             }
             return
         }
+        if w.action == "react", let item = w.item { LibraryModel.shared.settle(item, kept: w.react == nil, ticket: w.ticket) }
         // 还有开关在路上：以最后那封回的名单为准
         if let list = r.bot?.jobs, !waits.values.contains(where: { $0.window == id && $0.action.hasPrefix("job-") }) {
             jobs[id] = list
@@ -765,7 +820,7 @@ final class BotsModel {
             for (k, p) in imgs.enumerated() { files[p] = wire[(n - 1) % wire.count][k] }
             let data: [String: Any] = ["v": 1, "id": "bm-demo\(n)", "kind": BotPost.kind, "bot": eye.id, "msg": "zdemo\(n)", "text": texts[n - 1],
                                        "images": imgs, "react": n < 4, "run": "j0000001-demo", "seq": n, "last": n == 4,
-                                       "at": ISOTime.string(Date().addingTimeInterval(-60))]
+                                       "item": n < 4 ? "zdemo\(n)" : "", "at": ISOTime.string(Date().addingTimeInterval(-60))]
             if let j = try? JSONSerialization.data(withJSONObject: data), let d = try? JSONDecoder().decode(ButlerDelivery.self, from: j) {
                 post(d, files: files)
             }

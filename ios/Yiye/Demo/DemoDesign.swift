@@ -14,6 +14,22 @@ enum DemoDesign {
         }
     }
 
+    /// 258 灵感库的假图：三套颜色；每套一张缩略图，原图是裁图、整屏、手机图
+    static func library() -> [(thumb: Data, images: [(String, Data)])] {
+        let base = pictures()
+        let tall = [(UIColor(red: 0.07, green: 0.07, blue: 0.09, alpha: 1), UIColor(red: 0.95, green: 0.27, blue: 0.16, alpha: 1)),
+                    (UIColor(red: 0.93, green: 0.92, blue: 0.88, alpha: 1), UIColor(red: 0.18, green: 0.20, blue: 0.24, alpha: 1)),
+                    (UIColor(red: 0.85, green: 0.84, blue: 0.80, alpha: 1), UIColor(red: 0.45, green: 0.08, blue: 0.14, alpha: 1))]
+        var out: [(thumb: Data, images: [(String, Data)])] = []
+        for (n, c) in tall.enumerated() {
+            let mobile = draw(CGSize(width: 390, height: 640), back: c.0, ink: c.1, shape: n, full: false)
+            // 缩略图高矮错开，照片墙看得出来
+            let thumb = [base[n][0], mobile, base[n][1]][n]
+            out.append((thumb, [("crop", base[n][0]), ("full", base[n][1]), ("mobile", mobile)]))
+        }
+        return out
+    }
+
     private static func draw(_ size: CGSize, back: UIColor, ink: UIColor, shape: Int, full: Bool) -> Data {
         let f = UIGraphicsImageRendererFormat()
         f.scale = 1

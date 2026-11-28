@@ -49,7 +49,7 @@ public enum BotPost {
     public static func line(_ d: ButlerDelivery, images: [String]) -> BotLine? {
         guard let bot = d.bot, !bot.isEmpty, let msg = d.msg, !msg.isEmpty else { return nil }
         return BotLine(who: bot, text: d.text, at: d.at.flatMap { ISOTime.date($0) } ?? Date(), seq: d.seq,
-                       msg: msg, images: images.isEmpty ? nil : images, canReact: d.react == true, run: d.run)
+                       msg: msg, images: images.isEmpty ? nil : images, canReact: d.react == true, run: d.run, item: d.item)
     }
 
     /// 放哪儿：同一趟（run）按 seq 排；别的按时间；这一句（msg）放过了回 nil

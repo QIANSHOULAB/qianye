@@ -239,7 +239,7 @@ final class ButlerService {
         }
         var action = MailAction.decide(env, waiting: waiting, dubbing: dubbing, words: words.requestIDs, looks: looks, keeps: Set(keepWait.keys), articles: Set(articles.keys), doves: doves,
                                        shutongs: shutongs.union(ShutongModel.shared.waitingIDs), talks: talks, votes: votes.requestIDs,
-                                       bots: BotsModel.shared.waitingIDs)
+                                       bots: BotsModel.shared.waitingIDs, libraries: LibraryModel.shared.waitingIDs)
         if action == .later, let ch = app.mirror.channel, let a = env.delivery?.audio {
             // 信里没带录音：去 iCloud 镜像里找（后台读，占位的要等它下载）
             let data: Data? = await withCheckedContinuation { c in
@@ -313,6 +313,9 @@ final class ButlerService {
             return true
         case .botPost(let d, let images):                   // 252：定时活寄进机器人窗的一句
             BotsModel.shared.post(d, files: images)
+            return true
+        case .library(let r, let files):                    // 258 灵感库：目录、缩略图、原图
+            LibraryModel.shared.answer(r, files: files)
             return true
         case .talk(let r, let audio):                       // 137 书童开口说：一句话的回信 / 插嘴对声纹
             talks.remove(r.id)
@@ -981,6 +984,7 @@ final class ButlerService {
         guard let app else { return }
         ShutongModel.shared.tick()                          // 136：新便签该收拾的寄出去
         BotsModel.shared.tick()                             // 250：机器人等太久的收掉
+        LibraryModel.shared.tick()                          // 258：灵感库等太久的停转圈
         backup.hub.tick()
         refreshQuota()
         retryStalled()

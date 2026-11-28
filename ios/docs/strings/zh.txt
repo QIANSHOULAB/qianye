@@ -67,7 +67,6 @@ bots.groupName	群名
 bots.groupTitle	拉个群
 bots.groups	群
 bots.jobs	定时活
-bots.like	喜欢
 bots.loading	问大管家要名单…
 bots.members	成员（2 到 6 个）
 bots.memory	它记得的
@@ -178,6 +177,22 @@ font.small	小
 import.done	搬回来 %lld 条，更新 %lld 条。
 import.pending	还有 %lld 条在 iCloud 里磨蹭，过会儿再搬一次。
 lang.system	跟系统
+lib.all	全部
+lib.cardEmpty	寄来的设计图都在这儿
+lib.difference	差别
+lib.drop	不留
+lib.dropped	不留了
+lib.empty	墙还白着。像素走私犯寄一张，这儿挂一张。
+lib.fetching	取原图…
+lib.move	能偷的招
+lib.noHit	没搜到
+lib.offline	大管家不在线，先翻存下的
+lib.opened	打开 %@
+lib.punctum	刺点
+lib.search	搜刺点、招式、站名
+lib.syncing	取新的…
+lib.title	灵感库
+lib.undo	撤回
 link.copy	拷贝链接
 link.open	打开
 link.share	分享…

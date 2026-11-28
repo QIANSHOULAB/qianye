@@ -205,11 +205,14 @@ public struct BotLine: Codable, Identifiable, Equatable, Sendable {
     public var canReact: Bool?
     public var reaction: String?
     public var run: String?
+    /// 258：这一句对着灵感库里哪一条
+    public var item: String?
 
     public init(id: UUID = UUID(), who: String, text: String, at: Date = Date(), rid: String? = nil, seq: Int? = nil, state: String = "",
-                msg: String? = nil, images: [String]? = nil, canReact: Bool? = nil, reaction: String? = nil, run: String? = nil) {
+                msg: String? = nil, images: [String]? = nil, canReact: Bool? = nil, reaction: String? = nil, run: String? = nil,
+                item: String? = nil) {
         self.id = id; self.who = who; self.text = text; self.at = at; self.rid = rid; self.seq = seq; self.state = state
-        self.msg = msg; self.images = images; self.canReact = canReact; self.reaction = reaction; self.run = run
+        self.msg = msg; self.images = images; self.canReact = canReact; self.reaction = reaction; self.run = run; self.item = item
     }
 }
 

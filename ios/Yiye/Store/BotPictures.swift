@@ -45,6 +45,11 @@ enum BotPictures {
     /// 长按存进相册（只要「添加照片」权限）；原样存那份 JPEG。截图、UI 测试不碰相册
     static func keep(_ name: String, app: AppModel) {
         guard let d = data(name) else { return }
+        keep(data: d, demo: demo, app: app)
+    }
+
+    /// 258：灵感库的图也走这条
+    static func keep(data d: Data, demo: Bool, app: AppModel) {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         if demo { app.show(app.lang.t("share.saved")); return }
         PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in

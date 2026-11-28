@@ -5,8 +5,9 @@ import XCTest
 /// 2. 名单里拉群 → 打 @ 点成员名 → 发一句 → 两条回话按序摆
 /// 3. 提醒链接 yiye://group 直接进那个群
 /// 4. 252：yiye://bot?id=&msg= 进掌眼的窗、滚到今天第一条（信故意倒着到）→ 图点开全屏、左滑下一张、长按存相册；深色看一眼
-/// 5. 252：👍 再点取消、👎 → 资料页定时活开关、左滑删
+/// 5. 258：只剩 👎，设计图点了出「不留了 · 撤回」、几秒淡掉、灵感库里没了 → 资料页定时活开关、左滑删
 /// 6. 256：新建页不往上推就点得到「建好」；缺名字、缺人设、重名、太长当场说；回信带 error 字还在；返回先问
+/// 7. 258：名单最上面的灵感库卡 → 照片墙、种类、搜索 → 全屏（卡片字、左右滑、长按存、原网址）→ 不留、撤回 → 深色
 final class BotsTests: XCTestCase {
     private var app: XCUIApplication!
 
@@ -212,21 +213,30 @@ final class BotsTests: XCTestCase {
         shot("252-掌眼窗-深色")
     }
 
-    // ---------------------------------------------------------------- 5. 252 👍👎、定时活
+    // ---------------------------------------------------------------- 5. 258 👎、252 定时活
     func testReactAndJobs() {
         launch("link-eye", lang: "zh-Hans")
         check(any("bots.pic.zdemo1.0").waitForExistence(timeout: 12), "252-没进掌眼的窗", "")
-        let up = any("bots.up.zdemo1")
-        check(reach(up), "252-没有赞", "能评的话底下该有 👍")
-        for _ in 0..<3 where !up.isHittable { app.swipeUp() }
-        up.tap()
-        check(selected(up, true), "252-点了没变实", "点 👍 该变实")
-        up.tap()
-        check(selected(up, false), "252-再点没取消", "再点一次取消")
         let down = any("bots.down.zdemo1")
+        check(reach(down), "252-没有踩", "能评的话底下该有 👎")
+        check(!any("bots.up.zdemo1").exists, "258-还有赞", "👍 没有了")
+        for _ in 0..<3 where !down.isHittable { app.swipeUp() }
         down.tap()
         check(selected(down, true), "252-踩不动", "点 👎 该变实")
-        shot("252-赞踩")
+        let undo = any("bots.undo.zdemo1")
+        check(undo.waitForExistence(timeout: 4), "258-没有撤回", "设计图点了 👎，底下该有「不留了 · 撤回」")
+        shot("258-不留了")
+        undo.tap()
+        check(selected(down, false), "258-撤回没撤", "点撤回 👎 该变回空心")
+        check(undo.waitForNonExistence(timeout: 6), "258-撤回完还挂着", "")
+        down.tap()
+        check(selected(down, true), "258-又踩不动", "")
+        check(undo.waitForNonExistence(timeout: 15), "258-小字不淡掉", "几秒后该淡掉")
+        check(selected(down, true), "258-淡掉就撤了", "小字淡掉，👎 还是实的")
+        tap("bots.header.library", "258-窗右上没有灵感库")
+        check(any("lib.tile.zdemo2").waitForExistence(timeout: 8), "258-墙没出来", "")
+        check(any("lib.tile.zdemo1").waitForNonExistence(timeout: 4), "258-不留的还在墙上", "")
+        tap("bots.back", "258-回聊天窗")
 
         tap("bots.title", "252-点名字")
         let job = app.switches["bots.job.j0000001"].firstMatch
@@ -245,6 +255,66 @@ final class BotsTests: XCTestCase {
         check(delete.waitForExistence(timeout: 4), "252-左滑没出删除", "")
         delete.tap()
         check(second.waitForNonExistence(timeout: 6), "252-删不掉定时活", "")
+    }
+
+    // ---------------------------------------------------------------- 7. 258 灵感库
+    func testLibrary() {
+        launch("bots", lang: "zh-Hans")
+        let card = any("bots.library")
+        check(card.waitForExistence(timeout: 10), "258-没有卡", "机器人名单最上面该有一张「灵感库」")
+        check(card.frame.minY < any("bots.row.shutong").frame.minY, "258-卡不在最上面", "")
+        sleep(1)
+        shot("258-名单")
+        card.tap()
+        let wire = any("lib.tile.zdemo1")
+        let type4 = any("lib.tile.zlib4")
+        check(wire.waitForExistence(timeout: 8) && type4.waitForExistence(timeout: 4), "258-墙没出来", "")
+        sleep(1)
+        shot("258-灵感库")
+
+        tap("lib.kind.字体", "258-没有种类")
+        check(wire.waitForNonExistence(timeout: 6) && type4.exists, "258-种类没筛", "选「字体」只该剩字体")
+        tap("lib.kind.all", "258-没有全部")
+        check(wire.waitForExistence(timeout: 6), "258-回不到全部", "")
+        type("lib.search", "铁丝", "258-搜索框")
+        check(type4.waitForNonExistence(timeout: 6) && wire.exists, "258-没搜对", "搜「铁丝」只该剩那一张")
+        tap("lib.clear", "258-清不掉")
+        tap("lib.kind.all", "258-收键盘")
+        check(type4.waitForExistence(timeout: 6), "258-清了没回来", "")
+
+        wire.tap()
+        let full0 = any("lib.viewer.image.0")
+        check(full0.waitForExistence(timeout: 8), "258-原图没取来", "点一张该全屏、取原图")
+        check(containing("同类堆卡片").waitForExistence(timeout: 4), "258-没有差别", "")
+        check(containing("一个主角，别的全退后").exists, "258-没有招", "")
+        sleep(1)
+        shot("258-全屏")
+        full0.swipeLeft()
+        let full1 = any("lib.viewer.image.1")
+        check(full1.waitForExistence(timeout: 4) && hittable(full1), "258-滑不到整屏", "")
+        full1.press(forDuration: 1.2)
+        check(containing("存进相册了").waitForExistence(timeout: 6), "258-长按没存", "")
+        tap("lib.url", "258-没有原网址")
+        check(containing("打开 ritual.engineer").waitForExistence(timeout: 4), "258-网址点了没开", "")
+
+        tap("lib.viewer.drop", "258-没有 👎")
+        check(wire.waitForNonExistence(timeout: 8), "258-不留了还在墙上", "")
+        let undo = app.buttons["撤回"].firstMatch
+        check(undo.waitForExistence(timeout: 4), "258-墙下没有撤回", "")
+        undo.tap()
+        check(wire.waitForExistence(timeout: 8), "258-撤回没挂回去", "")
+        wire.tap()
+        tap("lib.viewer.drop", "258-再点 👎")
+        check(wire.waitForNonExistence(timeout: 8), "258-第二回没拿掉", "")
+        tap("bots.back", "258-回名单")
+        check(card.waitForExistence(timeout: 6) && card.label.contains("4"), "258-卡上数不对", "实际 \(card.label)")
+
+        app.terminate()
+        launch("bots", lang: "zh-Hans", appearance: "dark")
+        tap("bots.library", "258-深色没有卡")
+        check(any("lib.tile.zdemo1").waitForExistence(timeout: 12), "258-深色墙没出来", "")
+        sleep(1)
+        shot("258-灵感库-深色")
     }
 
     private func hittable(_ e: XCUIElement) -> Bool {
