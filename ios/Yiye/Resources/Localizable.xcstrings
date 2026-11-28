@@ -817,6 +817,23 @@
         }
       }
     },
+    "bots.descNew": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optional. Defaults to the persona’s first sentence"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可以不填，拿人设第一句"
+          }
+        }
+      }
+    },
     "bots.dislike": {
       "extractionState": "manual",
       "localizations": {
@@ -830,6 +847,57 @@
           "stringUnit": {
             "state": "translated",
             "value": "不喜欢"
+          }
+        }
+      }
+    },
+    "bots.dropAsk": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drop it?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不建了？"
+          }
+        }
+      }
+    },
+    "bots.dropNo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep editing"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接着填"
+          }
+        }
+      }
+    },
+    "bots.dropYes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drop it"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不建了"
           }
         }
       }
@@ -898,6 +966,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "开口吧。@ 谁谁回"
+          }
+        }
+      }
+    },
+    "bots.groupLong": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group name too long: %@ characters, 20 max."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "群名太长了：%@ 字，最多 20"
           }
         }
       }
@@ -1068,6 +1153,159 @@
           "stringUnit": {
             "state": "translated",
             "value": "名字"
+          }
+        }
+      }
+    },
+    "bots.nameAs": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Will be saved as “%@” (no spaces or @)."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建出来叫「%@」（空格和 @ 不算）"
+          }
+        }
+      }
+    },
+    "bots.nameLong": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name too long: %@ characters, 20 max."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名字太长了：%@ 字，最多 20"
+          }
+        }
+      }
+    },
+    "bots.nameNothing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Needs a real name; spaces and @ don’t count."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要个名字（不带空格和 @）"
+          }
+        }
+      }
+    },
+    "bots.nameTaken": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There’s already a bot called “%@”."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已经有叫「%@」的了"
+          }
+        }
+      }
+    },
+    "bots.need": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Still needed: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还缺%@"
+          }
+        }
+      }
+    },
+    "bots.needGroupName": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a group name"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "群名"
+          }
+        }
+      }
+    },
+    "bots.needMembers": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "members (%@ more)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 个成员"
+          }
+        }
+      }
+    },
+    "bots.needName": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a name"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名字"
+          }
+        }
+      }
+    },
+    "bots.needPersona": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a persona"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "人设"
           }
         }
       }

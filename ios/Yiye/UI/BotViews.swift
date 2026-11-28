@@ -23,6 +23,8 @@ struct BotsSheet: View {
         .overlay(alignment: .bottom) { ToastView() }
         .onAppear { m.load(); if m.focus != nil { detent = .large } }
         .onChange(of: m.focus) { _, f in if f != nil { detent = .large } }
+        // 256：新建页整张拉满，不用往上推
+        .onChange(of: m.path.last) { _, r in if r == .newBot || r == .newGroup { detent = .large } }
         .onDisappear { m.open = false; m.focus = nil; if ShutongModel.shared.recording { ShutongModel.shared.stopRecording() } }
     }
 }
@@ -50,11 +52,20 @@ private extension View {
     }
 }
 
-/// 顶上那一条：返回、名字（能点进资料页）、好了
+/// 256：新建页右上那个「建好」：填齐才亮，寄出去以后换成转圈
+private struct BotMake {
+    let ready: Bool
+    let busy: Bool
+    let tap: () -> Void
+}
+
+/// 顶上那一条：返回、名字（能点进资料页）、好了（256：新建页换成「建好」）
 private struct BotHeader: View {
     let title: String
     var back = true
     var onTitle: (() -> Void)?
+    var onBack: (() -> Void)?
+    var make: BotMake?
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
 
@@ -63,7 +74,7 @@ private struct BotHeader: View {
     var body: some View {
         HStack(spacing: 6) {
             if back {
-                Button { dismiss() } label: {
+                Button { if let onBack { onBack() } else { dismiss() } } label: {
                     Image(systemName: "chevron.left").font(.system(size: 17, weight: .semibold)).foregroundStyle(Color(Ink.accent)).hit44()
                 }
                 .buttonStyle(.plain)
@@ -84,9 +95,23 @@ private struct BotHeader: View {
                 BarTitle(text: title)
             }
             Spacer(minLength: 0)
-            Button(t.t("common.done")) { BotsModel.shared.open = false }
-                .buttonStyle(PlainTextButtonStyle())
-                .accessibilityIdentifier("bots.done")
+            if let make {
+                if make.busy {
+                    ProgressView()
+                        .frame(minWidth: 44, minHeight: 44)
+                        .accessibilityIdentifier("bots.creating")
+                } else {
+                    Button(t.t("bots.create"), action: make.tap)
+                        .buttonStyle(PlainTextButtonStyle(color: make.ready ? Ink.accent : Ink.text3))
+                        .disabled(!make.ready)
+                        .opacity(make.ready ? 1 : 0.55)
+                        .accessibilityIdentifier("bots.create")
+                }
+            } else {
+                Button(t.t("common.done")) { BotsModel.shared.open = false }
+                    .buttonStyle(PlainTextButtonStyle())
+                    .accessibilityIdentifier("bots.done")
+            }
         }
         .padding(.horizontal, 16)
         .frame(height: 52)
@@ -580,40 +605,95 @@ private struct BotPictureViewer: View {
 }
 
 // ================================================================ 建机器人
-private struct NewBotView: View {
-    @Environment(AppModel.self) private var app
-    @State private var name = ""
-    @State private var desc = ""
-    @State private var persona = ""
-
-    private var t: Lang { app.lang }
-    private var m: BotsModel { BotsModel.shared }
+/// 256：新建页顶上那一句：缺什么、哪里不对、大管家回的原话
+private struct NewNote: View {
+    let text: String
+    let bad: Bool
 
     var body: some View {
+        if !text.isEmpty {
+            Text(text)
+                .font(.system(size: 14))
+                .foregroundStyle(Color(bad ? Ink.danger : Ink.text3))
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 4)
+                .accessibilityIdentifier(bad ? "bots.error" : "bots.hint")
+        }
+    }
+}
+
+private extension View {
+    /// 256：填了字又点返回，先问一句
+    @MainActor func dropAsk(_ asking: Binding<Bool>, _ t: Lang, drop: @escaping () -> Void) -> some View {
+        alert(t.t("bots.dropAsk"), isPresented: asking) {                    // 用弹窗：两个按钮一定都在
+            Button(t.t("bots.dropYes"), role: .destructive, action: drop)
+            Button(t.t("bots.dropNo"), role: .cancel) {}
+        }
+    }
+}
+
+private struct NewBotView: View {
+    @Environment(AppModel.self) private var app
+    @State private var asking = false
+
+    private var t: Lang { app.lang }
+
+    var body: some View {
+        @Bindable var m = BotsModel.shared
+        let d = m.newBot
         let busy = m.busy.contains("new")
-        let ready = !name.trimmingCharacters(in: .whitespaces).isEmpty && !desc.trimmingCharacters(in: .whitespaces).isEmpty
+        let taken = m.roster.map(\.name)
+        let line = topLine(d, BotNew.nameProblem(d.name, taken: taken), m.newError[.newBot])
         VStack(spacing: 0) {
-            BotHeader(title: t.t("bots.newTitle"))
+            BotHeader(title: t.t("bots.newTitle"),
+                      onBack: { if d.dirty && !busy { asking = true } else { leave() } },
+                      make: BotMake(ready: d.ready(taken: taken), busy: busy) { m.create() })
+            NewNote(text: line.text, bad: line.bad)
             Form {
                 Section(t.t("bots.name")) {
-                    TextField("", text: $name).accessibilityIdentifier("bots.name")
-                }
-                Section(t.t("bots.desc")) {
-                    TextField(t.t("bots.descHint"), text: $desc).accessibilityIdentifier("bots.desc")
+                    TextField("", text: $m.newBot.name)
+                        .autocorrectionDisabled()
+                        .accessibilityIdentifier("bots.name")
                 }
                 Section(t.t("bots.persona")) {
-                    TextField(t.t("bots.personaHint"), text: $persona, axis: .vertical)
+                    TextField(t.t("bots.personaHint"), text: $m.newBot.persona, axis: .vertical)
                         .lineLimit(4...12)
                         .accessibilityIdentifier("bots.persona")
                 }
-                Section {
-                    Button(t.t("bots.create")) { m.create(name: name, desc: desc, persona: persona) }
-                        .disabled(!ready || busy)
-                        .accessibilityIdentifier("bots.create")
+                Section(t.t("bots.desc")) {
+                    TextField(t.t("bots.descNew"), text: $m.newBot.desc).accessibilityIdentifier("bots.desc")
                 }
             }
+            .disabled(busy)
             .scrollContentBackground(.hidden)
         }
+        .onChange(of: m.newBot) { _, _ in m.newError[.newBot] = nil }         // 改了一个字，上回那句就撤了
+        .dropAsk($asking, t) {
+            BotsModel.shared.newBot = BotDraft()
+            BotsModel.shared.newError[.newBot] = nil
+            leave()
+        }
+    }
+
+    private func leave() {
+        if BotsModel.shared.path.last == .newBot { BotsModel.shared.path.removeLast() }
+    }
+
+    /// 名字不对 → 大管家回的话 → 还缺什么 → 建出来的名字跟打的不一样
+    private func topLine(_ d: BotDraft, _ problem: BotNew.Problem?, _ error: String?) -> (text: String, bad: Bool) {
+        switch problem {
+        case .nameEmpty?: return (t.t("bots.nameNothing"), true)
+        case .nameTooLong(let n)?: return (t.f("bots.nameLong", String(n)), true)
+        case .nameTaken(let name)?: return (t.f("bots.nameTaken", name), true)
+        case .none: break
+        }
+        if let error { return (error, true) }
+        let missing = d.missing.map { t.t($0 == .name ? "bots.needName" : "bots.needPersona") }
+        if !missing.isEmpty { return (t.f("bots.need", missing.joined(separator: t.isZh ? "、" : ", ")), false) }
+        let name = BotNew.cleanName(d.name)
+        return (name == d.name.trimmingCharacters(in: .whitespacesAndNewlines) ? "" : t.f("bots.nameAs", name), false)
     }
 }
 
@@ -766,33 +846,65 @@ private struct PickRow: View {
 
 private struct NewGroupView: View {
     @Environment(AppModel.self) private var app
-    @State private var name = ""
-    @State private var picked: [String] = []
+    @State private var asking = false
 
     private var t: Lang { app.lang }
-    private var m: BotsModel { BotsModel.shared }
 
     var body: some View {
-        let ready = !name.trimmingCharacters(in: .whitespaces).isEmpty && (2...6).contains(picked.count)
+        @Bindable var m = BotsModel.shared
+        let d = m.newGroup
+        let busy = m.busy.contains("newGroup")
+        let line = topLine(d, m.newError[.newGroup])
         VStack(spacing: 0) {
-            BotHeader(title: t.t("bots.groupTitle"))
+            BotHeader(title: t.t("bots.groupTitle"),
+                      onBack: { if d.dirty && !busy { asking = true } else { leave() } },
+                      make: BotMake(ready: d.ready, busy: busy) { m.createGroup() })
+            NewNote(text: line.text, bad: line.bad)
             List {
-                Section(t.t("bots.groupName")) { TextField("", text: $name).accessibilityIdentifier("bots.groupName") }
+                Section(t.t("bots.groupName")) {
+                    TextField("", text: $m.newGroup.name)
+                        .autocorrectionDisabled()
+                        .accessibilityIdentifier("bots.groupName")
+                }
                 Section(t.t("bots.members")) {
                     ForEach(m.roster) { b in
-                        PickRow(card: b, on: picked.contains(b.id)) {
-                            if let i = picked.firstIndex(of: b.id) { picked.remove(at: i) } else if picked.count < 6 { picked.append(b.id) }
+                        PickRow(card: b, on: d.members.contains(b.id)) {
+                            if let i = m.newGroup.members.firstIndex(of: b.id) {
+                                m.newGroup.members.remove(at: i)
+                            } else if m.newGroup.members.count < BotGroupDraft.membersMax {
+                                m.newGroup.members.append(b.id)
+                            }
                         }
                     }
                 }
-                Section {
-                    Button(t.t("bots.create")) { m.createGroup(name: name, members: picked, chief: BotID.shutong) }
-                        .disabled(!ready || m.busy.contains("new"))
-                        .accessibilityIdentifier("bots.create")
-                }
             }
+            .disabled(busy)
             .scrollContentBackground(.hidden)
         }
+        .onAppear {
+            // 上回勾的里有删掉了的：拿掉，不然大管家不认
+            let alive = Set(m.roster.map(\.id))
+            if m.newGroup.members.contains(where: { !alive.contains($0) }) { m.newGroup.members.removeAll { !alive.contains($0) } }
+        }
+        .onChange(of: m.newGroup) { _, _ in m.newError[.newGroup] = nil }
+        .dropAsk($asking, t) {
+            BotsModel.shared.newGroup = BotGroupDraft()
+            BotsModel.shared.newError[.newGroup] = nil
+            leave()
+        }
+    }
+
+    private func leave() {
+        if BotsModel.shared.path.last == .newGroup { BotsModel.shared.path.removeLast() }
+    }
+
+    private func topLine(_ d: BotGroupDraft, _ error: String?) -> (text: String, bad: Bool) {
+        if let n = d.nameTooLong { return (t.f("bots.groupLong", String(n)), true) }
+        if let error { return (error, true) }
+        var missing: [String] = []
+        if d.sentName.isEmpty { missing.append(t.t("bots.needGroupName")) }
+        if d.short > 0 { missing.append(t.f("bots.needMembers", String(d.short))) }
+        return (missing.isEmpty ? "" : t.f("bots.need", missing.joined(separator: t.isZh ? "、" : ", ")), false)
     }
 }
 

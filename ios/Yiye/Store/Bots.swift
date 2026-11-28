@@ -62,6 +62,23 @@ final class BotsModel {
     var jobs: [String: [BotJob]] = [:]
     var jobsError: [String: String] = [:]
     var focus: BotFocus?
+    /// 256：新建页填到一半的字放这儿：右滑返回、整张拉下去都不丢，建好了或点了「不建了」才清
+    var newBot = BotDraft()
+    var newGroup = BotGroupDraft()
+    /// 256：新建页顶上那一句错（大管家回的 error、寄不出去、没等到）
+    var newError: [BotRoute: String] = [:]
+
+    /// 256：寄出去的那封新建是照哪份填的字
+    fileprivate enum Made {
+        case bot(BotDraft)
+        case group(BotGroupDraft)
+        var page: BotRoute {
+            switch self {
+            case .bot: return .newBot
+            case .group: return .newGroup
+            }
+        }
+    }
 
     private struct Wait {
         /// list / new / edit / delete / memory / forget / chat / say
@@ -76,6 +93,10 @@ final class BotsModel {
         var msg: String?
         var react: String?
         var old: String?
+        /// 256 new：照哪份填的字寄的；信是不是在信箱里排着；等超时了（不转圈了，回信晚到照样认）
+        var made: Made?
+        var queued = false
+        var late = false
         /// 252：👍👎、开关定时活：信放进信箱迟早办，不催、不超时撤回
         var quiet: Bool { action == "react" || action.hasPrefix("job-") }
     }
@@ -240,8 +261,12 @@ final class BotsModel {
     }
 
     // ---------------------------------------------------------------- 建、改、删
-    func create(name: String, desc: String, persona: String) {
-        send(BotAsk("new", name: name, desc: desc, persona: persona), window: "new")
+    /// 256：照新机器人页填的寄；说明没填拿人设第一句
+    func create() {
+        let d = newBot
+        guard !busy.contains("new"), d.ready(taken: roster.map(\.name)) else { return }
+        newError[.newBot] = nil
+        send(BotAsk("new", name: BotNew.cleanName(d.name), desc: d.sentDesc, persona: d.sentPersona), window: "new", made: .bot(d))
     }
 
     func edit(_ id: String, name: String, desc: String, persona: String) {
@@ -258,8 +283,11 @@ final class BotsModel {
         send(BotAsk("forget", id: id, text: memo.text), window: id)
     }
 
-    func createGroup(name: String, members: [String], chief: String) {
-        send(BotAsk("new", name: name, members: members, chief: chief), window: "new", group: true)
+    func createGroup() {
+        let d = newGroup
+        guard !busy.contains("newGroup"), d.ready else { return }
+        newError[.newGroup] = nil
+        send(BotAsk("new", name: d.sentName, members: d.members, chief: BotID.shutong), window: "newGroup", group: true, made: .group(d))
     }
 
     func editGroup(_ id: String, name: String, members: [String], chief: String) {
@@ -366,18 +394,19 @@ final class BotsModel {
         return names
     }
 
-    private func send(_ ask: BotAsk, window: String, group: Bool = false) {
+    private func send(_ ask: BotAsk, window: String, group: Bool = false, made: Made? = nil) {
         guard let app else { return }
         let rid = UUID().uuidString
         let at = ISOTime.string(Date())
         let req = group ? ButlerRequest.group(id: rid, ask: ask, at: at, app: ButlerService.appVersion)
                         : ButlerRequest.bot(id: rid, ask: ask, at: at, app: ButlerService.appVersion)
-        waits[rid] = Wait(action: ask.action, window: window)
+        waits[rid] = Wait(action: ask.action, window: window, made: made)
         if window != "quiet" { busy.insert(window) }
         if app.demo != nil { fake(req); return }
         Task {
             switch await app.butler.sendBots(req) {
             case .sent(let pc):
+                if !pc { self.waits[rid]?.queued = true }
                 if !pc && window != "quiet" { app.show(self.t("shutong.queued")) }
             case .noPair:
                 self.opFailed(rid, self.t("shutong.noPair"))
@@ -395,9 +424,37 @@ final class BotsModel {
         busy.remove(w.window)
         if w.action == "list" {
             if w.window == "list" { listError = why }
+        } else if let made = w.made {
+            refused(made.page, why)
         } else {
             app?.show(why)
         }
+    }
+
+    /// 256 没建成：那句写在新建页上（字留着）；他已经走开了就底下再弹一行
+    private func refused(_ page: BotRoute, _ why: String) {
+        newError[page] = why
+        if path.last != page { app?.show(why) }
+    }
+
+    /// 256 new 的回信：没办成把那句原样亮在新建页上（字留着）；办成了清掉填的字，还在那一页就跳进它的窗
+    private func madeAnswer(_ r: ButlerResult, _ made: Made) {
+        guard r.ok else {
+            refused(made.page, failure(r))
+            return
+        }
+        if let b = r.bot?.bots ?? r.group?.bots { bots = b }
+        if let g = r.bot?.groups ?? r.group?.groups { groups = g }
+        if let id = r.bot?.id, let b = r.bot?.bot {
+            profiles[id] = BotProfile(persona: b.persona ?? "", memory: r.bot?.memory ?? [])
+        }
+        newError[made.page] = nil
+        switch made {
+        case .bot(let d): if newBot.name == d.name { newBot = BotDraft() }
+        case .group(let d): if newGroup.name == d.name { newGroup = BotGroupDraft() }
+        }
+        if let id = r.bot?.id ?? r.group?.id, path.last == made.page { path = [.chat(id)] }
+        save()
     }
 
     // ---------------------------------------------------------------- 说话
@@ -503,6 +560,12 @@ final class BotsModel {
             opAnswer(r, w)
             return
         }
+        if let made = w.made {
+            // 晚到的那封回来时，别把后来那封的转圈停了
+            if !waits.values.contains(where: { $0.window == w.window && !$0.late }) { busy.remove(w.window) }
+            madeAnswer(r, made)
+            return
+        }
         busy.remove(w.window)
         guard r.ok else {
             if w.action == "list" {
@@ -521,8 +584,6 @@ final class BotsModel {
             profiles[id] = BotProfile(persona: b.persona ?? "", memory: r.bot?.memory ?? [])
         }
         switch w.action {
-        case "new":
-            if let id = r.bot?.id ?? r.group?.id, path.last == .newBot || path.last == .newGroup { path = [.chat(id)] }
         case "delete":
             let id = r.bot?.id ?? r.group?.id ?? w.window
             dropPictures(chats[id] ?? [])
@@ -642,12 +703,18 @@ final class BotsModel {
         guard loaded, !waits.isEmpty else { return }
         let now = Date()
         for (rid, w) in waits {
-            if w.quiet {                                                // 252：信在信箱里，晚了也会办
+            if w.quiet || w.late {                                      // 252：信在信箱里，晚了也会办
                 if now.timeIntervalSince(w.at) > 86_400 { waits[rid] = nil }
                 continue
             }
             let talking = w.action == "chat" || w.action == "say"
             if now.timeIntervalSince(w.at) <= (talking ? 300 : 90) { continue }
+            if let made = w.made {                                      // 256：停转圈、字留着；回信晚到照样认
+                waits[rid]?.late = true
+                busy.remove(w.window)
+                newError[made.page] = t(w.queued ? "shutong.queued" : "bots.noAnswer")
+                continue
+            }
             if talking { sayFailed(rid, t("bots.noAnswer")) } else { opFailed(rid, t("bots.noAnswer")) }
         }
     }
@@ -731,6 +798,10 @@ final class BotsModel {
         case "list":
             fakeReply(rid, stage: "bot", bot: BotReply("list", bots: bots, groups: groups))
         case "new":
+            if a.name == "Nope" {                                       // 256 UI 测试：大管家回 error
+                fakeReply(rid, stage: "bot", ok: false, error: z ? "机器人到 12 个了，先删一个" : "12 bots already. Delete one first.")
+                return
+            }
             let nid = "bdemo\(1000 + bots.count)"
             let b = BotCard(id: nid, name: a.name ?? "", desc: a.desc ?? "", gear: "Sonnet 中", persona: a.persona ?? "")
             demoMemory[nid] = [BotMemo(date: "2026-11-28", text: z ? "他爱喝茶" : "He likes tea"),

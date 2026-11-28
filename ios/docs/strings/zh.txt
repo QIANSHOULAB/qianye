@@ -52,11 +52,16 @@ bots.deleteGroup	解散这个群
 bots.deleteYes	删掉
 bots.desc	一句话说明
 bots.descHint	它干什么。总管靠这句分活
+bots.descNew	可以不填，拿人设第一句
 bots.dislike	不喜欢
+bots.dropAsk	不建了？
+bots.dropNo	接着填
+bots.dropYes	不建了
 bots.empty	还没聊过，打个招呼
 bots.forget	忘掉
 bots.gone	找不到了
 bots.groupEmpty	开口吧。@ 谁谁回
+bots.groupLong	群名太长了：%@ 字，最多 20
 bots.groupMemory	群里记得的
 bots.groupName	群名
 bots.groupTitle	拉个群
@@ -67,6 +72,15 @@ bots.loading	问大管家要名单…
 bots.members	成员（2 到 6 个）
 bots.memory	它记得的
 bots.name	名字
+bots.nameAs	建出来叫「%@」（空格和 @ 不算）
+bots.nameLong	名字太长了：%@ 字，最多 20
+bots.nameNothing	要个名字（不带空格和 @）
+bots.nameTaken	已经有叫「%@」的了
+bots.need	还缺%@
+bots.needGroupName	群名
+bots.needMembers	%@ 个成员
+bots.needName	名字
+bots.needPersona	人设
 bots.new	+ 机器人
 bots.newGroup	+ 拉个群
 bots.newTitle	新机器人

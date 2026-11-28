@@ -6,6 +6,7 @@ import XCTest
 /// 3. 提醒链接 yiye://group 直接进那个群
 /// 4. 252：yiye://bot?id=&msg= 进掌眼的窗、滚到今天第一条（信故意倒着到）→ 图点开全屏、左滑下一张、长按存相册；深色看一眼
 /// 5. 252：👍 再点取消、👎 → 资料页定时活开关、左滑删
+/// 6. 256：新建页不往上推就点得到「建好」；缺名字、缺人设、重名、太长当场说；回信带 error 字还在；返回先问
 final class BotsTests: XCTestCase {
     private var app: XCUIApplication!
 
@@ -77,8 +78,7 @@ final class BotsTests: XCTestCase {
         tap("shutong.bots", "B1-没有机器人图标")
         tap("bots.new", "B1-名单没出来")
         type("bots.name", "Pip", "B1-名字框")
-        type("bots.desc", "Food ideas", "B1-说明框")
-        type("bots.persona", "Cheerful.", "B1-人设框")
+        type("bots.persona", "Cheerful. Makes tea.", "B1-人设框")      // 256：说明不填
         tap("bots.create", "B1-建好按钮")
         check(any("bots.input").waitForExistence(timeout: 8), "B1-没进聊天窗", "建好该直接进它的聊天窗")
         type("bots.input", "hello", "B1-输入框")
@@ -87,6 +87,9 @@ final class BotsTests: XCTestCase {
         shot("B1-聊天")
 
         tap("bots.title", "B1-点名字")
+        let desc = any("bots.desc")
+        check(desc.waitForExistence(timeout: 6) && desc.value as? String == "Cheerful", "256-说明没拿第一句",
+              "实际 \(String(describing: desc.value))")
         let memo = containing("He likes tea")
         check(reach(memo), "B1-没有记忆", "资料页该列出「He likes tea」")
         shot("B1-资料页")
@@ -102,7 +105,7 @@ final class BotsTests: XCTestCase {
         check(yes.waitForExistence(timeout: 4), "B1-没有确认", "删机器人该问一下")
         yes.tap()
         check(any("bots.new").waitForExistence(timeout: 8), "B1-没回名单", "删完该回名单")
-        check(!containing("Food ideas").exists, "B1-还在名单里", "删掉的机器人还在名单里")
+        check(!containing("Cheerful").exists, "B1-还在名单里", "删掉的机器人还在名单里")
         app.buttons["Done"].firstMatch.tap()
         check(open.waitForExistence(timeout: 6), "B1-回主页", "关掉名单该回主页")
         open.tap()
@@ -113,6 +116,9 @@ final class BotsTests: XCTestCase {
     func testGroupMentionAndOrder() {
         launch("bots")
         tap("bots.newGroup", "B2-名单没出来")
+        let make = app.buttons["bots.create"].firstMatch
+        check(make.waitForExistence(timeout: 6) && hittable(make) && !make.isEnabled, "256-群-建好", "进页就该看得到、还不能点")
+        check(containing("a group name, members (2 more)").waitForExistence(timeout: 4), "256-群-没说缺什么", "")
         type("bots.groupName", "Lunch", "B2-群名")
         tap("bots.pick.bdemo0001", "B2-勾第一个")
         tap("bots.pick.bdemo0002", "B2-勾第二个")
@@ -129,6 +135,49 @@ final class BotsTests: XCTestCase {
         check(second.waitForExistence(timeout: 6), "B2-第二句没到", "")
         check(first.frame.minY < second.frame.minY, "B2-顺序反了", "第 2 封先到，也该摆在第 1 封下面")
         shot("B2-群聊")
+    }
+
+    // ---------------------------------------------------------------- 6. 256 新建页
+    func testNewBotPage() {
+        launch("bots")
+        tap("bots.new", "256-名单没出来")
+        let make = app.buttons["bots.create"].firstMatch
+        check(make.waitForExistence(timeout: 6) && hittable(make), "256-建好不在屏上", "不用往上推就该点得到「建好」")
+        check(!make.isEnabled, "256-空着就亮了", "什么都没填，「建好」该是灰的")
+        check(app.buttons["bots.done"].waitForNonExistence(timeout: 4), "256-还有好了", "新建页不放「好了」")
+        check(containing("a name, a persona").waitForExistence(timeout: 4), "256-没说缺什么", "")
+
+        type("bots.name", "Chef", "256-名字框")
+        check(containing("already a bot called").waitForExistence(timeout: 4), "256-没说重名", "")
+        let delete = XCUIKeyboardKey.delete.rawValue
+        any("bots.name").typeText(String(repeating: delete, count: 4) + "Abcdefghijklmnopqrstu")
+        check(containing("Name too long: 21").waitForExistence(timeout: 4), "256-没说太长", "")
+        any("bots.name").typeText(String(repeating: delete, count: 21) + "Nope")
+        check(containing("Still needed: a persona").waitForExistence(timeout: 4), "256-没说缺人设", "")
+        check(!make.isEnabled, "256-缺人设就亮了", "")
+        type("bots.persona", "Grumpy.", "256-人设框")
+        check(make.isEnabled && make.isHittable, "256-填齐了没亮", "")
+        shot("256-新建页")
+
+        make.tap()                                                   // 假大管家对「Nope」回 error
+        check(containing("12 bots already").waitForExistence(timeout: 8), "256-没亮出错那句", "回信带 error 该原样写在页上")
+        check(any("bots.name").value as? String == "Nope", "256-字丢了", "实际 \(String(describing: any("bots.name").value))")
+        check(make.waitForExistence(timeout: 4) && make.isEnabled, "256-不能再点", "")
+        shot("256-回信带错")
+
+        tap("bots.back", "256-返回")
+        let keep = app.buttons["Keep editing"].firstMatch
+        check(keep.waitForExistence(timeout: 4), "256-返回没问", "填了字点返回该问一句")
+        keep.tap()
+        check(any("bots.name").value as? String == "Nope", "256-接着填字没了", "")
+        tap("bots.back", "256-返回")
+        let drop = app.buttons["Drop it"].firstMatch
+        check(drop.waitForExistence(timeout: 4), "256-返回没问", "")
+        drop.tap()
+        tap("bots.new", "256-没回名单")
+        check(containing("a name, a persona").waitForExistence(timeout: 4), "256-不建了还留着字", "")
+        tap("bots.back", "256-空着返回")
+        check(any("bots.new").waitForExistence(timeout: 6), "256-空着返回也问", "没填字直接走")
     }
 
     // ---------------------------------------------------------------- 4. 252 掌眼：图、全屏、👍👎、定时活
